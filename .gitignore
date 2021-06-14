@@ -1,0 +1,56 @@
+###
+# Unity folders and files
+###
+[Aa]ssets/AssetStoreTools*
+[Aa]ssets/_Project/Stashs
+[Aa]ssets/_Project/Stashs.meta
+[Bb]uild/
+[Ll]ibrary/
+[Ll]ocal[Cc]ache/
+[Oo]bj/
+[Tt]emp/
+[Pp]rivate/
+[Mm]emoryCaptures/
+[Uu]nityGenerated/
+# file on crash reports
+sysinfo.txt 
+
+###
+# VS/MD solution and project files
+###
+[Ee]xportedObj/
+*.booproj
+*.csproj
+*.sln
+*.suo
+*.svd
+*.unityproj
+*.user
+*.userprefs
+*.pidb
+.DS_Store
+.idea/
+
+###
+# OS generated
+###
+.DS_Store
+.DS_Store?
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+ethumbs.db.meta
+Thumbs.db
+Thumbs.db.meta
+.vs/
+RegisterIcalls.cpp
+Assets/StreamingAssets/build_info.txt
+Assets/Plugins/Editor/JetBrains/JetBrains.Rider.Unity.Editor.Plugin.Repacked.dll
+Assets/_TerrainAutoUpgrade.meta
+Assets/Plugins/IOS.meta
+Assets/Gaia/Stamps/Villages.meta
+Assets/Gaia/Stamps/Bases.meta
+Assets/Gaia/Stamps/Villages/Data.meta
+Assets/Gaia/Stamps/Bases/Data.meta
+Assets/_Project/Scripts/Automated Firing Probes Script.meta
+Assets/Plugins/Editor/JetBrains/JetBrains.Rider.Unity.Editor.Plugin.Repacked.dll.meta
