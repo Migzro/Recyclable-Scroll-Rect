@@ -31,4 +31,9 @@ public class MainController : MonoBehaviour, IDataSource
     {
         (cell as DemoCellPrototype)?.Initialize(_dataSource[cellIndex]);
     }
+
+    public bool IsCellStatic(int cellIndex)
+    {
+        return false;
+    }
 }
