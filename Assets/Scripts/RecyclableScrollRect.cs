@@ -21,6 +21,7 @@ public class RecyclableScrollRect : ScrollRect
     // todo: test horizontal
     // todo: test with items less that content
     // todo: test with dynamic item sizes
+    // todo: add leniency in what items are shown before and after
     
     [SerializeField] private IDataSourceContainer _dataSourceContainer;
     [SerializeField] private GameObject _prototypeCell;
@@ -223,7 +224,7 @@ public class RecyclableScrollRect : ScrollRect
                 _visibleItems.Remove(_minVisibleItem);
                 
                 // increment the _minVisibleItem by 1
-                _minVisibleItem = Mathf.Min(_itemsCount - 1, _minVisibleItem + 1);
+                _minVisibleItem++;
             }
             
             // item at bottom or right needs to appear
@@ -231,7 +232,7 @@ public class RecyclableScrollRect : ScrollRect
             if (vertical && contentBottomRightCorner.y > maxItemBottomRightCorner.y || !vertical && contentBottomRightCorner.x > maxItemBottomRightCorner.x)
             {
                 // Increment _maxVisibleItem by 1
-                var newMaxItemToCheck = Mathf.Min(_itemsCount - 1, _maxVisibleItem + 1);
+                var newMaxItemToCheck = _maxVisibleItem + 1;
                 
                 // Show the new newMaxItemToCheck
                 ShowCellAtIndex(newMaxItemToCheck, _maxVisibleItem);
@@ -251,7 +252,7 @@ public class RecyclableScrollRect : ScrollRect
                 _visibleItems.Remove(_maxVisibleItem);
                 
                 // Decrement the _maxVisibleItem by 1
-                _maxVisibleItem = Mathf.Max(0, _maxVisibleItem - 1);
+                _maxVisibleItem--;
             }
             
             // item at top or left needs to appear
@@ -259,7 +260,7 @@ public class RecyclableScrollRect : ScrollRect
             if (vertical && contentTopLeftCorner.y < minItemBottomRightCorner.y || !vertical && contentTopLeftCorner.x < minItemBottomRightCorner.x)
             {
                 // Decrement _minVisibleItem by 1
-                var newMinItemToCheck = Mathf.Max(0, _minVisibleItem - 1);
+                var newMinItemToCheck = _minVisibleItem - 1;
                 
                 // Show the new newMinItemToCheck
                 ShowCellAtIndex(newMinItemToCheck, _minVisibleItem);
