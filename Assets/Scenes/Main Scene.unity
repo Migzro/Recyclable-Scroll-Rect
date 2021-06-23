@@ -134,6 +134,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Advanced FPS Counter
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: e84b65f6b68cbca4a9a9c63e390ea836, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: e84b65f6b68cbca4a9a9c63e390ea836, type: 3}
       propertyPath: m_RootOrder
       value: 2
@@ -188,7 +192,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: e84b65f6b68cbca4a9a9c63e390ea836, type: 3}
       propertyPath: scaleFactor
-      value: 2.96
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: e84b65f6b68cbca4a9a9c63e390ea836, type: 3}
       propertyPath: paddingOffset.x
@@ -252,7 +256,7 @@ MonoBehaviour:
   m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
+  m_ReferenceResolution: {x: 750, y: 1334}
   m_ScreenMatchMode: 0
   m_MatchWidthOrHeight: 0
   m_PhysicalUnit: 3
@@ -387,8 +391,8 @@ MonoBehaviour:
   m_Spacing: 0
   m_ChildForceExpandWidth: 0
   m_ChildForceExpandHeight: 0
-  m_ChildControlWidth: 1
-  m_ChildControlHeight: 1
+  m_ChildControlWidth: 0
+  m_ChildControlHeight: 0
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
