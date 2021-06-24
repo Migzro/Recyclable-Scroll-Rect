@@ -16,9 +16,8 @@ public class Item
 
 public class RecyclableScrollRect : ScrollRect
 {
-    // todo: add leniency in what items are shown before and after
-    // todo: test with dynamic item sizes
     // todo: Remove any corner visible
+    // todo: test with dynamic item sizes
     // todo: remove initialize cell maybe?
     // todo: profile and check which calls are taking the longest time
     // todo: maybe dont set items x in vertical everytime we show a cell or item y in horizontal unless reloaded
@@ -27,6 +26,7 @@ public class RecyclableScrollRect : ScrollRect
 
     [SerializeField] private IDataSourceContainer _dataSourceContainer;
     [SerializeField] private GameObject _prototypeCell;
+    [SerializeField] private int _extraItemsVisible;
     [SerializeField] private bool _initOnStart;
     
     private VerticalLayoutGroup _verticalLayoutGroup;
@@ -40,8 +40,8 @@ public class RecyclableScrollRect : ScrollRect
     private float[] _cellSizes;
     private int _minimumItemsInViewPort;
     private int _itemsCount;
-    private int _minVisibleItem;
-    private int _maxVisibleItem;
+    private int _minVisibleItemInViewPort;
+    private int _maxVisibleItemInViewPort;
     private bool _hasLayoutGroup;
     private bool _init;
 
@@ -176,20 +176,25 @@ public class RecyclableScrollRect : ScrollRect
 
         for (var i = 0; i < _itemsCount; i++)
         {
-            remainingViewPortSize -= _cellSizes[i];
+            var spacing = _spacing;
+            if (i == _itemsCount - 1)
+                spacing = 0;
+            
+            remainingViewPortSize -= _cellSizes[i] + spacing;
             _minimumItemsInViewPort++;
 
             if (remainingViewPortSize <= 0)
                 break;
         }
         
-        _minVisibleItem = 0;
-        _maxVisibleItem = _minimumItemsInViewPort - 1;
+        _minVisibleItemInViewPort = 0;
+        _maxVisibleItemInViewPort = _minimumItemsInViewPort - 1;
     }
 
     private void InitializeCells()
     {
-        for (var i = 0; i < _minimumItemsInViewPort; i++)
+        var itemsToShow = Mathf.Min(_itemsCount, _minimumItemsInViewPort + _extraItemsVisible);
+        for (var i = 0; i < itemsToShow; i++)
         {
             InitializeCell(i);
         }
@@ -322,60 +327,59 @@ public class RecyclableScrollRect : ScrollRect
         
         var contentTopLeftCorner = content.localPosition.Abs();
         var contentBottomRightCorner = new Vector2 (contentTopLeftCorner.x + _viewPortSize.x, contentTopLeftCorner.y + _viewPortSize.y).Abs();
-        if (isDownOrRight && _maxVisibleItem < _itemsCount - 1)
+        
+        if (isDownOrRight && _maxVisibleItemInViewPort < _itemsCount - 1)
         {
-            // item at top or left can hide
-            if (_visibleItems[_minVisibleItem].transform.gameObject.activeSelf && !viewport.AnyCornerVisible(_visibleItems[_minVisibleItem].transform))
+            // item at top or left is not in viewport
+            if (_visibleItems[_minVisibleItemInViewPort].transform.gameObject.activeSelf && !viewport.AnyCornerVisible(_visibleItems[_minVisibleItemInViewPort].transform))
             {
-                // set _minVisibleItem as not active
-                _visibleItems[_minVisibleItem].transform.gameObject.SetActive(false);
-                
-                // remove _minVisibleItem from _visibleItems and add it in _invisibleItems
-                _invisibleItems.Add(_visibleItems[_minVisibleItem]);
-                _visibleItems.Remove(_minVisibleItem);
-                
-                // increment the _minVisibleItem by 1
-                _minVisibleItem++;
+                var itemToHide = _minVisibleItemInViewPort - _extraItemsVisible;
+                if (itemToHide > -1)
+                {
+                    _visibleItems[itemToHide].transform.gameObject.SetActive(false);
+                    _visibleItems[itemToHide].transform.name = "Pooled Cell";
+                    _invisibleItems.Add(_visibleItems[itemToHide]);
+                    _visibleItems.Remove(itemToHide);
+                }
+                _minVisibleItemInViewPort++;
             }
             
             // item at bottom or right needs to appear
-            var maxItemBottomRightCorner = _visibleItems[_maxVisibleItem].transform.anchoredPosition.Abs() + _visibleItems[_maxVisibleItem].transform.rect.size;
+            var maxItemBottomRightCorner = _visibleItems[_maxVisibleItemInViewPort].transform.anchoredPosition.Abs() + _visibleItems[_maxVisibleItemInViewPort].transform.rect.size;
             if (vertical && contentBottomRightCorner.y > maxItemBottomRightCorner.y || !vertical && contentBottomRightCorner.x > maxItemBottomRightCorner.x)
             {
-                // Increment _maxVisibleItem by 1
-                var newMaxItemToCheck = _maxVisibleItem + 1;
-                
-                // Show the new newMaxItemToCheck
-                ShowCellAtIndex(newMaxItemToCheck, _maxVisibleItem);
-                _maxVisibleItem = newMaxItemToCheck;
+                var newMaxItemToCheck = _maxVisibleItemInViewPort + 1;
+                var itemToShow = newMaxItemToCheck + _extraItemsVisible;
+                if (itemToShow < _itemsCount)
+                    ShowCellAtIndex(itemToShow, itemToShow - 1);
+                _maxVisibleItemInViewPort = newMaxItemToCheck;
             }
         }
-        else if (!isDownOrRight && _minVisibleItem > 0)
+        else if (!isDownOrRight && _minVisibleItemInViewPort > 0)
         {
-            // item at bottom or right can hide
-            if (_visibleItems[_maxVisibleItem].transform.gameObject.activeSelf && !viewport.AnyCornerVisible(_visibleItems[_maxVisibleItem].transform))
+            // item at bottom or right not in viewport
+            if (_visibleItems[_maxVisibleItemInViewPort].transform.gameObject.activeSelf && !viewport.AnyCornerVisible(_visibleItems[_maxVisibleItemInViewPort].transform))
             {
-                // set _maxVisibleItem as not active
-                _visibleItems[_maxVisibleItem].transform.gameObject.SetActive(false);
-                
-                // remove _maxVisibleItem from _visibleItems and add it in _invisibleItems
-                _invisibleItems.Add(_visibleItems[_maxVisibleItem]);
-                _visibleItems.Remove(_maxVisibleItem);
-                
-                // Decrement the _maxVisibleItem by 1
-                _maxVisibleItem--;
+                var itemToHide = _maxVisibleItemInViewPort + _extraItemsVisible;
+                if (itemToHide < _itemsCount)
+                {
+                    _visibleItems[itemToHide].transform.gameObject.SetActive(false);
+                    _visibleItems[itemToHide].transform.name = "Pooled Cell";
+                    _invisibleItems.Add(_visibleItems[itemToHide]);
+                    _visibleItems.Remove(itemToHide);
+                }
+                _maxVisibleItemInViewPort--;
             }
             
             // item at top or left needs to appear
-            var minItemBottomRightCorner = _visibleItems[_minVisibleItem].transform.anchoredPosition.Abs();
+            var minItemBottomRightCorner = _visibleItems[_minVisibleItemInViewPort].transform.anchoredPosition.Abs();
             if (vertical && contentTopLeftCorner.y < minItemBottomRightCorner.y || !vertical && contentTopLeftCorner.x < minItemBottomRightCorner.x)
             {
-                // Decrement _minVisibleItem by 1
-                var newMinItemToCheck = _minVisibleItem - 1;
-                
-                // Show the new newMinItemToCheck
-                ShowCellAtIndex(newMinItemToCheck, _minVisibleItem);
-                _minVisibleItem = newMinItemToCheck;
+                var newMinItemToCheck = _minVisibleItemInViewPort - 1;
+                var itemToShow = newMinItemToCheck - _extraItemsVisible;
+                if (itemToShow > -1)
+                    ShowCellAtIndex(itemToShow, itemToShow + 1);
+                _minVisibleItemInViewPort = newMinItemToCheck;
             }
         }
     }
