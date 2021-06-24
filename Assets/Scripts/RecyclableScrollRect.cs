@@ -17,9 +17,9 @@ public class Item
 public class RecyclableScrollRect : ScrollRect
 {
     // todo: initialize items at positions manually instead of relying on layouts with padding, spacing, expanding
+    // todo: remove initialize cell maybe?
     // todo: Remove any corner visible
     // todo: test horizontal
-    // todo: test with items less that content
     // todo: test with dynamic item sizes
     // todo: add leniency in what items are shown before and after
     // todo: profile and check which calls are taking the longest time
@@ -46,27 +46,45 @@ public class RecyclableScrollRect : ScrollRect
 
     private Dictionary<int, Item> _visibleItems;
     private List<Item> _invisibleItems;
-    private Vector2 lastScrollPosition;
+    private Vector2 _lastScrollPosition;
+    private RectOffset _padding;
+    private TextAnchor _alignment;
+    private float _spacing;
 
     protected override void Start()
     {
         base.Start();
         if (_initOnStart)
             Initialize();
-        lastScrollPosition = normalizedPosition;
+        _lastScrollPosition = normalizedPosition;
     }
 
     public void Initialize()
     {
         _dataSource = _dataSourceContainer.DataSource;
-        
+
         if (vertical)
+        {
             _verticalLayoutGroup = content.gameObject.GetComponent<VerticalLayoutGroup>();
+            if (_verticalLayoutGroup != null)
+            {
+                _hasLayoutGroup = true;
+                _padding = _verticalLayoutGroup.padding;
+                _spacing = _verticalLayoutGroup.spacing;
+                _alignment = _verticalLayoutGroup.childAlignment;
+            }
+        }
         else
+        {
             _horizontalLayoutGroup = content.gameObject.GetComponent<HorizontalLayoutGroup>();
-        
-        if (_verticalLayoutGroup != null || _horizontalLayoutGroup != null)
-            _hasLayoutGroup = true;
+            if (_horizontalLayoutGroup != null)
+            {
+                _hasLayoutGroup = true;
+                _padding = _horizontalLayoutGroup.padding;
+                _spacing = _horizontalLayoutGroup.spacing;
+                _alignment = _horizontalLayoutGroup.childAlignment;
+            }
+        }
 
         if (_hasLayoutGroup)
         {
@@ -86,20 +104,33 @@ public class RecyclableScrollRect : ScrollRect
     public void ReloadData()
     {
         _itemsCount = _dataSource.GetItemCount();
+        DisableContentLayouts();
         CalculateLayoutSize();
         CalculateMinimumItemsInViewPort();
         InitializeCells();
-        LayoutRebuilder.ForceRebuildLayoutImmediate(content);
-        DisableContentLayouts();
+    }
+    
+    private void DisableContentLayouts()
+    {
+        if (_hasLayoutGroup)
+        {
+            if (_horizontalLayoutGroup != null)
+                _horizontalLayoutGroup.enabled = false;
+
+            if (_verticalLayoutGroup != null)
+                _verticalLayoutGroup.enabled = false;
+
+            _contentSizeFitter.enabled = false;
+        }
     }
     
     private void CalculateLayoutSize()
     {
-        _contentSize = viewport.sizeDelta;
+        var contentSizeDelta = viewport.sizeDelta;
         if (vertical)
-            _contentSize.y = 0;
+            contentSizeDelta.y = 0;
         else
-            _contentSize.x = 0;
+            contentSizeDelta.x = 0;
         
         _cellSizes = new float[_itemsCount];
         for (var i = 0; i < _itemsCount; i++)
@@ -108,24 +139,32 @@ public class RecyclableScrollRect : ScrollRect
             _cellSizes[i] = cellSize;
             
             if (vertical)
-                _contentSize.y += cellSize;
+                contentSizeDelta.y += cellSize;
             else
-                _contentSize.x += cellSize;
+                contentSizeDelta.x += cellSize;
         }
 
         if (_hasLayoutGroup)
         {
             if (vertical && _verticalLayoutGroup != null)
             {
-                _contentSize.y += _verticalLayoutGroup.spacing * (_itemsCount - 1);
-                _contentSize.y += _verticalLayoutGroup.padding.top + _verticalLayoutGroup.padding.bottom;
+                contentSizeDelta.y += _spacing * (_itemsCount - 1);
+                contentSizeDelta.y += _padding.top + _padding.bottom;
             }
             else if (!vertical && _horizontalLayoutGroup != null)
             {
-                _contentSize.x += _horizontalLayoutGroup.spacing * (_itemsCount - 1);
-                _contentSize.y += _verticalLayoutGroup.padding.right + _verticalLayoutGroup.padding.left;
+                contentSizeDelta.x += _spacing * (_itemsCount - 1);
+                contentSizeDelta.y += _padding.right + _padding.left;
             }
+            
+            if (vertical)
+                _layoutElement.preferredHeight = contentSizeDelta.y;
+            else
+                _layoutElement.preferredWidth = contentSizeDelta.x;
         }
+        
+        content.sizeDelta = contentSizeDelta;
+        _contentSize = content.rect.size;
     }
 
     private void CalculateMinimumItemsInViewPort()
@@ -167,43 +206,88 @@ public class RecyclableScrollRect : ScrollRect
         _visibleItems.Add(index, item);
         _dataSource.SetCellData(cell, index);
 
-        var itemSize = rect.sizeDelta;
-        if (_hasLayoutGroup)
-        {
-            if (vertical && _verticalLayoutGroup.childControlWidth && _verticalLayoutGroup.childForceExpandWidth)
-            {
-                itemSize.x = _contentSize.x;
-            }
-            
-            if (!vertical && _verticalLayoutGroup.childControlHeight && _verticalLayoutGroup.childControlHeight)
-            {
-                itemSize.y = _contentSize.y;
-            }
-        }
-
-        rect.sizeDelta = itemSize;
+        SetCellSizePosition(rect, index, index - 1);
         return item;
     }
 
-    private void DisableContentLayouts()
+    private void SetCellSizePosition(RectTransform rect, int newIndex, int prevIndex)
     {
+        // set position
+        // all items are anchored to top left
+        var anchorVector = new Vector2(0, 1);
+        rect.anchorMin = anchorVector;
+        rect.anchorMax = anchorVector;
+        
+        // set size
         if (_hasLayoutGroup)
         {
-            if (_horizontalLayoutGroup != null)
-                _horizontalLayoutGroup.enabled = false;
+            // expand item width if its in a vertical layout group and the conditions are satisfied
+            if (vertical && _verticalLayoutGroup.childControlWidth && _verticalLayoutGroup.childForceExpandWidth)
+            {
+                var itemSize = rect.sizeDelta;
+                itemSize.x = content.rect.width - _verticalLayoutGroup.padding.right - _verticalLayoutGroup.padding.left;
+                rect.sizeDelta = itemSize;
+            }
             
-            if (_verticalLayoutGroup != null)
-                _verticalLayoutGroup.enabled = false;
-
-            _contentSizeFitter.enabled = false;
-
-            if (vertical)
-                _layoutElement.preferredHeight = _contentSize.y;
-            else
-                _layoutElement.preferredWidth = _contentSize.x;
+            // expand item height if its in a horizontal layout group and the conditions are satisfied
+            else if (!vertical && _horizontalLayoutGroup.childControlHeight && _horizontalLayoutGroup.childControlHeight)
+            {
+                var itemSize = rect.sizeDelta;
+                itemSize.y = content.rect.height - _horizontalLayoutGroup.padding.top - _horizontalLayoutGroup.padding.bottom;
+                rect.sizeDelta = itemSize;
+            }
         }
 
-        content.sizeDelta = _contentSize;
+        // get content size without padding
+        var contentSizeWithPadding = _contentSize;
+        contentSizeWithPadding.x -= _padding.right - _padding.left;
+        contentSizeWithPadding.y -= _padding.top - _padding.bottom;
+
+        // figure out where the prev cell position was
+        var prevItemPosition = Vector2.zero;
+        if (newIndex == 0)
+        {
+            prevItemPosition.y -= _padding.top;
+            prevItemPosition.x += _padding.left;
+        }
+        if (prevIndex > -1 && prevIndex < _itemsCount - 1)
+        {
+            var isAfter = newIndex > prevIndex;
+            prevItemPosition = _visibleItems[prevIndex].transform.anchoredPosition;
+            var sign = isAfter ? -1 : 1;
+            if (vertical)
+                prevItemPosition.y += (_visibleItems[prevIndex].transform.rect.height * sign) + (_spacing * sign);
+            else
+                prevItemPosition.x += (_visibleItems[prevIndex].transform.rect.width * sign) + (_spacing * sign);
+        }
+                
+        // set position of cell based on layout alignment
+        var rectSize = rect.rect.size;
+        var itemSizeSmallerThanContent = vertical && rectSize.x < contentSizeWithPadding.x || !vertical && rectSize.y < contentSizeWithPadding.y;
+        if (_hasLayoutGroup && itemSizeSmallerThanContent)
+        {
+            if (vertical)
+            {
+                if (_alignment == TextAnchor.LowerCenter || _alignment == TextAnchor.MiddleCenter || _alignment == TextAnchor.UpperCenter)
+                {
+                    prevItemPosition.x = (_padding.left + (_contentSize.x - rectSize.x) - _padding.right) / 2f;
+                }
+                else if (_alignment == TextAnchor.LowerRight || _alignment == TextAnchor.MiddleRight || _alignment == TextAnchor.UpperRight)
+                {
+                    prevItemPosition.x = _contentSize.x - rectSize.x - _padding.right;
+                }
+                else
+                {
+                    prevItemPosition.x = _padding.left;
+                }
+            }
+            else
+            {
+                // todo : this for horizontal
+                rect.anchoredPosition = new Vector2(0, (_padding.top + (_contentSize.y - rectSize.y) - _padding.bottom) / 2f);
+            }
+        }
+        rect.anchoredPosition = prevItemPosition;
     }
     
     protected override void LateUpdate()
@@ -212,17 +296,18 @@ public class RecyclableScrollRect : ScrollRect
 
         if (!_init)
             return;
-        if (normalizedPosition == lastScrollPosition)
+        if (normalizedPosition == _lastScrollPosition)
             return;
         if (_visibleItems.Count <= 0)
             return;
 
+        // check the direction of the scrolling
         var isDownOrRight = true;
-        if (vertical && lastScrollPosition.y < normalizedPosition.y)
+        if (vertical && _lastScrollPosition.y < normalizedPosition.y)
             isDownOrRight = false;
-        else if (!vertical && lastScrollPosition.x < normalizedPosition.x)
+        else if (!vertical && _lastScrollPosition.x < normalizedPosition.x)
             isDownOrRight = false;
-        lastScrollPosition = normalizedPosition;
+        _lastScrollPosition = normalizedPosition;
         
         var contentTopLeftCorner = content.localPosition;
         var contentBottomRightCorner = new Vector2 (contentTopLeftCorner.x + _viewPortSize.x, contentTopLeftCorner.y + _viewPortSize.y);
@@ -288,10 +373,9 @@ public class RecyclableScrollRect : ScrollRect
     {
         // Get empty cell
         var isAfter = newIndex > prevIndex;
-        Item item;
         if (_invisibleItems.Count > 0)
         {
-            item = _invisibleItems[0];
+            var item = _invisibleItems[0];
             _invisibleItems.RemoveAt(0);
             
             if (isAfter)
@@ -304,21 +388,13 @@ public class RecyclableScrollRect : ScrollRect
             
             _dataSource.SetCellData(item.cell, newIndex);
             _visibleItems.Add(newIndex, item);
+            
+            SetCellSizePosition(item.transform, newIndex, prevIndex);
         }
         else
         {
-            item = InitializeCell(newIndex);
+            InitializeCell(newIndex);
         }
-        
-        // Set position, size of cell
-        var prevIndexPosition = _visibleItems[prevIndex].transform.anchoredPosition;
-        var sign = isAfter ? 1 : -1;
-        if (vertical)
-            prevIndexPosition.y += Mathf.Sign(prevIndexPosition.y) * _visibleItems[prevIndex].transform.rect.height * sign;
-        else
-            prevIndexPosition.x += Mathf.Sign(prevIndexPosition.x) * _visibleItems[prevIndex].transform.rect.width * sign;
-        
-        item.transform.anchoredPosition = prevIndexPosition;
     }
 }
 

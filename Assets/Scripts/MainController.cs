@@ -29,7 +29,7 @@ public class MainController : MonoBehaviour, IDataSource
 
     public void SetCellData(ICell cell, int cellIndex)
     {
-        (cell as DemoCellPrototype)?.Initialize(_dataSource[cellIndex]);
+        (cell as DemoCellPrototype)?.Initialize(_dataSource[cellIndex], cellIndex);
     }
 
     public bool IsCellStatic(int cellIndex)
