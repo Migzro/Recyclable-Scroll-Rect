@@ -22,6 +22,7 @@ public class RecyclableScrollRect : ScrollRect
     // todo: test with items less that content
     // todo: test with dynamic item sizes
     // todo: add leniency in what items are shown before and after
+    // todo: profile and check which calls are taking the longest time
     
     [SerializeField] private IDataSourceContainer _dataSourceContainer;
     [SerializeField] private GameObject _prototypeCell;
@@ -84,12 +85,6 @@ public class RecyclableScrollRect : ScrollRect
 
     public void ReloadData()
     {
-        _contentSize = viewport.sizeDelta;
-        if (vertical)
-            _contentSize.y = 0;
-        else
-            _contentSize.x = 0;
-        
         _itemsCount = _dataSource.GetItemCount();
         CalculateLayoutSize();
         CalculateMinimumItemsInViewPort();
@@ -100,6 +95,12 @@ public class RecyclableScrollRect : ScrollRect
     
     private void CalculateLayoutSize()
     {
+        _contentSize = viewport.sizeDelta;
+        if (vertical)
+            _contentSize.y = 0;
+        else
+            _contentSize.x = 0;
+        
         _cellSizes = new float[_itemsCount];
         for (var i = 0; i < _itemsCount; i++)
         {
@@ -110,6 +111,20 @@ public class RecyclableScrollRect : ScrollRect
                 _contentSize.y += cellSize;
             else
                 _contentSize.x += cellSize;
+        }
+
+        if (_hasLayoutGroup)
+        {
+            if (vertical && _verticalLayoutGroup != null)
+            {
+                _contentSize.y += _verticalLayoutGroup.spacing * (_itemsCount - 1);
+                _contentSize.y += _verticalLayoutGroup.padding.top + _verticalLayoutGroup.padding.bottom;
+            }
+            else if (!vertical && _horizontalLayoutGroup != null)
+            {
+                _contentSize.x += _horizontalLayoutGroup.spacing * (_itemsCount - 1);
+                _contentSize.y += _verticalLayoutGroup.padding.right + _verticalLayoutGroup.padding.left;
+            }
         }
     }
 

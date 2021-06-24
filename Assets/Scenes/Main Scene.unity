@@ -317,7 +317,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6a9ca35bfa244745bc8e70062f5d7eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _itemsCount: 10000
+  _itemsCount: 10
   _scrollRect: {fileID: 1904557390}
 --- !u!1 &1362537419
 GameObject:
@@ -389,9 +389,9 @@ MonoBehaviour:
     m_Bottom: 0
   m_ChildAlignment: 1
   m_Spacing: 0
-  m_ChildForceExpandWidth: 0
+  m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 0
-  m_ChildControlWidth: 0
+  m_ChildControlWidth: 1
   m_ChildControlHeight: 0
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
