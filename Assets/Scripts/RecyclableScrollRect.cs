@@ -16,14 +16,15 @@ public class Item
 
 public class RecyclableScrollRect : ScrollRect
 {
-    // todo: initialize items at positions manually instead of relying on layouts with padding, spacing, expanding
-    // todo: remove initialize cell maybe?
-    // todo: Remove any corner visible
-    // todo: test horizontal
-    // todo: test with dynamic item sizes
     // todo: add leniency in what items are shown before and after
+    // todo: test with dynamic item sizes
+    // todo: Remove any corner visible
+    // todo: remove initialize cell maybe?
     // todo: profile and check which calls are taking the longest time
-    
+    // todo: maybe dont set items x in vertical everytime we show a cell or item y in horizontal unless reloaded
+    // todo: ExecuteInEditMode?
+    // todo: add a scrollto method?
+
     [SerializeField] private IDataSourceContainer _dataSourceContainer;
     [SerializeField] private GameObject _prototypeCell;
     [SerializeField] private bool _initOnStart;
@@ -194,7 +195,7 @@ public class RecyclableScrollRect : ScrollRect
         }
     }
 
-    private Item InitializeCell(int index)
+    private void InitializeCell(int index)
     {
         var itemGo = Instantiate(_prototypeCell, content, false);
         itemGo.name = index.ToString();
@@ -207,7 +208,6 @@ public class RecyclableScrollRect : ScrollRect
         _dataSource.SetCellData(cell, index);
 
         SetCellSizePosition(rect, index, index - 1);
-        return item;
     }
 
     private void SetCellSizePosition(RectTransform rect, int newIndex, int prevIndex)
@@ -258,10 +258,11 @@ public class RecyclableScrollRect : ScrollRect
             if (vertical)
                 prevItemPosition.y += (_visibleItems[prevIndex].transform.rect.height * sign) + (_spacing * sign);
             else
-                prevItemPosition.x += (_visibleItems[prevIndex].transform.rect.width * sign) + (_spacing * sign);
+                prevItemPosition.x -= (_visibleItems[prevIndex].transform.rect.width * sign) + (_spacing * sign);
         }
                 
         // set position of cell based on layout alignment
+        // we check for multiple conditions together since the content is made to fit the items, so they only move in one axis in each different scroll direction
         var rectSize = rect.rect.size;
         var itemSizeSmallerThanContent = vertical && rectSize.x < contentSizeWithPadding.x || !vertical && rectSize.y < contentSizeWithPadding.y;
         if (_hasLayoutGroup && itemSizeSmallerThanContent)
@@ -283,8 +284,18 @@ public class RecyclableScrollRect : ScrollRect
             }
             else
             {
-                // todo : this for horizontal
-                rect.anchoredPosition = new Vector2(0, (_padding.top + (_contentSize.y - rectSize.y) - _padding.bottom) / 2f);
+                if (_alignment == TextAnchor.MiddleLeft || _alignment == TextAnchor.MiddleCenter || _alignment == TextAnchor.MiddleRight)
+                {
+                    prevItemPosition.y = -(_padding.top + (_contentSize.y - rectSize.y) - _padding.bottom) / 2f;
+                }
+                else if (_alignment == TextAnchor.LowerLeft || _alignment == TextAnchor.LowerCenter || _alignment == TextAnchor.LowerRight)
+                {
+                    prevItemPosition.y = -(_contentSize.y - rectSize.y - _padding.bottom);
+                }
+                else
+                {
+                    prevItemPosition.y = -_padding.top;
+                }
             }
         }
         rect.anchoredPosition = prevItemPosition;
@@ -305,12 +316,12 @@ public class RecyclableScrollRect : ScrollRect
         var isDownOrRight = true;
         if (vertical && _lastScrollPosition.y < normalizedPosition.y)
             isDownOrRight = false;
-        else if (!vertical && _lastScrollPosition.x < normalizedPosition.x)
+        else if (!vertical && _lastScrollPosition.x > normalizedPosition.x)
             isDownOrRight = false;
         _lastScrollPosition = normalizedPosition;
         
-        var contentTopLeftCorner = content.localPosition;
-        var contentBottomRightCorner = new Vector2 (contentTopLeftCorner.x + _viewPortSize.x, contentTopLeftCorner.y + _viewPortSize.y);
+        var contentTopLeftCorner = content.localPosition.Abs();
+        var contentBottomRightCorner = new Vector2 (contentTopLeftCorner.x + _viewPortSize.x, contentTopLeftCorner.y + _viewPortSize.y).Abs();
         if (isDownOrRight && _maxVisibleItem < _itemsCount - 1)
         {
             // item at top or left can hide
@@ -405,5 +416,13 @@ public static class Helpers
         vec2.x = Mathf.Abs(vec2.x);
         vec2.y = Mathf.Abs(vec2.y);
         return vec2;
+    }
+    
+    public static Vector3 Abs(this Vector3 vec3)
+    {
+        vec3.x = Mathf.Abs(vec3.x);
+        vec3.y = Mathf.Abs(vec3.y);
+        vec3.z = Mathf.Abs(vec3.z);
+        return vec3;
     }
 }

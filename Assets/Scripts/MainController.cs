@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class MainController : MonoBehaviour, IDataSource
 {
+    [SerializeField] private bool _isVertical;
     [SerializeField] private int _itemsCount;
     [SerializeField] private RecyclableScrollRect _scrollRect;
     private List<string> _dataSource;
@@ -24,7 +25,7 @@ public class MainController : MonoBehaviour, IDataSource
 
     public float GetCellSize(int cellIndex)
     {
-        return 100;
+        return _isVertical ? 100 : 300;
     }
 
     public void SetCellData(ICell cell, int cellIndex)
