@@ -7,6 +7,8 @@ public class MainController : MonoBehaviour, IDataSource
     [SerializeField] private bool _isVertical;
     [SerializeField] private int _itemsCount;
     [SerializeField] private RecyclableScrollRect _scrollRect;
+    [SerializeField] private GameObject[] _prototypeCells;
+        
     private List<string> _dataSource;
 
     private void Start()
@@ -26,12 +28,21 @@ public class MainController : MonoBehaviour, IDataSource
 
     public float GetCellSize(int cellIndex)
     {
-        return _isVertical ? 100 : 300;
+        var verticalCellSize = cellIndex % 2 == 0 ? 100 : 200;
+        return _isVertical ? verticalCellSize : 300;
     }
 
     public void SetCellData(ICell cell, int cellIndex)
     {
         (cell as DemoCellPrototype)?.Initialize(_dataSource[cellIndex], cellIndex);
+    }
+
+    public GameObject GetCellPrototypeCell(int cellIndex)
+    {
+        if (cellIndex % 2 == 0)
+            return _prototypeCells[0]; 
+        
+        return _prototypeCells[1];
     }
 
     public bool IsCellStatic(int cellIndex)

@@ -318,8 +318,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _isVertical: 1
-  _itemsCount: 10000
+  _itemsCount: 100
   _scrollRect: {fileID: 1904557390}
+  _prototypeCells:
+  - {fileID: 1638117046129563386, guid: e71a2206129434ac9b60b1d7743a0f00, type: 3}
+  - {fileID: 1638117046129563386, guid: 8adbff0b635e942389b00eba787508ce, type: 3}
 --- !u!1 &1362537419
 GameObject:
   m_ObjectHideFlags: 0
@@ -624,9 +627,10 @@ MonoBehaviour:
       m_Calls: []
   _dataSourceContainer:
     _dataSource: {fileID: 658359684}
-  _prototypeCell: {fileID: 1638117046129563386, guid: 8adbff0b635e942389b00eba787508ce, type: 3}
+  _prototypeCell: {fileID: 1638117046129563386, guid: e71a2206129434ac9b60b1d7743a0f00, type: 3}
   _extraItemsVisible: 5
   _initOnStart: 0
+  _useDataSourcePrototypeCells: 0
 --- !u!114 &1904557391
 MonoBehaviour:
   m_ObjectHideFlags: 0

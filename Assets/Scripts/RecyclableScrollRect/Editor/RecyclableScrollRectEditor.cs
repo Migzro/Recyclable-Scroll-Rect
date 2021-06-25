@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEditor.UI;
+using UnityEngine;
 
 namespace RecyclableSR.Editor
 {
@@ -7,8 +8,9 @@ namespace RecyclableSR.Editor
     [CanEditMultipleObjects]
     public class RecyclableScrollRectEditor : ScrollRectEditor
     {
-        SerializedProperty _protoTypeCell;
         SerializedProperty _initOnStart;
+        SerializedProperty _useDataSourcePrototypeCells;
+        SerializedProperty _protoTypeCell;
         SerializedProperty _dataSourceContainer;
         SerializedProperty _extraItemsVisible;
 
@@ -16,6 +18,7 @@ namespace RecyclableSR.Editor
         {
             base.OnEnable();
             _initOnStart = serializedObject.FindProperty("_initOnStart");
+            _useDataSourcePrototypeCells = serializedObject.FindProperty("_useDataSourcePrototypeCells");
             _protoTypeCell = serializedObject.FindProperty("_prototypeCell");
             _dataSourceContainer = serializedObject.FindProperty("_dataSourceContainer");
             _extraItemsVisible = serializedObject.FindProperty("_extraItemsVisible");
@@ -26,7 +29,12 @@ namespace RecyclableSR.Editor
             base.OnInspectorGUI();
             EditorGUILayout.Space();
             EditorGUILayout.PropertyField(_initOnStart);
-            EditorGUILayout.PropertyField(_protoTypeCell);
+            EditorGUILayout.PropertyField(_useDataSourcePrototypeCells);
+            if (EditorGUILayout.BeginFadeGroup(((RecyclableScrollRect) target).useDataSourcePrototypeCells ? 0 : 1))
+            {
+                EditorGUILayout.PropertyField(_protoTypeCell);
+            }
+            EditorGUILayout.EndFadeGroup();
             EditorGUILayout.PropertyField(_dataSourceContainer);
             EditorGUILayout.PropertyField(_extraItemsVisible);
             serializedObject.ApplyModifiedProperties();

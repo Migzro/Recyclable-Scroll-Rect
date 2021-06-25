@@ -1,16 +1,16 @@
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using UnityEngine;
 using UnityEngine.UI;
-using Debug = UnityEngine.Debug;
 
 namespace RecyclableSR
 {
     public class RecyclableScrollRect : ScrollRect
     {
         // todo: test with dynamic item sizes
-        // todo: profile and check which calls are taking the longest time
+        // todo: profile and check which calls are taking the longest time (SetActive takes the longest in the update loop)
         // todo: maybe dont set items x in vertical everytime we show a cell or item y in horizontal unless reloaded
+        // todo: check reload data and add maybe a new method that just adds items
         // todo: ExecuteInEditMode?
         // todo: add a scrollto method?
         // todo: Simulate content size (O.o)^(o.O)
@@ -19,6 +19,8 @@ namespace RecyclableSR
         [SerializeField] private GameObject _prototypeCell;
         [SerializeField] private int _extraItemsVisible;
         [SerializeField] private bool _initOnStart;
+        [SerializeField] private bool _useDataSourcePrototypeCells;
+        public bool useDataSourcePrototypeCells => _useDataSourcePrototypeCells;
 
         private VerticalLayoutGroup _verticalLayoutGroup;
         private HorizontalLayoutGroup _horizontalLayoutGroup;
@@ -54,6 +56,11 @@ namespace RecyclableSR
         public void Initialize()
         {
             _dataSource = _dataSourceContainer.DataSource;
+
+            if (!_useDataSourcePrototypeCells && _prototypeCell == null)
+            {
+                throw new ArgumentNullException(nameof(_prototypeCell), "No prototype cell defined in Recyclable Scroll Rect");
+            }
 
             if (vertical)
             {
@@ -188,7 +195,8 @@ namespace RecyclableSR
 
         private void InitializeCell(int index)
         {
-            var itemGo = Instantiate(_prototypeCell, content, false);
+            var itemPrototypeCell = _useDataSourcePrototypeCells ? _dataSource.GetCellPrototypeCell(index) : _prototypeCell;
+            var itemGo = Instantiate(itemPrototypeCell, content, false);
             itemGo.name = index.ToString();
 
             var cell = itemGo.GetComponent<ICell>();
