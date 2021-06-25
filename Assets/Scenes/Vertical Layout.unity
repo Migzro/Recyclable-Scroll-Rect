@@ -630,7 +630,7 @@ MonoBehaviour:
   _prototypeCell: {fileID: 1638117046129563386, guid: e71a2206129434ac9b60b1d7743a0f00, type: 3}
   _extraItemsVisible: 5
   _initOnStart: 0
-  _useDataSourcePrototypeCells: 0
+  _useDataSourcePrototypeCells: 1
 --- !u!114 &1904557391
 MonoBehaviour:
   m_ObjectHideFlags: 0

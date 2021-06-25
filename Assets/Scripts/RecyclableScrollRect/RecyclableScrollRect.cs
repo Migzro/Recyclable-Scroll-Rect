@@ -8,9 +8,12 @@ namespace RecyclableSR
     public class RecyclableScrollRect : ScrollRect
     {
         // todo: test with dynamic item sizes
+        // todo: test with horizontal again
+        // todo: static cell
         // todo: profile and check which calls are taking the longest time (SetActive takes the longest in the update loop)
         // todo: maybe dont set items x in vertical everytime we show a cell or item y in horizontal unless reloaded
         // todo: check reload data and add maybe a new method that just adds items
+        // todo: add a ReloadCell method?
         // todo: ExecuteInEditMode?
         // todo: add a scrollto method?
         // todo: Simulate content size (O.o)^(o.O)
@@ -31,6 +34,7 @@ namespace RecyclableSR
         private Vector2 _viewPortSize;
         private Vector2 _contentSize;
         private float[] _cellSizes;
+        private string[] _prototypeNames;
         private int _axis;
         private int _minimumItemsInViewPort;
         private int _itemsCount;
@@ -40,7 +44,7 @@ namespace RecyclableSR
         private bool _init;
 
         private Dictionary<int, Item> _visibleItems;
-        private List<Item> _invisibleItems;
+        private Dictionary<string, List<Item>> _invisibleItems;
         private Vector2 _lastScrollPosition;
         private RectOffset _padding;
         private TextAnchor _alignment;
@@ -94,7 +98,7 @@ namespace RecyclableSR
             }
 
             _visibleItems = new Dictionary<int, Item>();
-            _invisibleItems = new List<Item>();
+            _invisibleItems = new Dictionary<string, List<Item>>();
             _viewPortSize = viewport.rect.size;
             _init = true;
             _lastScrollPosition = normalizedPosition;
@@ -186,6 +190,10 @@ namespace RecyclableSR
 
         private void InitializeCells()
         {
+            _prototypeNames = new string[_itemsCount];
+            for (var i = 0; i < _itemsCount; i++)
+                _prototypeNames[i] = _dataSource.GetCellPrototypeCell(i).name;
+            
             var itemsToShow = Mathf.Min(_itemsCount, _minimumItemsInViewPort + _extraItemsVisible);
             for (var i = 0; i < itemsToShow; i++)
             {
@@ -206,6 +214,9 @@ namespace RecyclableSR
             _visibleItems.Add(index, item);
             _dataSource.SetCellData(cell, index);
 
+            if (!_invisibleItems.ContainsKey(_prototypeNames[index]))
+                _invisibleItems.Add(_prototypeNames[index], new List<Item>());
+            
             SetCellSizePosition(rect, index, index - 1);
         }
 
@@ -254,8 +265,14 @@ namespace RecyclableSR
             {
                 var isAfter = newIndex > prevIndex;
                 prevItemPosition = _visibleItems[prevIndex].transform.anchoredPosition;
+
                 var sign = isAfter ? -1 : 1;
-                prevItemPosition[_axis] += (_visibleItems[prevIndex].transform.rect.size[_axis] * sign) + (_spacing * sign);
+                var cellSizeToUse = isAfter ? _cellSizes[prevIndex] : _cellSizes[newIndex];
+                // var cellSizeToUse = _cellSizes[prevIndex];
+                if (vertical)
+                    prevItemPosition[_axis] += (cellSizeToUse * sign) + (_spacing * sign);
+                else
+                    prevItemPosition[_axis] -= (cellSizeToUse * sign) + (_spacing * sign);
             }
 
             // set position of cell based on layout alignment
@@ -331,7 +348,7 @@ namespace RecyclableSR
                     {
                         _visibleItems[itemToHide].transform.gameObject.SetActive(false);
                         SetVisibilityInHierarchy(_visibleItems[itemToHide].transform, false);
-                        _invisibleItems.Add(_visibleItems[itemToHide]);
+                        _invisibleItems[_prototypeNames[itemToHide]].Add(_visibleItems[itemToHide]);
                         _visibleItems.Remove(itemToHide);
                     }
 
@@ -359,7 +376,7 @@ namespace RecyclableSR
                     {
                         _visibleItems[itemToHide].transform.gameObject.SetActive(false);
                         SetVisibilityInHierarchy(_visibleItems[itemToHide].transform, false);
-                        _invisibleItems.Add(_visibleItems[itemToHide]);
+                        _invisibleItems[_prototypeNames[itemToHide]].Add(_visibleItems[itemToHide]);
                         _visibleItems.Remove(itemToHide);
                     }
 
@@ -383,10 +400,11 @@ namespace RecyclableSR
         {
             // Get empty cell and adjust its position and size, else just create a new a cell
             var isAfter = newIndex > prevIndex;
-            if (_invisibleItems.Count > 0)
+            var cellPrototypeName = _prototypeNames[newIndex];
+            if (_invisibleItems[cellPrototypeName].Count > 0)
             {
-                var item = _invisibleItems[0];
-                _invisibleItems.RemoveAt(0);
+                var item = _invisibleItems[cellPrototypeName][0];
+                _invisibleItems[cellPrototypeName].RemoveAt(0);
 
                 if (isAfter)
                     item.transform.SetAsLastSibling();
