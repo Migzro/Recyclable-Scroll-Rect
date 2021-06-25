@@ -318,7 +318,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _isVertical: 1
-  _itemsCount: 100
+  _itemsCount: 10000
   _scrollRect: {fileID: 1904557390}
 --- !u!1 &1362537419
 GameObject:
@@ -625,7 +625,7 @@ MonoBehaviour:
   _dataSourceContainer:
     _dataSource: {fileID: 658359684}
   _prototypeCell: {fileID: 1638117046129563386, guid: 8adbff0b635e942389b00eba787508ce, type: 3}
-  _extraItemsVisible: 0
+  _extraItemsVisible: 5
   _initOnStart: 0
 --- !u!114 &1904557391
 MonoBehaviour:

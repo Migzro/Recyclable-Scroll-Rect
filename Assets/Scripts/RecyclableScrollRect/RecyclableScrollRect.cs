@@ -121,21 +121,14 @@ namespace RecyclableSR
         private void CalculateLayoutSize()
         {
             var contentSizeDelta = viewport.sizeDelta;
-            if (vertical)
-                contentSizeDelta.y = 0;
-            else
-                contentSizeDelta.x = 0;
+            contentSizeDelta[_axis] = 0;
 
             _cellSizes = new float[_itemsCount];
             for (var i = 0; i < _itemsCount; i++)
             {
                 var cellSize = _dataSource.GetCellSize(i);
                 _cellSizes[i] = cellSize;
-
-                if (vertical)
-                    contentSizeDelta.y += cellSize;
-                else
-                    contentSizeDelta.x += cellSize;
+                contentSizeDelta[_axis] += cellSize;
             }
 
             if (_hasLayoutGroup)
@@ -148,7 +141,7 @@ namespace RecyclableSR
                 else if (!vertical && _horizontalLayoutGroup != null)
                 {
                     contentSizeDelta.x += _spacing * (_itemsCount - 1);
-                    contentSizeDelta.y += _padding.right + _padding.left;
+                    contentSizeDelta.x += _padding.right + _padding.left;
                 }
 
                 if (vertical)
@@ -165,7 +158,7 @@ namespace RecyclableSR
         {
             _minimumItemsInViewPort = 0;
             var rect = viewport.rect;
-            var remainingViewPortSize = vertical ? rect.height : rect.width;
+            var remainingViewPortSize = rect.size[_axis];
 
             for (var i = 0; i < _itemsCount; i++)
             {
@@ -254,17 +247,13 @@ namespace RecyclableSR
                 var isAfter = newIndex > prevIndex;
                 prevItemPosition = _visibleItems[prevIndex].transform.anchoredPosition;
                 var sign = isAfter ? -1 : 1;
-                if (vertical)
-                    prevItemPosition.y += (_visibleItems[prevIndex].transform.rect.height * sign) + (_spacing * sign);
-                else
-                    prevItemPosition.x -= (_visibleItems[prevIndex].transform.rect.width * sign) + (_spacing * sign);
+                prevItemPosition[_axis] += (_visibleItems[prevIndex].transform.rect.size[_axis] * sign) + (_spacing * sign);
             }
 
             // set position of cell based on layout alignment
             // we check for multiple conditions together since the content is made to fit the items, so they only move in one axis in each different scroll direction
             var rectSize = rect.rect.size;
-            var itemSizeSmallerThanContent =
-                vertical && rectSize.x < contentSizeWithPadding.x || !vertical && rectSize.y < contentSizeWithPadding.y;
+            var itemSizeSmallerThanContent = rectSize[_axis] < contentSizeWithPadding[_axis];
             if (_hasLayoutGroup && itemSizeSmallerThanContent)
             {
                 if (vertical)
@@ -306,9 +295,6 @@ namespace RecyclableSR
         {
             base.LateUpdate();
 
-            var timePerUpdateLoop = new Stopwatch();
-            timePerUpdateLoop.Start();
-            
             if (!_init)
                 return;
             if (normalizedPosition == _lastScrollPosition)
@@ -346,7 +332,7 @@ namespace RecyclableSR
 
                 // item at bottom or right needs to appear
                 var maxItemBottomRightCorner = _visibleItems[_maxVisibleItemInViewPort].transform.anchoredPosition.Abs() + _visibleItems[_maxVisibleItemInViewPort].transform.rect.size;
-                if (vertical && contentBottomRightCorner.y > maxItemBottomRightCorner.y || !vertical && contentBottomRightCorner.x > maxItemBottomRightCorner.x)
+                if (contentBottomRightCorner[_axis] > maxItemBottomRightCorner[_axis])
                 {
                     var newMaxItemToCheck = _maxVisibleItemInViewPort + 1;
                     var itemToShow = newMaxItemToCheck + _extraItemsVisible;
@@ -374,7 +360,7 @@ namespace RecyclableSR
 
                 // item at top or left needs to appear
                 var minItemBottomRightCorner = _visibleItems[_minVisibleItemInViewPort].transform.anchoredPosition.Abs();
-                if (vertical && contentTopLeftCorner.y < minItemBottomRightCorner.y || !vertical && contentTopLeftCorner.x < minItemBottomRightCorner.x)
+                if (contentTopLeftCorner[_axis] < minItemBottomRightCorner[_axis])
                 {
                     var newMinItemToCheck = _minVisibleItemInViewPort - 1;
                     var itemToShow = newMinItemToCheck - _extraItemsVisible;
@@ -383,8 +369,6 @@ namespace RecyclableSR
                     _minVisibleItemInViewPort = newMinItemToCheck;
                 }
             }
-            timePerUpdateLoop.Stop();
-            // Debug.Log($"Time per update loop: {timePerUpdateLoop.ElapsedTicks}");
         }
 
         private void ShowCellAtIndex(int newIndex, int prevIndex)
