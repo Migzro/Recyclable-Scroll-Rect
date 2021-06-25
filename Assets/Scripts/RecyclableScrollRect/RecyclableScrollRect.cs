@@ -1,14 +1,14 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
 using UnityEngine.UI;
+using Debug = UnityEngine.Debug;
 
 namespace RecyclableSR
 {
     public class RecyclableScrollRect : ScrollRect
     {
-        // todo: Remove any corner visible
         // todo: test with dynamic item sizes
-        // todo: remove initialize cell maybe?
         // todo: profile and check which calls are taking the longest time
         // todo: maybe dont set items x in vertical everytime we show a cell or item y in horizontal unless reloaded
         // todo: ExecuteInEditMode?
@@ -29,6 +29,7 @@ namespace RecyclableSR
         private Vector2 _viewPortSize;
         private Vector2 _contentSize;
         private float[] _cellSizes;
+        private int _axis;
         private int _minimumItemsInViewPort;
         private int _itemsCount;
         private int _minVisibleItemInViewPort;
@@ -48,7 +49,6 @@ namespace RecyclableSR
             base.Start();
             if (_initOnStart)
                 Initialize();
-            _lastScrollPosition = normalizedPosition;
         }
 
         public void Initialize()
@@ -90,6 +90,8 @@ namespace RecyclableSR
             _invisibleItems = new List<Item>();
             _viewPortSize = viewport.rect.size;
             _init = true;
+            _lastScrollPosition = normalizedPosition;
+            _axis = vertical ? 1 : 0;
             ReloadData();
         }
 
@@ -267,13 +269,11 @@ namespace RecyclableSR
             {
                 if (vertical)
                 {
-                    if (_alignment == TextAnchor.LowerCenter || _alignment == TextAnchor.MiddleCenter ||
-                        _alignment == TextAnchor.UpperCenter)
+                    if (_alignment == TextAnchor.LowerCenter || _alignment == TextAnchor.MiddleCenter || _alignment == TextAnchor.UpperCenter)
                     {
                         prevItemPosition.x = (_padding.left + (_contentSize.x - rectSize.x) - _padding.right) / 2f;
                     }
-                    else if (_alignment == TextAnchor.LowerRight || _alignment == TextAnchor.MiddleRight ||
-                             _alignment == TextAnchor.UpperRight)
+                    else if (_alignment == TextAnchor.LowerRight || _alignment == TextAnchor.MiddleRight || _alignment == TextAnchor.UpperRight)
                     {
                         prevItemPosition.x = _contentSize.x - rectSize.x - _padding.right;
                     }
@@ -284,13 +284,11 @@ namespace RecyclableSR
                 }
                 else
                 {
-                    if (_alignment == TextAnchor.MiddleLeft || _alignment == TextAnchor.MiddleCenter ||
-                        _alignment == TextAnchor.MiddleRight)
+                    if (_alignment == TextAnchor.MiddleLeft || _alignment == TextAnchor.MiddleCenter || _alignment == TextAnchor.MiddleRight)
                     {
                         prevItemPosition.y = -(_padding.top + (_contentSize.y - rectSize.y) - _padding.bottom) / 2f;
                     }
-                    else if (_alignment == TextAnchor.LowerLeft || _alignment == TextAnchor.LowerCenter ||
-                             _alignment == TextAnchor.LowerRight)
+                    else if (_alignment == TextAnchor.LowerLeft || _alignment == TextAnchor.LowerCenter || _alignment == TextAnchor.LowerRight)
                     {
                         prevItemPosition.y = -(_contentSize.y - rectSize.y - _padding.bottom);
                     }
@@ -308,6 +306,9 @@ namespace RecyclableSR
         {
             base.LateUpdate();
 
+            var timePerUpdateLoop = new Stopwatch();
+            timePerUpdateLoop.Start();
+            
             if (!_init)
                 return;
             if (normalizedPosition == _lastScrollPosition)
@@ -324,14 +325,12 @@ namespace RecyclableSR
             _lastScrollPosition = normalizedPosition;
 
             var contentTopLeftCorner = content.localPosition.Abs();
-            var contentBottomRightCorner =
-                new Vector2(contentTopLeftCorner.x + _viewPortSize.x, contentTopLeftCorner.y + _viewPortSize.y).Abs();
+            var contentBottomRightCorner = new Vector2(contentTopLeftCorner.x + _viewPortSize.x, contentTopLeftCorner.y + _viewPortSize.y).Abs();
 
             if (isDownOrRight && _maxVisibleItemInViewPort < _itemsCount - 1)
             {
                 // item at top or left is not in viewport
-                if (_visibleItems[_minVisibleItemInViewPort].transform.gameObject.activeSelf &&
-                    !viewport.AnyCornerVisible(_visibleItems[_minVisibleItemInViewPort].transform))
+                if (_visibleItems[_minVisibleItemInViewPort].transform.gameObject.activeSelf && !viewport.AnyCornerVisible(_visibleItems[_minVisibleItemInViewPort].transform))
                 {
                     var itemToHide = _minVisibleItemInViewPort - _extraItemsVisible;
                     if (itemToHide > -1)
@@ -346,10 +345,8 @@ namespace RecyclableSR
                 }
 
                 // item at bottom or right needs to appear
-                var maxItemBottomRightCorner = _visibleItems[_maxVisibleItemInViewPort].transform.anchoredPosition.Abs() +
-                                               _visibleItems[_maxVisibleItemInViewPort].transform.rect.size;
-                if (vertical && contentBottomRightCorner.y > maxItemBottomRightCorner.y ||
-                    !vertical && contentBottomRightCorner.x > maxItemBottomRightCorner.x)
+                var maxItemBottomRightCorner = _visibleItems[_maxVisibleItemInViewPort].transform.anchoredPosition.Abs() + _visibleItems[_maxVisibleItemInViewPort].transform.rect.size;
+                if (vertical && contentBottomRightCorner.y > maxItemBottomRightCorner.y || !vertical && contentBottomRightCorner.x > maxItemBottomRightCorner.x)
                 {
                     var newMaxItemToCheck = _maxVisibleItemInViewPort + 1;
                     var itemToShow = newMaxItemToCheck + _extraItemsVisible;
@@ -361,8 +358,7 @@ namespace RecyclableSR
             else if (!isDownOrRight && _minVisibleItemInViewPort > 0)
             {
                 // item at bottom or right not in viewport
-                if (_visibleItems[_maxVisibleItemInViewPort].transform.gameObject.activeSelf &&
-                    !viewport.AnyCornerVisible(_visibleItems[_maxVisibleItemInViewPort].transform))
+                if (_visibleItems[_maxVisibleItemInViewPort].transform.gameObject.activeSelf && !viewport.AnyCornerVisible(_visibleItems[_maxVisibleItemInViewPort].transform))
                 {
                     var itemToHide = _maxVisibleItemInViewPort + _extraItemsVisible;
                     if (itemToHide < _itemsCount)
@@ -378,8 +374,7 @@ namespace RecyclableSR
 
                 // item at top or left needs to appear
                 var minItemBottomRightCorner = _visibleItems[_minVisibleItemInViewPort].transform.anchoredPosition.Abs();
-                if (vertical && contentTopLeftCorner.y < minItemBottomRightCorner.y ||
-                    !vertical && contentTopLeftCorner.x < minItemBottomRightCorner.x)
+                if (vertical && contentTopLeftCorner.y < minItemBottomRightCorner.y || !vertical && contentTopLeftCorner.x < minItemBottomRightCorner.x)
                 {
                     var newMinItemToCheck = _minVisibleItemInViewPort - 1;
                     var itemToShow = newMinItemToCheck - _extraItemsVisible;
@@ -388,11 +383,13 @@ namespace RecyclableSR
                     _minVisibleItemInViewPort = newMinItemToCheck;
                 }
             }
+            timePerUpdateLoop.Stop();
+            // Debug.Log($"Time per update loop: {timePerUpdateLoop.ElapsedTicks}");
         }
 
         private void ShowCellAtIndex(int newIndex, int prevIndex)
         {
-            // Get empty cell
+            // Get empty cell and adjust its position and size, else just create a new a cell
             var isAfter = newIndex > prevIndex;
             if (_invisibleItems.Count > 0)
             {
