@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using RecyclableSR;
 using UnityEngine;
 
@@ -16,7 +17,7 @@ public class MainController : MonoBehaviour, IDataSource
         _dataSource = new List<string>();
         for (var i = 0; i < _itemsCount; i++)
         {
-            _dataSource.Add(i.ToString());
+            _dataSource.Add(i + " " + RandomString(Random.Range(10, 200)));
         }
         _scrollRect.Initialize();
     }
@@ -26,10 +27,16 @@ public class MainController : MonoBehaviour, IDataSource
         return _itemsCount;
     }
 
+    public bool IsCellSizeKnown()
+    {
+        return false;
+    }
+
     public float GetCellSize(int cellIndex)
     {
-        var verticalCellSize = cellIndex % 2 == 0 ? 100 : 200;
-        return _isVertical ? verticalCellSize : 300;
+        // var verticalCellSize = cellIndex % 2 == 0 ? 100 : 200;
+        // return _isVertical ? 40.22f : 300;
+        return -1;
     }
 
     public void SetCellData(ICell cell, int cellIndex)
@@ -48,5 +55,13 @@ public class MainController : MonoBehaviour, IDataSource
     public bool IsCellStatic(int cellIndex)
     {
         return false;
+    }
+    
+    private static System.Random random = new System.Random();
+    public static string RandomString(int length)
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        return new string(Enumerable.Repeat(chars, length)
+            .Select(s => s[random.Next(s.Length)]).ToArray());
     }
 }

@@ -5,7 +5,8 @@ namespace RecyclableSR
 {
     public interface IDataSource
     {
-        int GetItemCount();
+        int GetItemCount(); 
+        bool IsCellSizeKnown();
         float GetCellSize(int cellIndex);
         void SetCellData(ICell cell, int cellIndex);
         GameObject GetCellPrototypeCell(int cellIndex);
