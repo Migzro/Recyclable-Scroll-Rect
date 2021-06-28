@@ -24,8 +24,8 @@ public class MainController : MonoBehaviour, IDataSource
         _dataSource = new List<string>();
         for (var i = 0; i < _itemsCount; i++)
         {
-            // _dataSource.Add(i.ToString());
-            _dataSource.Add(i + " " + RandomString(Random.Range(1, 2)));
+            _dataSource.Add(i.ToString());
+            // _dataSource.Add(i + " " + RandomString(Random.Range(10, 200)));
         }
         _scrollRect.Initialize(this);
     }

@@ -1,20 +1,16 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using UnityEngine;
 using UnityEngine.UI;
-using Debug = UnityEngine.Debug;
 
 namespace RecyclableSR
 {
     public class RecyclableScrollRect : ScrollRect
     {
-        // todo: add comments for all the functions
         // todo: cache item start position + end position
         // todo: static cell
-        // todo: profile and check which calls are taking the longest time (SetActive takes the longest in the update loop)
         // todo: check reload data and add maybe a new method that just adds items
-        // todo: add a ReloadCell method?
+        // todo: add a ReloadCell method in case cell size changes?
         // todo: ExecuteInEditMode?
         // todo: add a scrollto method?
         // todo: Simulate content size (O.o)^(o.O)
@@ -45,15 +41,26 @@ namespace RecyclableSR
         private float _spacing;
         private bool _needsClearance;
 
+        /// <summary>
+        /// Initialize the scroll rect with the data source that contains all the details required to build the RecyclableScrollRect
+        /// </summary>
+        /// <param name="dataSource">The data source which is usually the class that implements IDataSource</param>
+        /// <exception cref="ArgumentNullException"></exception>
         public void Initialize(IDataSource dataSource)
         {
             _dataSource = dataSource;
+
+            if (_dataSource == null)
+            {
+                throw new ArgumentNullException(nameof(dataSource), "IDataSource is null");
+            }
 
             if (_dataSource.PrototypeCells == null || _dataSource.PrototypeCells.Length <= 0)
             {
                 throw new ArgumentNullException(nameof(_dataSource.PrototypeCells), "No prototype cell defined IDataSource");
             }
 
+            // get the layouts and their settings if present
             if (vertical)
             {
                 _verticalLayoutGroup = content.gameObject.GetComponent<VerticalLayoutGroup>();
@@ -77,6 +84,7 @@ namespace RecyclableSR
                 }
             }
 
+            // add a LayoutElement if not present to set the content size in case another element is controlling it 
             if (_hasLayoutGroup)
             {
                 _contentSizeFitter = content.gameObject.GetComponent<ContentSizeFitter>();
@@ -92,6 +100,7 @@ namespace RecyclableSR
             _lastScrollPosition = normalizedPosition;
             _axis = vertical ? 1 : 0;
             
+            // create a new list for each prototype cell to hold the pooled cells
             var prototypeCells = _dataSource.PrototypeCells;
             for (var i = 0; i < prototypeCells.Length; i++)
             {
@@ -99,7 +108,10 @@ namespace RecyclableSR
             }
             ReloadData();
         }
-
+        
+        /// <summary>
+        /// Reload the data in case the content of the RecyclableScrollRect has changed
+        /// </summary>
         public void ReloadData()
         {
             _itemsCount = _dataSource.ItemsCount;
@@ -111,6 +123,9 @@ namespace RecyclableSR
             InitializeCells();
         }
 
+        /// <summary>
+        /// Disable all layouts since everything is calculated manually
+        /// </summary>
         private void DisableContentLayouts()
         {
             if (_hasLayoutGroup)
@@ -125,6 +140,11 @@ namespace RecyclableSR
             }
         }
 
+        /// <summary>
+        /// Calculate the content size in their respective direction based on the scrolling direction
+        /// If the cell size is know we simply add all the cell sizes, spacing and padding
+        /// If not we set the cell size as -1 as it will be calculated once the cell comes into view
+        /// </summary>
         private void CalculateContentSize()
         {
             var contentSizeDelta = viewport.sizeDelta;
@@ -170,6 +190,9 @@ namespace RecyclableSR
             content.sizeDelta = contentSizeDelta;
         }
 
+        /// <summary>
+        /// If the cell size is know we calculate the amount of items needed to fill the view port
+        /// </summary>
         private void CalculateMinimumItemsInViewPort()
         {
             if (!_dataSource.IsCellSizeKnown)
@@ -196,14 +219,19 @@ namespace RecyclableSR
             _maxVisibleItemInViewPort = _minimumItemsInViewPort - 1;
         }
 
+        /// <summary>
+        /// Initialize all cells needed to fill the view port
+        /// If cell size is know we initiate the amount of cells calculated CalculateMinimumItemsInViewPort
+        /// if not we keep initializing cells until the view port is filled
+        /// extra visible items is an additional amount of cells that can be shown to prevent showing an empty view port if the scrolling is too fast and the update function didnt show all the items
+        /// that need to be shown
+        /// </summary>
         private void InitializeCells()
         {
+            // set an array of prototype names to be used when getting the correct prefab for the cell index it exists in its respective pool
             _prototypeNames = new string[_itemsCount];
-
             for (var i = 0; i < _itemsCount; i++)
-            {
                 _prototypeNames[i] = _dataSource.GetPrototypeCell(i).name;
-            }
 
             if (_dataSource.IsCellSizeKnown)
             {
@@ -233,6 +261,12 @@ namespace RecyclableSR
             }
         }
 
+        /// <summary>
+        /// Initialize the cells
+        /// Its only called when there are no pooled items available and the RecyclableScrollRect needs to show a cell
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns>cell index that needs to be initialized</returns>
         private Item InitializeCell(int index)
         {
             var itemPrototypeCell = _dataSource.GetPrototypeCell(index);
@@ -254,7 +288,8 @@ namespace RecyclableSR
         /// <summary>
         /// This function call is only needed once when the cell is created as it only sets the vertical size of the cell in a horizontal layout
         /// or the horizontal size of a cell in a vertical layout based on the settings of said layout
-        /// It also sets the vertical position in horizontal layout or the horizontal position in a vertical layout based on the padding of said layout
+        /// It also sets the vertical position in horizontal layout or the horizontal position in a vertical layout based on the padding of said layout since these wont usually
+        /// change during the runtime unless
         /// </summary>
         /// <param name="rect">The rect of the cell that its size will be adjusted</param>
         private void SetCellSize(RectTransform rect)
@@ -331,6 +366,14 @@ namespace RecyclableSR
             }
         }
 
+        /// <summary>
+        /// This function sets the position of the item whether its new or retrieved from pool based on its index and the previous item index
+        /// The current index position is the previous item position + previous item height
+        /// or the previous item position - current item height
+        /// </summary>
+        /// <param name="rect">rect of the item which position will be set</param>
+        /// <param name="newIndex">index of the item that needs its position set</param>
+        /// <param name="prevIndex">index of the item that new position will be based upon</param>
         private void SetCellPosition(RectTransform rect, int newIndex, int prevIndex)
         {
             if ((int)_cellSizes[newIndex] == -1)
@@ -363,6 +406,12 @@ namespace RecyclableSR
             rect.anchoredPosition = prevItemPosition;
         }
         
+        /// <summary>
+        /// This function calculates the cell size if its unknown by forcing a Layout rebuild
+        /// then calculating the new content size based on the old cell size if it was set previously
+        /// </summary>
+        /// <param name="rect">rect of the cell which the size will be calculated for</param>
+        /// <param name="index">cell index which the size will be calculated for</param>
         private void CalculateUnknownCellSize(RectTransform rect, int index)
         {
             LayoutRebuilder.ForceRebuildLayoutImmediate(rect);
@@ -387,6 +436,9 @@ namespace RecyclableSR
             content.sizeDelta = contentSize;
         }
 
+        /// <summary>
+        /// The function in which we calculate which items need to be shown and which items need to hide
+        /// </summary>
         protected override void LateUpdate()
         {
             base.LateUpdate();
@@ -466,17 +518,23 @@ namespace RecyclableSR
             }
         }
 
+        /// <summary>
+        /// User has scrolled and we need to show an item
+        /// If there is a pooled item available, we get it and set its position, sibling index, and remove it from the pool
+        /// If there is no pooled item available, we create a new one
+        /// </summary>
+        /// <param name="newIndex">current index of item we need to show</param>
+        /// <param name="prevIndex">index of item before the one we need to show</param>
         private void ShowCellAtIndex(int newIndex, int prevIndex)
         {
             // Get empty cell and adjust its position and size, else just create a new a cell
-            var isAfter = newIndex > prevIndex;
             var cellPrototypeName = _prototypeNames[newIndex];
             if (_invisibleItems[cellPrototypeName].Count > 0)
             {
                 var item = _invisibleItems[cellPrototypeName][0];
                 _invisibleItems[cellPrototypeName].RemoveAt(0);
 
-                if (isAfter)
+                if (newIndex > prevIndex)
                     item.transform.SetAsLastSibling();
                 else
                     item.transform.SetAsFirstSibling();
@@ -495,6 +553,10 @@ namespace RecyclableSR
             }
         }
 
+        /// <summary>
+        /// Hide cell at cellIndex and add it to the pool of items that can be used based on its prefab type
+        /// </summary>
+        /// <param name="cellIndex">cellIndex which will be hidden</param>
         private void HideCellAtIndex(int cellIndex)
         {
             _visibleItems[cellIndex].transform.gameObject.SetActive(false);
@@ -503,6 +565,13 @@ namespace RecyclableSR
             _visibleItems.Remove(cellIndex);
         }
 
+        /// <summary>
+        /// Organize the items in the hierarchy based on its visibility
+        /// Its only used for organization
+        /// </summary>
+        /// <param name="item">item which will have its hierarchy properties changed</param>
+        /// <param name="cellIndex">cell index</param>
+        /// <param name="visible">visibility of cell index</param>
         private void SetVisibilityInHierarchy(RectTransform item, int cellIndex, bool visible)
         {
 #if UNITY_EDITOR
