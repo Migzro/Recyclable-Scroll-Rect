@@ -4,8 +4,8 @@ namespace RecyclableSR
 {
     public class Item
     {
-        public ICell cell { get; private set; }
-        public RectTransform transform { get; private set; }
+        public ICell cell { get; }
+        public RectTransform transform { get; }
 
         public Item(ICell cell, RectTransform transform)
         {

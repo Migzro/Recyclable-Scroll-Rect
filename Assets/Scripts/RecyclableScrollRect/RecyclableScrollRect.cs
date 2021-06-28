@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
 using UnityEngine.UI;
+using Debug = UnityEngine.Debug;
 
 namespace RecyclableSR
 {
@@ -9,8 +11,6 @@ namespace RecyclableSR
     {
         // todo: add comments for all the functions
         // todo: cache item start position + end position
-        // todo: test with horizontal again
-        // todo: use canvas group to hide?
         // todo: static cell
         // todo: profile and check which calls are taking the longest time (SetActive takes the longest in the update loop)
         // todo: check reload data and add maybe a new method that just adds items
@@ -241,7 +241,7 @@ namespace RecyclableSR
 
             var cell = itemGo.GetComponent<ICell>();
             var rect = itemGo.GetComponent<RectTransform>();
-
+            
             var item = new Item(cell, rect);
             _visibleItems.Add(index, item);
             _dataSource.SetCellData(cell, index);
@@ -399,8 +399,8 @@ namespace RecyclableSR
                 return;
 
             // get the top corner and bottom corner positions of the scroll content
-            var contentTopLeftCorner = content.anchoredPosition;
-            var contentBottomRightCorner = new Vector2(contentTopLeftCorner.x + _viewPortSize.x, contentTopLeftCorner.y + _viewPortSize.y);
+            var contentTopLeftCorner = content.anchoredPosition.Abs();
+            var contentBottomRightCorner = new Vector2(contentTopLeftCorner.x + _viewPortSize.x, contentTopLeftCorner.y + _viewPortSize.y).Abs();
 
             // figure out which items that need to be rendered, bottom right or top left
             // generally if the content position is smaller than the position of _minVisibleItemInViewPort, this means we need to show items in top left
@@ -409,11 +409,11 @@ namespace RecyclableSR
             // _needsClearance is needed because sometimes the scrolling happens so fast that the items are not showing and normalizedPosition & _lastScrollPosition would be the same stopping the update loop
             _needsClearance = false;
             var showBottomRight = false;
-            if (Math.Round(_visibleItems[_minVisibleItemInViewPort].transform.anchoredPosition.Abs()[_axis], 3) > Math.Round(contentTopLeftCorner[_axis], 3))
+            if (Math.Round(_visibleItems[_minVisibleItemInViewPort].transform.anchoredPosition.Abs()[_axis], 1) > Math.Round(contentTopLeftCorner[_axis], 1))
             {
                 _needsClearance = true;
             }
-            else if (Math.Round(_visibleItems[_maxVisibleItemInViewPort].transform.anchoredPosition.Abs()[_axis] + _visibleItems[_maxVisibleItemInViewPort].transform.rect.size[_axis], 3) < Math.Round(contentBottomRightCorner[_axis], 3))
+            else if (Math.Round(_visibleItems[_maxVisibleItemInViewPort].transform.anchoredPosition.Abs()[_axis] + _visibleItems[_maxVisibleItemInViewPort].transform.rect.size[_axis], 1) < Math.Round(contentBottomRightCorner[_axis], 1))
             {
                 showBottomRight = true;
                 _needsClearance = true;
@@ -427,13 +427,7 @@ namespace RecyclableSR
                 {
                     var itemToHide = _minVisibleItemInViewPort - _extraItemsVisible;
                     if (itemToHide > -1)
-                    {
-                        _visibleItems[itemToHide].transform.gameObject.SetActive(false);
-                        SetVisibilityInHierarchy(_visibleItems[itemToHide].transform, false);
-                        _invisibleItems[_prototypeNames[itemToHide]].Add(_visibleItems[itemToHide]);
-                        _visibleItems.Remove(itemToHide);
-                    }
-
+                        HideCellAtIndex(itemToHide);
                     _minVisibleItemInViewPort++;
                 }
 
@@ -455,13 +449,7 @@ namespace RecyclableSR
                 {
                     var itemToHide = _maxVisibleItemInViewPort + _extraItemsVisible;
                     if (itemToHide < _itemsCount)
-                    {
-                        _visibleItems[itemToHide].transform.gameObject.SetActive(false);
-                        SetVisibilityInHierarchy(_visibleItems[itemToHide].transform, false);
-                        _invisibleItems[_prototypeNames[itemToHide]].Add(_visibleItems[itemToHide]);
-                        _visibleItems.Remove(itemToHide);
-                    }
-
+                        HideCellAtIndex(itemToHide);
                     _maxVisibleItemInViewPort--;
                 }
 
@@ -492,10 +480,9 @@ namespace RecyclableSR
                     item.transform.SetAsLastSibling();
                 else
                     item.transform.SetAsFirstSibling();
-
-                item.transform.name = newIndex.ToString();
+                
                 item.transform.gameObject.SetActive(true);
-                SetVisibilityInHierarchy(item.transform, true);
+                SetVisibilityInHierarchy(item.transform, newIndex, true);
 
                 _dataSource.SetCellData(item.cell, newIndex);
                 _visibleItems.Add(newIndex, item);
@@ -508,10 +495,20 @@ namespace RecyclableSR
             }
         }
 
-        private void SetVisibilityInHierarchy(RectTransform item, bool visible)
+        private void HideCellAtIndex(int cellIndex)
+        {
+            _visibleItems[cellIndex].transform.gameObject.SetActive(false);
+            SetVisibilityInHierarchy(_visibleItems[cellIndex].transform, cellIndex, false);
+            _invisibleItems[_prototypeNames[cellIndex]].Add(_visibleItems[cellIndex]);
+            _visibleItems.Remove(cellIndex);
+        }
+
+        private void SetVisibilityInHierarchy(RectTransform item, int cellIndex, bool visible)
         {
 #if UNITY_EDITOR
-            item.transform.hideFlags = visible ? HideFlags.None : HideFlags.HideInHierarchy;
+            var itemTransform = item.transform;
+            itemTransform.name = cellIndex.ToString();
+            itemTransform.hideFlags = visible ? HideFlags.None : HideFlags.HideInHierarchy;
 #endif
         }
     }
