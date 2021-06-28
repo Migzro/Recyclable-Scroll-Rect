@@ -7,11 +7,9 @@ namespace RecyclableSR
 {
     public class RecyclableScrollRect : ScrollRect
     {
-        // todo: what if we dont know item size :) 
         // todo: test with horizontal again
         // todo: use canvas group to hide?
         // todo: static cell
-        // todo: bug with small item sizes and fast scrolling 
         // todo: profile and check which calls are taking the longest time (SetActive takes the longest in the update loop)
         // todo: check reload data and add maybe a new method that just adds items
         // todo: add a ReloadCell method?
@@ -40,6 +38,8 @@ namespace RecyclableSR
         private int _itemsCount;
         private int _minVisibleItemInViewPort;
         private int _maxVisibleItemInViewPort;
+        private bool _reachedTopOrRight;
+        private bool _reachedBottomOrLeft;
         private bool _hasLayoutGroup;
         private bool _init;
 
@@ -395,9 +395,9 @@ namespace RecyclableSR
 
             if (!_init)
                 return;
-            if (normalizedPosition == _lastScrollPosition)
-                return;
             if (_visibleItems.Count <= 0)
+                return;
+            if (normalizedPosition == _lastScrollPosition && !_reachedTopOrRight && !_reachedBottomOrLeft)
                 return;
 
             // check the direction of the scrolling
@@ -407,6 +407,24 @@ namespace RecyclableSR
             else if (!vertical && _lastScrollPosition.x > normalizedPosition.x)
                 isDownOrRight = false;
             _lastScrollPosition = normalizedPosition;
+            
+            // check if is at bottom or top of scroll, we need this due an issue that happens when the scroll content moves too fast and it doesnt send events properly
+            // this forces the rendering of all the cells that have not been rendered properly because of how fast the scroll moved
+            if (Math.Round(normalizedPosition[_axis], 3) == 1.000f && _minVisibleItemInViewPort > 0)
+            {
+                _reachedTopOrRight = true;
+                isDownOrRight = false;
+            }
+            else if (Math.Round(normalizedPosition[_axis], 3) == 0.000f && _maxVisibleItemInViewPort < _itemsCount - 1)
+            {
+                _reachedBottomOrLeft = true;
+                isDownOrRight = true;
+            }
+            else
+            {
+                _reachedTopOrRight = false;
+                _reachedBottomOrLeft = false;
+            }
 
             var contentTopLeftCorner = content.localPosition.Abs();
             var contentBottomRightCorner = new Vector2(contentTopLeftCorner.x + _viewPortSize.x, contentTopLeftCorner.y + _viewPortSize.y).Abs();
