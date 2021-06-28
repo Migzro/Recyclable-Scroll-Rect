@@ -323,7 +323,7 @@ MonoBehaviour:
   _prototypeCells:
   - {fileID: 1638117046129563386, guid: 5f88a912c63114bf5956ff1a0d6b41b6, type: 3}
   - {fileID: 1638117046129563386, guid: b8cbbbf5ec9f84862a015809422f9fbe, type: 3}
-  _extraItemsVisible: 5
+  _extraItemsVisible: 0
 --- !u!1 &1362537419
 GameObject:
   m_ObjectHideFlags: 0

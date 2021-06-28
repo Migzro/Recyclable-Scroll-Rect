@@ -318,11 +318,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _isVertical: 1
-  _itemsCount: 1000
+  _itemsCount: 100
   _scrollRect: {fileID: 1904557390}
   _prototypeCells:
   - {fileID: 1638117046129563386, guid: e71a2206129434ac9b60b1d7743a0f00, type: 3}
   - {fileID: 1638117046129563386, guid: a8fbeae1039cd4ea9bf358107f5e5c16, type: 3}
+  _extraItemsVisible: 5
 --- !u!1 &1362537419
 GameObject:
   m_ObjectHideFlags: 0
@@ -610,7 +611,7 @@ MonoBehaviour:
   m_Content: {fileID: 1362537420}
   m_Horizontal: 0
   m_Vertical: 1
-  m_MovementType: 1
+  m_MovementType: 2
   m_Elasticity: 0.1
   m_Inertia: 1
   m_DecelerationRate: 0.135
@@ -625,12 +626,6 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
-  _dataSourceContainer:
-    _dataSource: {fileID: 658359684}
-  _prototypeCell: {fileID: 1638117046129563386, guid: e71a2206129434ac9b60b1d7743a0f00, type: 3}
-  _extraItemsVisible: 0
-  _initOnStart: 0
-  _useDataSourcePrototypeCells: 1
 --- !u!114 &1904557391
 MonoBehaviour:
   m_ObjectHideFlags: 0

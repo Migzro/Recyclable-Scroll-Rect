@@ -34,8 +34,6 @@ namespace RecyclableSR
         private int _minVisibleItemInViewPort;
         private int _maxVisibleItemInViewPort;
         private int _extraItemsVisible;
-        private bool _reachedTopOrRight;
-        private bool _reachedBottomOrLeft;
         private bool _hasLayoutGroup;
         private bool _init;
 
@@ -45,6 +43,7 @@ namespace RecyclableSR
         private RectOffset _padding;
         private TextAnchor _alignment;
         private float _spacing;
+        private bool _needsClearance;
 
         public void Initialize(IDataSource dataSource)
         {
@@ -396,39 +395,32 @@ namespace RecyclableSR
                 return;
             if (_visibleItems.Count <= 0)
                 return;
-            if (normalizedPosition == _lastScrollPosition && !_reachedTopOrRight && !_reachedBottomOrLeft)
+            if (normalizedPosition == _lastScrollPosition && !_needsClearance)
                 return;
 
-            // check the direction of the scrolling
-            var isDownOrRight = true;
-            if (vertical && _lastScrollPosition.y < normalizedPosition.y)
-                isDownOrRight = false;
-            else if (!vertical && _lastScrollPosition.x > normalizedPosition.x)
-                isDownOrRight = false;
+            // get the top corner and bottom corner positions of the scroll content
+            var contentTopLeftCorner = content.anchoredPosition;
+            var contentBottomRightCorner = new Vector2(contentTopLeftCorner.x + _viewPortSize.x, contentTopLeftCorner.y + _viewPortSize.y);
+
+            // figure out which items that need to be rendered, bottom right or top left
+            // generally if the content position is smaller than the position of _minVisibleItemInViewPort, this means we need to show items in top left
+            // if content position is bigger than the the position of _maxVisibleItemInViewPort, this means we need to show items in bottom right
+            // The rounding is because sometimes the items or the content dont fully snap to 0 or bottom right corner, so we would keep iterating forever with no need
+            // _needsClearance is needed because sometimes the scrolling happens so fast that the items are not showing and normalizedPosition & _lastScrollPosition would be the same stopping the update loop
+            _needsClearance = false;
+            var showBottomRight = false;
+            if (Math.Round(_visibleItems[_minVisibleItemInViewPort].transform.anchoredPosition.Abs()[_axis], 3) > Math.Round(contentTopLeftCorner[_axis], 3))
+            {
+                _needsClearance = true;
+            }
+            else if (Math.Round(_visibleItems[_maxVisibleItemInViewPort].transform.anchoredPosition.Abs()[_axis] + _visibleItems[_maxVisibleItemInViewPort].transform.rect.size[_axis], 3) < Math.Round(contentBottomRightCorner[_axis], 3))
+            {
+                showBottomRight = true;
+                _needsClearance = true;
+            }
             _lastScrollPosition = normalizedPosition;
-            
-            // check if is at bottom or top of scroll, we need this due an issue that happens when the scroll content moves too fast and it doesnt send events properly
-            // this forces the rendering of all the cells that have not been rendered properly because of how fast the scroll moved
-            if (Math.Round(normalizedPosition[_axis], 3) == 1.000f && _minVisibleItemInViewPort > 0)
-            {
-                _reachedTopOrRight = true;
-                isDownOrRight = false;
-            }
-            else if (Math.Round(normalizedPosition[_axis], 3) == 0.000f && _maxVisibleItemInViewPort < _itemsCount - 1)
-            {
-                _reachedBottomOrLeft = true;
-                isDownOrRight = true;
-            }
-            else
-            {
-                _reachedTopOrRight = false;
-                _reachedBottomOrLeft = false;
-            }
 
-            var contentTopLeftCorner = content.localPosition.Abs();
-            var contentBottomRightCorner = new Vector2(contentTopLeftCorner.x + _viewPortSize.x, contentTopLeftCorner.y + _viewPortSize.y).Abs();
-
-            if (isDownOrRight && _maxVisibleItemInViewPort < _itemsCount - 1)
+            if (showBottomRight && _maxVisibleItemInViewPort < _itemsCount - 1)
             {
                 // item at top or left is not in viewport
                 if (_visibleItems[_minVisibleItemInViewPort].transform.gameObject.activeSelf && !viewport.AnyCornerVisible(_visibleItems[_minVisibleItemInViewPort].transform))
@@ -456,7 +448,7 @@ namespace RecyclableSR
                     _maxVisibleItemInViewPort = newMaxItemToCheck;
                 }
             }
-            else if (!isDownOrRight && _minVisibleItemInViewPort > 0)
+            else if (!showBottomRight && _minVisibleItemInViewPort > 0)
             {
                 // item at bottom or right not in viewport
                 if (_visibleItems[_maxVisibleItemInViewPort].transform.gameObject.activeSelf && !viewport.AnyCornerVisible(_visibleItems[_maxVisibleItemInViewPort].transform))

@@ -33,7 +33,7 @@ public class MainController : MonoBehaviour, IDataSource
     public float GetCellSize(int cellIndex)
     {
         // var verticalCellSize = cellIndex % 2 == 0 ? 100 : 200;
-        // return _isVertical ? 40.22f : 146.9;
+        // return _isVertical ? 40.22f : 60.28f;
         return -1;
     }
 
