@@ -9,7 +9,6 @@ namespace RecyclableSR
     {
         // todo: add comments for all the functions
         // todo: cache item start position + end position
-        // todo: remove prototype cells from here
         // todo: test with horizontal again
         // todo: use canvas group to hide?
         // todo: static cell
@@ -19,13 +18,6 @@ namespace RecyclableSR
         // todo: ExecuteInEditMode?
         // todo: add a scrollto method?
         // todo: Simulate content size (O.o)^(o.O)
-
-        [SerializeField] private IDataSourceContainer _dataSourceContainer;
-        [SerializeField] private GameObject _prototypeCell;
-        [SerializeField] private int _extraItemsVisible;
-        [SerializeField] private bool _initOnStart;
-        [SerializeField] private bool _useDataSourcePrototypeCells;
-        public bool useDataSourcePrototypeCells => _useDataSourcePrototypeCells;
 
         private VerticalLayoutGroup _verticalLayoutGroup;
         private HorizontalLayoutGroup _horizontalLayoutGroup;
@@ -41,6 +33,7 @@ namespace RecyclableSR
         private int _itemsCount;
         private int _minVisibleItemInViewPort;
         private int _maxVisibleItemInViewPort;
+        private int _extraItemsVisible;
         private bool _reachedTopOrRight;
         private bool _reachedBottomOrLeft;
         private bool _hasLayoutGroup;
@@ -53,20 +46,14 @@ namespace RecyclableSR
         private TextAnchor _alignment;
         private float _spacing;
 
-        protected override void Start()
+        public void Initialize(IDataSource dataSource)
         {
-            base.Start();
-            if (_initOnStart)
-                Initialize();
-        }
+            _dataSource = dataSource;
+            _extraItemsVisible = dataSource.GetExtraItemsVisible();
 
-        public void Initialize()
-        {
-            _dataSource = _dataSourceContainer.DataSource;
-
-            if (!_useDataSourcePrototypeCells && _prototypeCell == null)
+            if (_dataSource.GetCellPrototypeCells() == null || _dataSource.GetCellPrototypeCells().Length <= 0)
             {
-                throw new ArgumentNullException(nameof(_prototypeCell), "No prototype cell defined in Recyclable Scroll Rect");
+                throw new ArgumentNullException(nameof(_dataSource.GetCellPrototypeCells), "No prototype cell defined IDataSource");
             }
 
             if (vertical)
@@ -107,15 +94,10 @@ namespace RecyclableSR
             _lastScrollPosition = normalizedPosition;
             _axis = vertical ? 1 : 0;
             
-            if (!_useDataSourcePrototypeCells)
-                _invisibleItems.Add(_prototypeCell.name, new List<Item>());
-            else
+            var prototypeCells = _dataSource.GetCellPrototypeCells();
+            for (var i = 0; i < prototypeCells.Length; i++)
             {
-                var prototypeCells = _dataSource.GetCellPrototypeCells();
-                for (var i = 0; i < prototypeCells.Length; i++)
-                {
-                    _invisibleItems.Add(prototypeCells[i].name, new List<Item>());
-                }
+                _invisibleItems.Add(prototypeCells[i].name, new List<Item>());
             }
             
             ReloadData();
@@ -221,10 +203,7 @@ namespace RecyclableSR
 
             for (var i = 0; i < _itemsCount; i++)
             {
-                if (useDataSourcePrototypeCells)
-                    _prototypeNames[i] = _dataSource.GetCellPrototypeCell(i).name;
-                else
-                    _prototypeNames[i] = _prototypeCell.name;
+                _prototypeNames[i] = _dataSource.GetCellPrototypeCell(i).name;
             }
 
             if (_dataSource.IsCellSizeKnown())
@@ -257,7 +236,7 @@ namespace RecyclableSR
 
         private Item InitializeCell(int index)
         {
-            var itemPrototypeCell = _useDataSourcePrototypeCells ? _dataSource.GetCellPrototypeCell(index) : _prototypeCell;
+            var itemPrototypeCell = _dataSource.GetCellPrototypeCell(index);
             var itemGo = Instantiate(itemPrototypeCell, content, false);
             itemGo.name = index.ToString();
 

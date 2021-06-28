@@ -323,6 +323,7 @@ MonoBehaviour:
   _prototypeCells:
   - {fileID: 1638117046129563386, guid: 5f88a912c63114bf5956ff1a0d6b41b6, type: 3}
   - {fileID: 1638117046129563386, guid: b8cbbbf5ec9f84862a015809422f9fbe, type: 3}
+  _extraItemsVisible: 5
 --- !u!1 &1362537419
 GameObject:
   m_ObjectHideFlags: 0
@@ -625,12 +626,6 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
-  _dataSourceContainer:
-    _dataSource: {fileID: 658359684}
-  _prototypeCell: {fileID: 1638117046129563386, guid: 5f88a912c63114bf5956ff1a0d6b41b6, type: 3}
-  _extraItemsVisible: 0
-  _initOnStart: 0
-  _useDataSourcePrototypeCells: 1
 --- !u!114 &1904557391
 MonoBehaviour:
   m_ObjectHideFlags: 0

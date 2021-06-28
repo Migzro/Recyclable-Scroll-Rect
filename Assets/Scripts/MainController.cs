@@ -9,6 +9,7 @@ public class MainController : MonoBehaviour, IDataSource
     [SerializeField] private int _itemsCount;
     [SerializeField] private RecyclableScrollRect _scrollRect;
     [SerializeField] private GameObject[] _prototypeCells;
+    [SerializeField] private int _extraItemsVisible;
         
     private List<string> _dataSource;
 
@@ -20,12 +21,17 @@ public class MainController : MonoBehaviour, IDataSource
             // _dataSource.Add(i.ToString());
             _dataSource.Add(i + " " + RandomString(Random.Range(10, 200)));
         }
-        _scrollRect.Initialize();
+        _scrollRect.Initialize(this);
     }
 
     public int GetItemCount()
     {
         return _itemsCount;
+    }
+
+    public int GetExtraItemsVisible()
+    {
+        return _extraItemsVisible;
     }
 
     public bool IsCellSizeKnown()
