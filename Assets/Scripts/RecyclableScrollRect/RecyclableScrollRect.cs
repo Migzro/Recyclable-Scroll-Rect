@@ -7,6 +7,9 @@ namespace RecyclableSR
 {
     public class RecyclableScrollRect : ScrollRect
     {
+        // todo: add comments for all the functions
+        // todo: cache item start position + end position
+        // todo: remove prototype cells from here
         // todo: test with horizontal again
         // todo: use canvas group to hide?
         // todo: static cell
@@ -103,6 +106,18 @@ namespace RecyclableSR
             _init = true;
             _lastScrollPosition = normalizedPosition;
             _axis = vertical ? 1 : 0;
+            
+            if (!_useDataSourcePrototypeCells)
+                _invisibleItems.Add(_prototypeCell.name, new List<Item>());
+            else
+            {
+                var prototypeCells = _dataSource.GetCellPrototypeCells();
+                for (var i = 0; i < prototypeCells.Length; i++)
+                {
+                    _invisibleItems.Add(prototypeCells[i].name, new List<Item>());
+                }
+            }
+            
             ReloadData();
         }
 
@@ -203,8 +218,14 @@ namespace RecyclableSR
         private void InitializeCells()
         {
             _prototypeNames = new string[_itemsCount];
+
             for (var i = 0; i < _itemsCount; i++)
-                _prototypeNames[i] = _dataSource.GetCellPrototypeCell(i).name;
+            {
+                if (useDataSourcePrototypeCells)
+                    _prototypeNames[i] = _dataSource.GetCellPrototypeCell(i).name;
+                else
+                    _prototypeNames[i] = _prototypeCell.name;
+            }
 
             if (_dataSource.IsCellSizeKnown())
             {
@@ -216,20 +237,20 @@ namespace RecyclableSR
             }
             else
             {
-                var cellVisible = true;
+                var contentHasSpace = true;
                 var extraItemsInitialized = 0;
                 var i = 0;
                 _maxVisibleItemInViewPort = -1;
-                while (cellVisible || extraItemsInitialized < _extraItemsVisible)
+                while (contentHasSpace || extraItemsInitialized < _extraItemsVisible)
                 {
                     var cell = InitializeCell(i);
-                    cellVisible = viewport.AnyCornerVisible(cell.transform);
-                    i++;
-                    
-                    if (!cellVisible)
+                    if (!contentHasSpace)
                         extraItemsInitialized++;
                     else
                         _maxVisibleItemInViewPort++;
+
+                    contentHasSpace = cell.transform.anchoredPosition.Abs()[_axis] + cell.transform.rect.size[_axis] + _spacing <= viewport.rect.size[_axis];
+                    i++;
                 }
             }
         }
@@ -246,9 +267,6 @@ namespace RecyclableSR
             var item = new Item(cell, rect);
             _visibleItems.Add(index, item);
             _dataSource.SetCellData(cell, index);
-
-            if (!_invisibleItems.ContainsKey(_prototypeNames[index]))
-                _invisibleItems.Add(_prototypeNames[index], new List<Item>());
 
             SetCellSize(rect);
             SetCellPosition(rect, index, index - 1);
@@ -341,11 +359,13 @@ namespace RecyclableSR
                 CalculateUnknownCellSize(rect, newIndex);
             
             // figure out where the prev cell position was
-            var prevItemPosition = Vector2.zero;
+            var prevItemPosition = rect.anchoredPosition;
             if (newIndex == 0)
             {
-                prevItemPosition.y -= _padding.top;
-                prevItemPosition.x += _padding.left;
+                if (vertical)
+                    prevItemPosition.y = _padding.top;
+                else
+                    prevItemPosition.x = _padding.left;
             }
 
             if (prevIndex > -1 && prevIndex < _itemsCount - 1)

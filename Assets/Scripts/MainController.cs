@@ -17,8 +17,8 @@ public class MainController : MonoBehaviour, IDataSource
         _dataSource = new List<string>();
         for (var i = 0; i < _itemsCount; i++)
         {
-            _dataSource.Add(i.ToString());
-            // _dataSource.Add(i + " " + RandomString(Random.Range(10, 200)));
+            // _dataSource.Add(i.ToString());
+            _dataSource.Add(i + " " + RandomString(Random.Range(10, 200)));
         }
         _scrollRect.Initialize();
     }
@@ -30,15 +30,15 @@ public class MainController : MonoBehaviour, IDataSource
 
     public bool IsCellSizeKnown()
     {
-        // return false;
-        return true;
+        return false;
+        // return true;
     }
 
     public float GetCellSize(int cellIndex)
     {
         // var verticalCellSize = cellIndex % 2 == 0 ? 100 : 200;
-        return _isVertical ? 40.22f : 300;
-        // return -1;
+        // return _isVertical ? 40.22f : 146.9;
+        return -1;
     }
 
     public void SetCellData(ICell cell, int cellIndex)
@@ -52,6 +52,11 @@ public class MainController : MonoBehaviour, IDataSource
             return _prototypeCells[0]; 
         
         return _prototypeCells[1];
+    }
+
+    public GameObject[] GetCellPrototypeCells()
+    {
+        return _prototypeCells;
     }
 
     public bool IsCellStatic(int cellIndex)
