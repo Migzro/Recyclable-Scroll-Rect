@@ -49,11 +49,10 @@ namespace RecyclableSR
         public void Initialize(IDataSource dataSource)
         {
             _dataSource = dataSource;
-            _extraItemsVisible = dataSource.GetExtraItemsVisible();
 
-            if (_dataSource.GetCellPrototypeCells() == null || _dataSource.GetCellPrototypeCells().Length <= 0)
+            if (_dataSource.PrototypeCells == null || _dataSource.PrototypeCells.Length <= 0)
             {
-                throw new ArgumentNullException(nameof(_dataSource.GetCellPrototypeCells), "No prototype cell defined IDataSource");
+                throw new ArgumentNullException(nameof(_dataSource.PrototypeCells), "No prototype cell defined IDataSource");
             }
 
             if (vertical)
@@ -94,18 +93,19 @@ namespace RecyclableSR
             _lastScrollPosition = normalizedPosition;
             _axis = vertical ? 1 : 0;
             
-            var prototypeCells = _dataSource.GetCellPrototypeCells();
+            var prototypeCells = _dataSource.PrototypeCells;
             for (var i = 0; i < prototypeCells.Length; i++)
             {
                 _invisibleItems.Add(prototypeCells[i].name, new List<Item>());
             }
-            
             ReloadData();
         }
 
         public void ReloadData()
         {
-            _itemsCount = _dataSource.GetItemCount();
+            _itemsCount = _dataSource.ItemsCount;
+            _extraItemsVisible = _dataSource.ExtraItemsVisible;
+
             DisableContentLayouts();
             CalculateContentSize();
             CalculateMinimumItemsInViewPort();
@@ -132,7 +132,7 @@ namespace RecyclableSR
             contentSizeDelta[_axis] = 0;
 
             _cellSizes = new float[_itemsCount];
-            if (_dataSource.IsCellSizeKnown())
+            if (_dataSource.IsCellSizeKnown)
             {
                 for (var i = 0; i < _itemsCount; i++)
                 {
@@ -173,7 +173,7 @@ namespace RecyclableSR
 
         private void CalculateMinimumItemsInViewPort()
         {
-            if (!_dataSource.IsCellSizeKnown())
+            if (!_dataSource.IsCellSizeKnown)
                 return;
             
             _minimumItemsInViewPort = 0;
@@ -203,10 +203,10 @@ namespace RecyclableSR
 
             for (var i = 0; i < _itemsCount; i++)
             {
-                _prototypeNames[i] = _dataSource.GetCellPrototypeCell(i).name;
+                _prototypeNames[i] = _dataSource.GetPrototypeCell(i).name;
             }
 
-            if (_dataSource.IsCellSizeKnown())
+            if (_dataSource.IsCellSizeKnown)
             {
                 var itemsToShow = Mathf.Min(_itemsCount, _minimumItemsInViewPort + _extraItemsVisible);
                 for (var i = 0; i < itemsToShow; i++)
@@ -236,7 +236,7 @@ namespace RecyclableSR
 
         private Item InitializeCell(int index)
         {
-            var itemPrototypeCell = _dataSource.GetCellPrototypeCell(index);
+            var itemPrototypeCell = _dataSource.GetPrototypeCell(index);
             var itemGo = Instantiate(itemPrototypeCell, content, false);
             itemGo.name = index.ToString();
 

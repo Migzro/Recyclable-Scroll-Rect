@@ -12,6 +12,12 @@ public class MainController : MonoBehaviour, IDataSource
     [SerializeField] private int _extraItemsVisible;
         
     private List<string> _dataSource;
+    private int _itemCount;
+    
+    public int ItemsCount => _itemsCount;
+    public int ExtraItemsVisible => _extraItemsVisible;
+    public bool IsCellSizeKnown => false;
+    public GameObject[] PrototypeCells => _prototypeCells;
 
     private void Start()
     {
@@ -22,22 +28,6 @@ public class MainController : MonoBehaviour, IDataSource
             _dataSource.Add(i + " " + RandomString(Random.Range(10, 200)));
         }
         _scrollRect.Initialize(this);
-    }
-
-    public int GetItemCount()
-    {
-        return _itemsCount;
-    }
-
-    public int GetExtraItemsVisible()
-    {
-        return _extraItemsVisible;
-    }
-
-    public bool IsCellSizeKnown()
-    {
-        return false;
-        // return true;
     }
 
     public float GetCellSize(int cellIndex)
@@ -52,17 +42,12 @@ public class MainController : MonoBehaviour, IDataSource
         (cell as DemoCellPrototype)?.Initialize(_dataSource[cellIndex], cellIndex);
     }
 
-    public GameObject GetCellPrototypeCell(int cellIndex)
+    public GameObject GetPrototypeCell(int cellIndex)
     {
         if (cellIndex % 2 == 0)
             return _prototypeCells[0]; 
         
         return _prototypeCells[1];
-    }
-
-    public GameObject[] GetCellPrototypeCells()
-    {
-        return _prototypeCells;
     }
 
     public bool IsCellStatic(int cellIndex)

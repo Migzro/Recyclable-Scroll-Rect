@@ -5,13 +5,13 @@ namespace RecyclableSR
 {
     public interface IDataSource
     {
-        int GetItemCount();
-        int GetExtraItemsVisible();
-        bool IsCellSizeKnown();
+        int ItemsCount { get; }
+        int ExtraItemsVisible { get; }
+        bool IsCellSizeKnown { get; }
+        GameObject[] PrototypeCells { get; }
         float GetCellSize(int cellIndex);
         void SetCellData(ICell cell, int cellIndex);
-        GameObject GetCellPrototypeCell(int cellIndex);
-        GameObject[] GetCellPrototypeCells();
+        GameObject GetPrototypeCell(int cellIndex);
         bool IsCellStatic(int cellIndex);
     }
 }
