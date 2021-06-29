@@ -427,12 +427,10 @@ namespace RecyclableSR
         /// <param name="reloadData">when set true, it will fetch data from IDataSource</param>
         public void ReloadCell (int cellIndex, bool reloadData = false)
         {
+            // No need to reload cell at index {cellIndex} as its currently not visible and everything will be automatically handled when it appears
             if (!_visibleItems.ContainsKey(cellIndex))
-            {
-                Debug.Log($"No need to reload cell at index {cellIndex} as its currently not visible and everything will be automatically handled when it appears");
                 return;
-            }
-
+            
             var cell = _visibleItems[cellIndex];
             if (reloadData)
                 _dataSource.SetCellData(cell.cell, cellIndex);
