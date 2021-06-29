@@ -303,10 +303,11 @@ namespace RecyclableSR
         /// <param name="rect">The rect of the cell that its size will be adjusted</param>
         private void SetCellSize(RectTransform rect)
         {
-            // all items are anchored to top left
+            // all items are pivoted & anchored to top left
             var anchorVector = new Vector2(0, 1);
             rect.anchorMin = anchorVector;
             rect.anchorMax = anchorVector;
+            rect.pivot = anchorVector;
 
             var forceSize = false;
             // set size
