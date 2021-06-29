@@ -24,10 +24,22 @@ public class MainController : MonoBehaviour, IDataSource
         _dataSource = new List<string>();
         for (var i = 0; i < _itemsCount; i++)
         {
-            _dataSource.Add(i.ToString());
-            // _dataSource.Add(i + " " + RandomString(Random.Range(10, 200)));
+            // _dataSource.Add(i.ToString());
+            if (i == 5)
+                _dataSource.Add(i + " " + RandomString(Random.Range(1, 1)));
+            else
+                _dataSource.Add(i + " " + RandomString(Random.Range(100, 200)));
         }
         _scrollRect.Initialize(this);
+        
+        Invoke(nameof(ChangeCell), 1);
+    }
+
+    private void ChangeCell()
+    {
+        Debug.LogWarning("Lets Go");
+        _dataSource[5] = "5 " + RandomString(Random.Range(220, 300));
+        _scrollRect.ReloadCell(5, true);
     }
 
     public float GetCellSize(int cellIndex)

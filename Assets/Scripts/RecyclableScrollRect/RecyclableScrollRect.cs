@@ -10,7 +10,6 @@ namespace RecyclableSR
         // todo: cache item start position + end position
         // todo: static cell
         // todo: check reload data and add maybe a new method that just adds items
-        // todo: add a ReloadCell method in case cell size changes?
         // todo: ExecuteInEditMode?
         // todo: add a scrollto method?
         // todo: Simulate content size (O.o)^(o.O)
@@ -120,6 +119,7 @@ namespace RecyclableSR
             DisableContentLayouts();
             CalculateContentSize();
             CalculateMinimumItemsInViewPort();
+            SetPrototypeNames();
             InitializeCells();
         }
 
@@ -220,23 +220,30 @@ namespace RecyclableSR
         }
 
         /// <summary>
+        /// Set prefab names for when needed to retrieve from pool
+        /// </summary>
+        private void SetPrototypeNames()
+        {
+            // set an array of prototype names to be used when getting the correct prefab for the cell index it exists in its respective pool
+            _prototypeNames = new string[_itemsCount];
+            for (var i = 0; i < _itemsCount; i++)
+                _prototypeNames[i] = _dataSource.GetPrototypeCell(i).name;
+        }
+        
+        /// <summary>
         /// Initialize all cells needed to fill the view port
         /// If cell size is know we initiate the amount of cells calculated CalculateMinimumItemsInViewPort
         /// if not we keep initializing cells until the view port is filled
         /// extra visible items is an additional amount of cells that can be shown to prevent showing an empty view port if the scrolling is too fast and the update function didnt show all the items
         /// that need to be shown
         /// </summary>
-        private void InitializeCells()
+        /// <param name="startingIndex">used to initialize cells in case a cell size has changed and the viewport is empty</param>
+        private void InitializeCells(int startingIndex = 0)
         {
-            // set an array of prototype names to be used when getting the correct prefab for the cell index it exists in its respective pool
-            _prototypeNames = new string[_itemsCount];
-            for (var i = 0; i < _itemsCount; i++)
-                _prototypeNames[i] = _dataSource.GetPrototypeCell(i).name;
-
             if (_dataSource.IsCellSizeKnown)
             {
                 var itemsToShow = Mathf.Min(_itemsCount, _minimumItemsInViewPort + _extraItemsVisible);
-                for (var i = 0; i < itemsToShow; i++)
+                for (var i = startingIndex; i < itemsToShow; i++)
                 {
                     InitializeCell(i);
                 }
@@ -245,8 +252,10 @@ namespace RecyclableSR
             {
                 var contentHasSpace = true;
                 var extraItemsInitialized = 0;
-                var i = 0;
-                _maxVisibleItemInViewPort = -1;
+                var i = startingIndex;
+                // _maxVisibleItemInViewPort is 0 if starting index is 0
+                // or startingIndex - 1 which will be the current _maxVisibleItemInViewPort as its called from ReloadCell
+                _maxVisibleItemInViewPort = startingIndex - 1;
                 while (contentHasSpace || extraItemsInitialized < _extraItemsVisible)
                 {
                     var cell = InitializeCell(i);
@@ -299,6 +308,7 @@ namespace RecyclableSR
             rect.anchorMin = anchorVector;
             rect.anchorMax = anchorVector;
 
+            var forceSize = false;
             // set size
             if (_hasLayoutGroup)
             {
@@ -308,6 +318,7 @@ namespace RecyclableSR
                     var itemSize = rect.sizeDelta;
                     itemSize.x = content.rect.width - _verticalLayoutGroup.padding.right - _verticalLayoutGroup.padding.left;
                     rect.sizeDelta = itemSize;
+                    forceSize = true;
                 }
 
                 // expand item height if its in a horizontal layout group and the conditions are satisfied
@@ -316,6 +327,7 @@ namespace RecyclableSR
                     var itemSize = rect.sizeDelta;
                     itemSize.y = content.rect.height - _horizontalLayoutGroup.padding.top - _horizontalLayoutGroup.padding.bottom;
                     rect.sizeDelta = itemSize;
+                    forceSize = true;
                 }
             }
 
@@ -329,7 +341,7 @@ namespace RecyclableSR
             // we check for multiple conditions together since the content is made to fit the items, so they only move in one axis in each different scroll direction
             var rectSize = rect.rect.size;
             var itemSizeSmallerThanContent = rectSize[_axis] < contentSizeWithoutPadding[_axis];
-            if (_hasLayoutGroup && itemSizeSmallerThanContent)
+            if (_hasLayoutGroup && (itemSizeSmallerThanContent || forceSize))
             {
                 var itemPosition = rect.anchoredPosition;
                 if (vertical)
@@ -405,7 +417,65 @@ namespace RecyclableSR
 
             rect.anchoredPosition = prevItemPosition;
         }
-        
+
+        /// <summary>
+        /// Reloads cell size and adjusts all the visible cells that follow that cell
+        /// Creates new cells if the cell size has shrunk and there is room in the view port
+        /// it also hides items that left the viewport
+        /// </summary>
+        /// <param name="cellIndex">cell index to reload</param>
+        /// <param name="reloadData">when set true, it will fetch data from IDataSource</param>
+        public void ReloadCell (int cellIndex, bool reloadData = false)
+        {
+            if (!_visibleItems.ContainsKey(cellIndex))
+            {
+                Debug.Log($"No need to reload cell at index {cellIndex} as its currently not visible and everything will be automatically handled when it appears");
+                return;
+            }
+
+            var cell = _visibleItems[cellIndex];
+            if (reloadData)
+                _dataSource.SetCellData(cell.cell, cellIndex);
+
+            var oldSize = _cellSizes[cellIndex];
+            if (_dataSource.IsCellSizeKnown)
+                _cellSizes[cellIndex] = _dataSource.GetCellSize(cellIndex);
+            else
+                CalculateUnknownCellSize(cell.transform, cellIndex);
+            var shrank = _cellSizes[cellIndex] < oldSize;
+
+            // need to adjust all the following cells position
+            var startingCellToAdjustPosition = cellIndex + 1;
+            var lastCellToAdjustPosition = _maxVisibleItemInViewPort + _extraItemsVisible;
+            
+            var currentMaxVisibleItemInViewPort = cellIndex;
+            for (var i = startingCellToAdjustPosition; i <= lastCellToAdjustPosition; i++)
+            {
+                SetCellPosition(_visibleItems[i].transform, i, i - 1);
+
+                // need to check if more item have appeared in Viewport which will require recalculation of _maxVisibleItemInViewPort
+                if (viewport.AnyCornerVisible(_visibleItems[i].transform))
+                    currentMaxVisibleItemInViewPort = i;
+            }
+            
+            if (shrank)
+            {
+                // we initialize cells in case the new newMaxVisibleItemInViewPort is bigger than the _maxVisibleItemInViewPort which means there are new items that need to initialized
+                // we dont set _maxVisibleItemInViewPort here as its already handled in the following function calls
+                CalculateMinimumItemsInViewPort();
+                InitializeCells(currentMaxVisibleItemInViewPort + 1);
+            }
+            else
+            {
+                // hide the items that left the viewport if there any
+                // while generally leaving items that are out of viewport won't hurt, we do it for performance
+                for (var i = currentMaxVisibleItemInViewPort + 1; i <= _maxVisibleItemInViewPort + _extraItemsVisible; i++)
+                    HideCellAtIndex(i);
+                
+                _maxVisibleItemInViewPort = currentMaxVisibleItemInViewPort;
+            }
+        }
+
         /// <summary>
         /// This function calculates the cell size if its unknown by forcing a Layout rebuild
         /// then calculating the new content size based on the old cell size if it was set previously
@@ -542,8 +612,8 @@ namespace RecyclableSR
                 item.transform.gameObject.SetActive(true);
                 SetVisibilityInHierarchy(item.transform, newIndex, true);
 
-                _dataSource.SetCellData(item.cell, newIndex);
                 _visibleItems.Add(newIndex, item);
+                _dataSource.SetCellData(item.cell, newIndex);
 
                 SetCellPosition(item.transform, newIndex, prevIndex);
             }
