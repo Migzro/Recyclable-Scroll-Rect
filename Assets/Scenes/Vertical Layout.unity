@@ -136,7 +136,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000, guid: e84b65f6b68cbca4a9a9c63e390ea836, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: e84b65f6b68cbca4a9a9c63e390ea836, type: 3}
       propertyPath: m_RootOrder
@@ -318,7 +318,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _isVertical: 1
-  _itemsCount: 100
+  _itemsCount: 1000
   _scrollRect: {fileID: 1904557390}
   _prototypeCells:
   - {fileID: 1638117046129563386, guid: e71a2206129434ac9b60b1d7743a0f00, type: 3}

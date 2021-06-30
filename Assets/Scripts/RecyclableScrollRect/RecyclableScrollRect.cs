@@ -518,10 +518,10 @@ namespace RecyclableSR
                 return;
             if (normalizedPosition == _lastScrollPosition && !_needsClearance)
                 return;
-
+            
             // get the top corner and bottom corner positions of the scroll content
-            var contentTopLeftCorner = content.anchoredPosition.Abs();
-            var contentBottomRightCorner = new Vector2(contentTopLeftCorner.x + _viewPortSize.x, contentTopLeftCorner.y + _viewPortSize.y).Abs();
+            var contentTopLeftCorner = content.anchoredPosition * (vertical ? 1f : -1f);
+            var contentBottomRightCorner = new Vector2(contentTopLeftCorner.x + _viewPortSize.x, contentTopLeftCorner.y + _viewPortSize.y);
 
             // figure out which items that need to be rendered, bottom right or top left
             // generally if the content position is smaller than the position of _minVisibleItemInViewPort, this means we need to show items in top left
