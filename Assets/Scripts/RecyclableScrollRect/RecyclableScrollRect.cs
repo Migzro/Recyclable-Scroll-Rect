@@ -304,6 +304,65 @@ namespace RecyclableSR
             SetCellSize(rect);
             SetCellPosition(rect, index, index - 1);
         }
+        
+        /// <summary>
+        /// Reloads cell size and adjusts all the visible cells that follow that cell
+        /// Creates new cells if the cell size has shrunk and there is room in the view port
+        /// it also hides items that left the viewport
+        /// </summary>
+        /// <param name="cellIndex">cell index to reload</param>
+        /// <param name="reloadData">when set true, it will fetch data from IDataSource</param>
+        public void ReloadCell (int cellIndex, bool reloadData = false)
+        {
+            // No need to reload cell at index {cellIndex} as its currently not visible and everything will be automatically handled when it appears
+            if (!_visibleItems.ContainsKey(cellIndex))
+                return;
+            
+            var cell = _visibleItems[cellIndex];
+            if (reloadData)
+                _dataSource.SetCellData(cell.cell, cellIndex);
+
+            var oldSize = _cellSizes[cellIndex];
+            if (_dataSource.IsCellSizeKnown)
+                _cellSizes[cellIndex] = _dataSource.GetCellSize(cellIndex);
+            else
+                CalculateUnknownCellSize(cell.transform, cellIndex);
+            _itemPositions[cellIndex].SetSize(cell.transform.rect.size);
+            var shrank = _cellSizes[cellIndex] < oldSize;
+
+            // need to adjust all the following cells position
+            var startingCellToAdjustPosition = cellIndex + 1;
+            var lastCellToAdjustPosition = _maxVisibleItemInViewPort + _extraItemsVisible;
+            
+            var currentMaxVisibleItemInViewPort = cellIndex;
+            var contentTopLeftCorner = content.anchoredPosition * (vertical ? 1f : -1f);
+            var contentBottomRightCorner = new Vector2(contentTopLeftCorner.x + _viewPortSize.x, contentTopLeftCorner.y + _viewPortSize.y);
+            for (var i = startingCellToAdjustPosition; i <= lastCellToAdjustPosition; i++)
+            {
+                SetCellPosition(_visibleItems[i].transform, i, i - 1);
+
+                // need to check if more item have appeared in Viewport which will require recalculation of _maxVisibleItemInViewPort
+                if (_itemPositions[i].topLeftPosition[_axis] < contentBottomRightCorner[_axis])
+                    currentMaxVisibleItemInViewPort = i;
+            }
+            
+            if (shrank)
+            {
+                // we initialize cells in case the new newMaxVisibleItemInViewPort is bigger than the _maxVisibleItemInViewPort which means there are new items that need to initialized
+                // we dont set _maxVisibleItemInViewPort here as its already handled in the following function calls
+                CalculateMinimumItemsInViewPort();
+                InitializeCells(currentMaxVisibleItemInViewPort + 1);
+            }
+            else
+            {
+                // hide the items that left the viewport if there any
+                // while generally leaving items that are out of viewport won't hurt, we do it for performance
+                for (var i = currentMaxVisibleItemInViewPort + 1; i <= _maxVisibleItemInViewPort + _extraItemsVisible; i++)
+                    HideCellAtIndex(i);
+                
+                _maxVisibleItemInViewPort = currentMaxVisibleItemInViewPort;
+            }
+        }
 
         /// <summary>
         /// This function call is only needed once when the cell is created as it only sets the vertical size of the cell in a horizontal layout
@@ -429,65 +488,6 @@ namespace RecyclableSR
 
             rect.anchoredPosition = newItemPosition;
             _itemPositions[newIndex].SetPositionAndSize(newItemPosition.Abs(), rect.rect.size);
-        }
-
-        /// <summary>
-        /// Reloads cell size and adjusts all the visible cells that follow that cell
-        /// Creates new cells if the cell size has shrunk and there is room in the view port
-        /// it also hides items that left the viewport
-        /// </summary>
-        /// <param name="cellIndex">cell index to reload</param>
-        /// <param name="reloadData">when set true, it will fetch data from IDataSource</param>
-        public void ReloadCell (int cellIndex, bool reloadData = false)
-        {
-            // No need to reload cell at index {cellIndex} as its currently not visible and everything will be automatically handled when it appears
-            if (!_visibleItems.ContainsKey(cellIndex))
-                return;
-            
-            var cell = _visibleItems[cellIndex];
-            if (reloadData)
-                _dataSource.SetCellData(cell.cell, cellIndex);
-
-            var oldSize = _cellSizes[cellIndex];
-            if (_dataSource.IsCellSizeKnown)
-                _cellSizes[cellIndex] = _dataSource.GetCellSize(cellIndex);
-            else
-                CalculateUnknownCellSize(cell.transform, cellIndex);
-            _itemPositions[cellIndex].SetSize(cell.transform.rect.size);
-            var shrank = _cellSizes[cellIndex] < oldSize;
-
-            // need to adjust all the following cells position
-            var startingCellToAdjustPosition = cellIndex + 1;
-            var lastCellToAdjustPosition = _maxVisibleItemInViewPort + _extraItemsVisible;
-            
-            var currentMaxVisibleItemInViewPort = cellIndex;
-            var contentTopLeftCorner = content.anchoredPosition * (vertical ? 1f : -1f);
-            var contentBottomRightCorner = new Vector2(contentTopLeftCorner.x + _viewPortSize.x, contentTopLeftCorner.y + _viewPortSize.y);
-            for (var i = startingCellToAdjustPosition; i <= lastCellToAdjustPosition; i++)
-            {
-                SetCellPosition(_visibleItems[i].transform, i, i - 1);
-
-                // need to check if more item have appeared in Viewport which will require recalculation of _maxVisibleItemInViewPort
-                if (_itemPositions[i].topLeftPosition[_axis] < contentBottomRightCorner[_axis])
-                    currentMaxVisibleItemInViewPort = i;
-            }
-            
-            if (shrank)
-            {
-                // we initialize cells in case the new newMaxVisibleItemInViewPort is bigger than the _maxVisibleItemInViewPort which means there are new items that need to initialized
-                // we dont set _maxVisibleItemInViewPort here as its already handled in the following function calls
-                CalculateMinimumItemsInViewPort();
-                InitializeCells(currentMaxVisibleItemInViewPort + 1);
-            }
-            else
-            {
-                // hide the items that left the viewport if there any
-                // while generally leaving items that are out of viewport won't hurt, we do it for performance
-                for (var i = currentMaxVisibleItemInViewPort + 1; i <= _maxVisibleItemInViewPort + _extraItemsVisible; i++)
-                    HideCellAtIndex(i);
-                
-                _maxVisibleItemInViewPort = currentMaxVisibleItemInViewPort;
-            }
         }
 
         /// <summary>
