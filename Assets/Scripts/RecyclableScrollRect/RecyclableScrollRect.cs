@@ -33,7 +33,7 @@ namespace RecyclableSR
         private bool _init;
 
         private Dictionary<int, Item> _visibleItems;
-        private Dictionary<string, List<Item>> _invisibleItems;
+        private Dictionary<string, List<Item>> _pooledItems;
         private Vector2 _lastScrollPosition;
         private RectOffset _padding;
         private TextAnchor _alignment;
@@ -93,7 +93,7 @@ namespace RecyclableSR
             }
 
             _visibleItems = new Dictionary<int, Item>();
-            _invisibleItems = new Dictionary<string, List<Item>>();
+            _pooledItems = new Dictionary<string, List<Item>>();
             _viewPortSize = viewport.rect.size;
             _init = true;
             _lastScrollPosition = normalizedPosition;
@@ -103,7 +103,7 @@ namespace RecyclableSR
             var prototypeCells = _dataSource.PrototypeCells;
             for (var i = 0; i < prototypeCells.Length; i++)
             {
-                _invisibleItems.Add(prototypeCells[i].name, new List<Item>());
+                _pooledItems.Add(prototypeCells[i].name, new List<Item>());
             }
             ReloadData();
         }
@@ -544,7 +544,7 @@ namespace RecyclableSR
             if (showBottomRight && _maxVisibleItemInViewPort < _itemsCount - 1)
             {
                 // item at top or left is not in viewport
-                if (_visibleItems[_minVisibleItemInViewPort].transform.gameObject.activeSelf && !viewport.AnyCornerVisible(_visibleItems[_minVisibleItemInViewPort].transform))
+                if (!viewport.AnyCornerVisible(_visibleItems[_minVisibleItemInViewPort].transform))
                 {
                     var itemToHide = _minVisibleItemInViewPort - _extraItemsVisible;
                     if (itemToHide > -1)
@@ -566,7 +566,7 @@ namespace RecyclableSR
             else if (!showBottomRight && _minVisibleItemInViewPort > 0)
             {
                 // item at bottom or right not in viewport
-                if (_visibleItems[_maxVisibleItemInViewPort].transform.gameObject.activeSelf && !viewport.AnyCornerVisible(_visibleItems[_maxVisibleItemInViewPort].transform))
+                if (!viewport.AnyCornerVisible(_visibleItems[_maxVisibleItemInViewPort].transform))
                 {
                     var itemToHide = _maxVisibleItemInViewPort + _extraItemsVisible;
                     if (itemToHide < _itemsCount)
@@ -598,10 +598,10 @@ namespace RecyclableSR
         {
             // Get empty cell and adjust its position and size, else just create a new a cell
             var cellPrototypeName = _prototypeNames[newIndex];
-            if (_invisibleItems[cellPrototypeName].Count > 0)
+            if (_pooledItems[cellPrototypeName].Count > 0)
             {
-                var item = _invisibleItems[cellPrototypeName][0];
-                _invisibleItems[cellPrototypeName].RemoveAt(0);
+                var item = _pooledItems[cellPrototypeName][0];
+                _pooledItems[cellPrototypeName].RemoveAt(0);
 
                 if (newIndex > prevIndex)
                     item.transform.SetAsLastSibling();
@@ -630,7 +630,7 @@ namespace RecyclableSR
         {
             _visibleItems[cellIndex].transform.gameObject.SetActive(false);
             SetVisibilityInHierarchy(_visibleItems[cellIndex].transform, cellIndex, false);
-            _invisibleItems[_prototypeNames[cellIndex]].Add(_visibleItems[cellIndex]);
+            _pooledItems[_prototypeNames[cellIndex]].Add(_visibleItems[cellIndex]);
             _visibleItems.Remove(cellIndex);
         }
 

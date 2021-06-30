@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace RecyclableSR
 {
-    public class Item
+    public readonly struct Item
     {
         public ICell cell { get; }
         public RectTransform transform { get; }
