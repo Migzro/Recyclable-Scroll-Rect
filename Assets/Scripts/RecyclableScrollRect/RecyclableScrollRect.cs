@@ -555,10 +555,10 @@ namespace RecyclableSR
             }
             _lastScrollPosition = normalizedPosition;
 
-            if (showBottomRight && _maxVisibleItemInViewPort < _itemsCount - 1)
+            if (showBottomRight)
             {
                 // item at top or left is not in viewport
-                if (contentTopLeftCorner[_axis] > _itemPositions[_minVisibleItemInViewPort].bottomRightPosition[_axis])
+                if (_minVisibleItemInViewPort < _itemsCount - 1 && contentTopLeftCorner[_axis] > _itemPositions[_minVisibleItemInViewPort].bottomRightPosition[_axis])
                 {
                     var itemToHide = _minVisibleItemInViewPort - _extraItemsVisible;
                     if (itemToHide > -1)
@@ -567,7 +567,7 @@ namespace RecyclableSR
                 }
 
                 // item at bottom or right needs to appear
-                if (contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleItemInViewPort].bottomRightPosition[_axis])
+                if (_maxVisibleItemInViewPort < _itemsCount - 1 && contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleItemInViewPort].bottomRightPosition[_axis])
                 {
                     var newMaxItemToCheck = _maxVisibleItemInViewPort + 1;
                     var itemToShow = newMaxItemToCheck + _extraItemsVisible;
@@ -576,10 +576,10 @@ namespace RecyclableSR
                     _maxVisibleItemInViewPort = newMaxItemToCheck;
                 }
             }
-            else if (!showBottomRight && _minVisibleItemInViewPort > 0)
+            else
             {
                 // item at bottom or right not in viewport
-                if (contentBottomRightCorner[_axis] < _itemPositions[_maxVisibleItemInViewPort].topLeftPosition[_axis])
+                if (_minVisibleItemInViewPort > 0 && contentBottomRightCorner[_axis] < _itemPositions[_maxVisibleItemInViewPort].topLeftPosition[_axis])
                 {
                     var itemToHide = _maxVisibleItemInViewPort + _extraItemsVisible;
                     if (itemToHide < _itemsCount)
@@ -588,7 +588,7 @@ namespace RecyclableSR
                 }
 
                 // item at top or left needs to appear
-                if (contentTopLeftCorner[_axis] < _itemPositions[_minVisibleItemInViewPort].topLeftPosition[_axis])
+                if (_minVisibleItemInViewPort > 0 && contentTopLeftCorner[_axis] < _itemPositions[_minVisibleItemInViewPort].topLeftPosition[_axis])
                 {
                     var newMinItemToCheck = _minVisibleItemInViewPort - 1;
                     var itemToShow = newMinItemToCheck - _extraItemsVisible;
