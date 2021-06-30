@@ -270,7 +270,7 @@ namespace RecyclableSR
                 _maxVisibleItemInViewPort = startingIndex - 1;
                 while (contentHasSpace || extraItemsInitialized < _extraItemsVisible)
                 {
-                    var cell = InitializeCell(i);
+                    InitializeCell(i);
                     if (!contentHasSpace)
                         extraItemsInitialized++;
                     else
@@ -288,7 +288,7 @@ namespace RecyclableSR
         /// </summary>
         /// <param name="index"></param>
         /// <returns>cell index that needs to be initialized</returns>
-        private Item InitializeCell(int index)
+        private void InitializeCell(int index)
         {
             var itemPrototypeCell = _dataSource.GetPrototypeCell(index);
             var itemGo = Instantiate(itemPrototypeCell, content, false);
@@ -303,7 +303,6 @@ namespace RecyclableSR
 
             SetCellSize(rect);
             SetCellPosition(rect, index, index - 1);
-            return item;
         }
 
         /// <summary>
@@ -462,12 +461,14 @@ namespace RecyclableSR
             var lastCellToAdjustPosition = _maxVisibleItemInViewPort + _extraItemsVisible;
             
             var currentMaxVisibleItemInViewPort = cellIndex;
+            var contentTopLeftCorner = content.anchoredPosition * (vertical ? 1f : -1f);
+            var contentBottomRightCorner = new Vector2(contentTopLeftCorner.x + _viewPortSize.x, contentTopLeftCorner.y + _viewPortSize.y);
             for (var i = startingCellToAdjustPosition; i <= lastCellToAdjustPosition; i++)
             {
                 SetCellPosition(_visibleItems[i].transform, i, i - 1);
 
                 // need to check if more item have appeared in Viewport which will require recalculation of _maxVisibleItemInViewPort
-                if (viewport.AnyCornerVisible(_visibleItems[i].transform))
+                if (_itemPositions[i].topLeftPosition[_axis] < contentBottomRightCorner[_axis])
                     currentMaxVisibleItemInViewPort = i;
             }
             
@@ -557,7 +558,7 @@ namespace RecyclableSR
             if (showBottomRight && _maxVisibleItemInViewPort < _itemsCount - 1)
             {
                 // item at top or left is not in viewport
-                if (!viewport.AnyCornerVisible(_visibleItems[_minVisibleItemInViewPort].transform))
+                if (contentTopLeftCorner[_axis] > _itemPositions[_minVisibleItemInViewPort].bottomRightPosition[_axis])
                 {
                     var itemToHide = _minVisibleItemInViewPort - _extraItemsVisible;
                     if (itemToHide > -1)
@@ -578,7 +579,7 @@ namespace RecyclableSR
             else if (!showBottomRight && _minVisibleItemInViewPort > 0)
             {
                 // item at bottom or right not in viewport
-                if (!viewport.AnyCornerVisible(_visibleItems[_maxVisibleItemInViewPort].transform))
+                if (contentBottomRightCorner[_axis] < _itemPositions[_maxVisibleItemInViewPort].topLeftPosition[_axis])
                 {
                     var itemToHide = _maxVisibleItemInViewPort + _extraItemsVisible;
                     if (itemToHide < _itemsCount)
