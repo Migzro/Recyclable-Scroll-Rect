@@ -28,6 +28,8 @@ namespace RecyclableSR
         private int _itemsCount;
         private int _minVisibleItemInViewPort;
         private int _maxVisibleItemInViewPort;
+        private int _minExtraVisibleItemInViewPort;
+        private int _maxExtraVisibleItemInViewPort;
         private int _extraItemsVisible;
         private bool _hasLayoutGroup;
         private bool _init;
@@ -35,7 +37,9 @@ namespace RecyclableSR
         private List<ItemPosition> _itemPositions;
         private Dictionary<int, Item> _visibleItems;
         private Dictionary<string, List<Item>> _pooledItems;
-        private Vector2 _lastScrollPosition;
+        private Vector2 _lastContentPosition;
+        private Vector2 _contentTopLeftCorner;
+        private Vector2 _contentBottomRightCorner;
         private RectOffset _padding;
         private TextAnchor _alignment;
         private float _spacing;
@@ -96,9 +100,8 @@ namespace RecyclableSR
             _visibleItems = new Dictionary<int, Item>();
             _pooledItems = new Dictionary<string, List<Item>>();
             _viewPortSize = viewport.rect.size;
-            _init = true;
-            _lastScrollPosition = normalizedPosition;
             _axis = vertical ? 1 : 0;
+            _init = true;
             
             // create a new list for each prototype cell to hold the pooled cells
             var prototypeCells = _dataSource.PrototypeCells;
@@ -114,9 +117,12 @@ namespace RecyclableSR
         /// </summary>
         public void ReloadData()
         {
+            GetContentBounds();
+
             _itemsCount = _dataSource.ItemsCount;
             _itemPositions = new List<ItemPosition>();
             _extraItemsVisible = _dataSource.ExtraItemsVisible;
+            _lastContentPosition = _contentTopLeftCorner;
 
             DisableContentLayouts();
             CalculateContentSize();
@@ -219,7 +225,9 @@ namespace RecyclableSR
             }
 
             _minVisibleItemInViewPort = 0;
+            _minExtraVisibleItemInViewPort = 0;
             _maxVisibleItemInViewPort = _minimumItemsInViewPort - 1;
+            _maxExtraVisibleItemInViewPort = _maxVisibleItemInViewPort + _extraItemsVisible;
         }
 
         /// <summary>
@@ -249,36 +257,33 @@ namespace RecyclableSR
         /// extra visible items is an additional amount of cells that can be shown to prevent showing an empty view port if the scrolling is too fast and the update function didnt show all the items
         /// that need to be shown
         /// </summary>
-        /// <param name="startingIndex">used to initialize cells in case a cell size has changed and the viewport is empty</param>
-        private void InitializeCells(int startingIndex = 0)
+        /// <param name="startIndex">the starting cell index on which we want initialized</param>
+        private void InitializeCells(int startIndex = 0)
         {
             if (_dataSource.IsCellSizeKnown)
             {
-                var itemsToShow = Mathf.Min(_itemsCount, _minimumItemsInViewPort + _extraItemsVisible);
-                for (var i = startingIndex; i < itemsToShow; i++)
-                {
+                var endIndex = Mathf.Min(_itemsCount, _minimumItemsInViewPort + _extraItemsVisible);
+                for (var i = startIndex; i < endIndex; i++)
                     InitializeCell(i);
-                }
             }
             else
             {
-                var contentHasSpace = true;
-                var extraItemsInitialized = 0;
-                var i = startingIndex;
-                // _maxVisibleItemInViewPort is 0 if starting index is 0
-                // or startingIndex - 1 which will be the current _maxVisibleItemInViewPort as its called from ReloadCell
-                _maxVisibleItemInViewPort = startingIndex - 1;
+                GetContentBounds();
+                var contentHasSpace = startIndex == 0 || _itemPositions[startIndex - 1].bottomRightPosition[_axis] + _spacing <= _contentBottomRightCorner[_axis];
+                var extraItemsInitialized = _maxExtraVisibleItemInViewPort - _maxVisibleItemInViewPort;
+                var i = startIndex;
                 while (contentHasSpace || extraItemsInitialized < _extraItemsVisible)
                 {
                     InitializeCell(i);
                     if (!contentHasSpace)
                         extraItemsInitialized++;
                     else
-                        _maxVisibleItemInViewPort++;
+                        _maxVisibleItemInViewPort = i;
 
-                    contentHasSpace = _itemPositions[i].topLeftPosition[_axis] + _cellSizes[i] + _spacing <= viewport.rect.size[_axis];
+                    contentHasSpace = _itemPositions[i].bottomRightPosition[_axis] + _spacing <= _contentBottomRightCorner[_axis];
                     i++;
                 }
+                _maxExtraVisibleItemInViewPort = i - 1;
             }
         }
 
@@ -312,7 +317,7 @@ namespace RecyclableSR
         /// </summary>
         /// <param name="cellIndex">cell index to reload</param>
         /// <param name="reloadData">when set true, it will fetch data from IDataSource</param>
-        public void ReloadCell (int cellIndex, bool reloadData = false)
+        public void ReloadCell(int cellIndex, bool reloadData = false)
         {
             // No need to reload cell at index {cellIndex} as its currently not visible and everything will be automatically handled when it appears
             if (!_visibleItems.ContainsKey(cellIndex))
@@ -323,10 +328,7 @@ namespace RecyclableSR
                 _dataSource.SetCellData(cell.cell, cellIndex);
 
             var oldSize = _cellSizes[cellIndex];
-            if (_dataSource.IsCellSizeKnown)
-                _cellSizes[cellIndex] = _dataSource.GetCellSize(cellIndex);
-            else
-                CalculateUnknownCellSize(cell.transform, cellIndex);
+            CalculateCellSize(cell.transform, cellIndex);
             _itemPositions[cellIndex].SetSize(cell.transform.rect.size);
             var shrank = _cellSizes[cellIndex] < oldSize;
 
@@ -335,32 +337,27 @@ namespace RecyclableSR
             var lastCellToAdjustPosition = _maxVisibleItemInViewPort + _extraItemsVisible;
             
             var currentMaxVisibleItemInViewPort = cellIndex;
-            var contentTopLeftCorner = content.anchoredPosition * (vertical ? 1f : -1f);
-            var contentBottomRightCorner = new Vector2(contentTopLeftCorner.x + _viewPortSize.x, contentTopLeftCorner.y + _viewPortSize.y);
+            GetContentBounds();
             for (var i = startingCellToAdjustPosition; i <= lastCellToAdjustPosition; i++)
             {
                 SetCellPosition(_visibleItems[i].transform, i, i - 1);
 
                 // need to check if more item have appeared in Viewport which will require recalculation of _maxVisibleItemInViewPort
-                if (_itemPositions[i].topLeftPosition[_axis] < contentBottomRightCorner[_axis])
+                if (_itemPositions[i].topLeftPosition[_axis] < _contentBottomRightCorner[_axis])
                     currentMaxVisibleItemInViewPort = i;
             }
-            
+            _maxVisibleItemInViewPort = currentMaxVisibleItemInViewPort;
             if (shrank)
             {
-                // we initialize cells in case the new newMaxVisibleItemInViewPort is bigger than the _maxVisibleItemInViewPort which means there are new items that need to initialized
-                // we dont set _maxVisibleItemInViewPort here as its already handled in the following function calls
-                CalculateMinimumItemsInViewPort();
-                InitializeCells(currentMaxVisibleItemInViewPort + 1);
+                InitializeCells(_maxExtraVisibleItemInViewPort + 1);
             }
             else
             {
                 // hide the items that left the viewport if there any
                 // while generally leaving items that are out of viewport won't hurt, we do it for performance
-                for (var i = currentMaxVisibleItemInViewPort + 1; i <= _maxVisibleItemInViewPort + _extraItemsVisible; i++)
+                for (var i = _maxVisibleItemInViewPort + _extraItemsVisible + 1; i <= _maxExtraVisibleItemInViewPort; i++)
                     HideCellAtIndex(i);
-                
-                _maxVisibleItemInViewPort = currentMaxVisibleItemInViewPort;
+                _maxExtraVisibleItemInViewPort = _maxVisibleItemInViewPort + _extraItemsVisible;
             }
         }
 
@@ -460,7 +457,7 @@ namespace RecyclableSR
         private void SetCellPosition(RectTransform rect, int newIndex, int prevIndex)
         {
             if ((int)_cellSizes[newIndex] == -1)
-                CalculateUnknownCellSize(rect, newIndex);
+                CalculateCellSize(rect, newIndex);
             
             // figure out where the prev cell position was
             var newItemPosition = rect.anchoredPosition;
@@ -492,24 +489,33 @@ namespace RecyclableSR
 
         /// <summary>
         /// This function calculates the cell size if its unknown by forcing a Layout rebuild
+        /// if it is known we just get the cell size
         /// then calculating the new content size based on the old cell size if it was set previously
         /// </summary>
         /// <param name="rect">rect of the cell which the size will be calculated for</param>
         /// <param name="index">cell index which the size will be calculated for</param>
-        private void CalculateUnknownCellSize(RectTransform rect, int index)
+        private void CalculateCellSize(RectTransform rect, int index)
         {
-            LayoutRebuilder.ForceRebuildLayoutImmediate(rect);
-            var contentSize = content.sizeDelta;
+            float newCellSize;
+            if (!_dataSource.IsCellSizeKnown)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(rect);
+                newCellSize = rect.rect.size[_axis];
+            }
+            else
+            {
+                newCellSize = _dataSource.GetCellSize(index);
+                CalculateMinimumItemsInViewPort();
+            }
 
             // get difference in cell size if its size has changed
-            var newCellSize = rect.rect.size[_axis];
             var oldCellSize = 0f;
             if ((int)_cellSizes[index] != -1)
                 oldCellSize = _cellSizes[index];
-            
             _cellSizes[index] = newCellSize;
+            
+            var contentSize = content.sizeDelta;
             contentSize[_axis] += newCellSize - oldCellSize;
-                
             if (_hasLayoutGroup)
             {
                 if (vertical)
@@ -531,69 +537,84 @@ namespace RecyclableSR
                 return;
             if (_visibleItems.Count <= 0)
                 return;
-            if (normalizedPosition == _lastScrollPosition && !_needsClearance)
+            GetContentBounds();
+            if (_contentTopLeftCorner == _lastContentPosition && !_needsClearance)
                 return;
             
-            // get the top corner and bottom corner positions of the scroll content
-            var contentTopLeftCorner = content.anchoredPosition * (vertical ? 1f : -1f);
-            var contentBottomRightCorner = new Vector2(contentTopLeftCorner.x + _viewPortSize.x, contentTopLeftCorner.y + _viewPortSize.y);
-
             // figure out which items that need to be rendered, bottom right or top left
             // generally if the content position is smaller than the position of _minVisibleItemInViewPort, this means we need to show items in tops left
             // if content position is bigger than the the position of _maxVisibleItemInViewPort, this means we need to show items in bottom right
             // _needsClearance is needed because sometimes the scrolling happens so fast that the items are not showing and normalizedPosition & _lastScrollPosition would be the same stopping the update loop
+            var showBottomRight = _contentTopLeftCorner[_axis] > _lastContentPosition[_axis];
+            _lastContentPosition = _contentTopLeftCorner;
+            
             _needsClearance = false;
-            var showBottomRight = false;
-            if (_itemPositions[_minVisibleItemInViewPort].topLeftPosition[_axis] - contentTopLeftCorner[_axis] > 0.1f)
+            if (_itemPositions[_minVisibleItemInViewPort].topLeftPosition[_axis] - _contentTopLeftCorner[_axis] > 0.1f)
             {
+                showBottomRight = false;
                 _needsClearance = true;
             }
-            else if (_itemPositions[_maxVisibleItemInViewPort].bottomRightPosition[_axis] - contentBottomRightCorner[_axis] < -0.1f)
+            else if (_itemPositions[_maxVisibleItemInViewPort].bottomRightPosition[_axis] - _contentBottomRightCorner[_axis] < -0.1f)
             {
                 showBottomRight = true;
                 _needsClearance = true;
             }
-            _lastScrollPosition = normalizedPosition;
-
+            
             if (showBottomRight)
             {
                 // item at top or left is not in viewport
-                if (_minVisibleItemInViewPort < _itemsCount - 1 && contentTopLeftCorner[_axis] > _itemPositions[_minVisibleItemInViewPort].bottomRightPosition[_axis])
+                if (_minVisibleItemInViewPort < _itemsCount - 1 && _contentTopLeftCorner[_axis] > _itemPositions[_minVisibleItemInViewPort].bottomRightPosition[_axis])
                 {
                     var itemToHide = _minVisibleItemInViewPort - _extraItemsVisible;
                     if (itemToHide > -1)
+                    {
+                        _minExtraVisibleItemInViewPort++;
                         HideCellAtIndex(itemToHide);
+                    }
+
                     _minVisibleItemInViewPort++;
                 }
 
                 // item at bottom or right needs to appear
-                if (_maxVisibleItemInViewPort < _itemsCount - 1 && contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleItemInViewPort].bottomRightPosition[_axis])
+                if (_maxVisibleItemInViewPort < _itemsCount - 1 && _contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleItemInViewPort].bottomRightPosition[_axis])
                 {
                     var newMaxItemToCheck = _maxVisibleItemInViewPort + 1;
                     var itemToShow = newMaxItemToCheck + _extraItemsVisible;
                     if (itemToShow < _itemsCount)
+                    {
+                        _maxExtraVisibleItemInViewPort = itemToShow;
                         ShowCellAtIndex(itemToShow, itemToShow - 1);
+                    }
+
                     _maxVisibleItemInViewPort = newMaxItemToCheck;
                 }
             }
             else
             {
                 // item at bottom or right not in viewport
-                if (_minVisibleItemInViewPort > 0 && contentBottomRightCorner[_axis] < _itemPositions[_maxVisibleItemInViewPort].topLeftPosition[_axis])
+                if (_maxVisibleItemInViewPort > 0 && _contentBottomRightCorner[_axis] < _itemPositions[_maxVisibleItemInViewPort].topLeftPosition[_axis])
                 {
                     var itemToHide = _maxVisibleItemInViewPort + _extraItemsVisible;
                     if (itemToHide < _itemsCount)
+                    {
+                        _maxExtraVisibleItemInViewPort--;
                         HideCellAtIndex(itemToHide);
+                    }
+
                     _maxVisibleItemInViewPort--;
                 }
 
                 // item at top or left needs to appear
-                if (_minVisibleItemInViewPort > 0 && contentTopLeftCorner[_axis] < _itemPositions[_minVisibleItemInViewPort].topLeftPosition[_axis])
+                if (_minVisibleItemInViewPort > 0 && _contentTopLeftCorner[_axis] < _itemPositions[_minVisibleItemInViewPort].topLeftPosition[_axis])
                 {
                     var newMinItemToCheck = _minVisibleItemInViewPort - 1;
                     var itemToShow = newMinItemToCheck - _extraItemsVisible;
                     if (itemToShow > -1)
+                    {
+                        _minExtraVisibleItemInViewPort = itemToShow;
                         ShowCellAtIndex(itemToShow, itemToShow + 1);
+                    }
+
                     _minVisibleItemInViewPort = newMinItemToCheck;
                 }
             }
@@ -644,6 +665,15 @@ namespace RecyclableSR
             SetVisibilityInHierarchy(_visibleItems[cellIndex].transform, cellIndex, false);
             _pooledItems[_prototypeNames[cellIndex]].Add(_visibleItems[cellIndex]);
             _visibleItems.Remove(cellIndex);
+        }
+
+        /// <summary>
+        /// Updates content bounds for different uses
+        /// </summary>
+        private void GetContentBounds()
+        {
+            _contentTopLeftCorner = content.anchoredPosition * (vertical ? 1f : -1f);
+            _contentBottomRightCorner = new Vector2(_contentTopLeftCorner.x + _viewPortSize.x, _contentTopLeftCorner.y + _viewPortSize.y);
         }
 
         /// <summary>

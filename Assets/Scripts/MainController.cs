@@ -19,6 +19,7 @@ public class MainController : MonoBehaviour, IDataSource
     public bool IsCellSizeKnown => false;
     public GameObject[] PrototypeCells => _prototypeCells;
 
+    private bool sizeChanged = false;
     private void Start()
     {
         _dataSource = new List<string>();
@@ -26,28 +27,33 @@ public class MainController : MonoBehaviour, IDataSource
         {
             // _dataSource.Add(i.ToString());
             if (i == 5)
-                _dataSource.Add(i + " " + RandomString(Random.Range(200, 300)));
+                _dataSource.Add("5\n5\n5");
+                // _dataSource.Add(i + " " + RandomString(Random.Range(200, 300)));
             else
                 // _dataSource.Add(i + " " + RandomString(Random.Range(100, 200)));
                 _dataSource.Add(i.ToString());
         }
         _scrollRect.Initialize(this);
-        
-        Invoke(nameof(ChangeCell), 1);
+        Invoke(nameof(ChangeCell), 5);  
     }
 
     private void ChangeCell()
     {
         Debug.LogWarning("Lets Go");
         _dataSource[5] = "5";
+        sizeChanged = true;
         _scrollRect.ReloadCell(5, true);
     }
 
     public float GetCellSize(int cellIndex)
     {
         // var verticalCellSize = cellIndex % 2 == 0 ? 100 : 200;
-        // return _isVertical ? 40.22f : 60.28f;
-        return -1;
+        if (cellIndex == 5 && _isVertical)
+        {
+            return !sizeChanged ? 40.22f * 3 : 40.22f;
+        }
+        return _isVertical ? 40.22f : 60.28f;
+        // return -1;
     }
 
     public void SetCellData(ICell cell, int cellIndex)
