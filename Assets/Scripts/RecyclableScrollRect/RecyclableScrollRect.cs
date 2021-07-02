@@ -7,11 +7,13 @@ namespace RecyclableSR
 {
     public class RecyclableScrollRect : ScrollRect
     {
+        // todo: test horizontal for the seventeenth time
+        // todo: that function that can be only one call
         // todo: convert cell size to vector2
         // todo: static cell
         // todo: check reload data and add maybe a new method that just adds items
         // todo: ExecuteInEditMode?
-        // todo: add a scrollto method?
+        // todo: add a scrollTo method?
         // todo: Simulate content size (O.o)^(o.O)
 
         private VerticalLayoutGroup _verticalLayoutGroup;
@@ -24,7 +26,6 @@ namespace RecyclableSR
         private List<float> _cellSizes;
         private List<string> _prototypeNames;
         private int _axis;
-        private int _minimumItemsInViewPort;
         private int _itemsCount;
         private int _minVisibleItemInViewPort;
         private int _maxVisibleItemInViewPort;
@@ -35,8 +36,9 @@ namespace RecyclableSR
         private bool _init;
 
         private List<ItemPosition> _itemPositions;
-        private Dictionary<int, Item> _visibleItems;
+        private HashSet<int> _itemsMarkedForReload;
         private Dictionary<string, List<Item>> _pooledItems;
+        private SortedDictionary<int, Item> _visibleItems;
         private Vector2 _lastContentPosition;
         private Vector2 _contentTopLeftCorner;
         private Vector2 _contentBottomRightCorner;
@@ -97,7 +99,8 @@ namespace RecyclableSR
                     _layoutElement = content.gameObject.AddComponent<LayoutElement>();
             }
 
-            _visibleItems = new Dictionary<int, Item>();
+            _itemsMarkedForReload = new HashSet<int>();
+            _visibleItems = new SortedDictionary<int, Item>();
             _pooledItems = new Dictionary<string, List<Item>>();
             _viewPortSize = viewport.rect.size;
             _axis = vertical ? 1 : 0;
@@ -126,7 +129,6 @@ namespace RecyclableSR
 
             DisableContentLayouts();
             CalculateContentSize();
-            CalculateMinimumItemsInViewPort();
             SetPrototypeNames();
             InitializeItemPositions();
             InitializeCells();
@@ -200,37 +202,6 @@ namespace RecyclableSR
         }
 
         /// <summary>
-        /// If the cell size is know we calculate the amount of items needed to fill the view port
-        /// </summary>
-        private void CalculateMinimumItemsInViewPort()
-        {
-            if (!_dataSource.IsCellSizeKnown)
-                return;
-            
-            _minimumItemsInViewPort = 0;
-            var rect = viewport.rect;
-            var remainingViewPortSize = rect.size[_axis];
-
-            for (var i = 0; i < _itemsCount; i++)
-            {
-                var spacing = _spacing;
-                if (i == _itemsCount - 1)
-                    spacing = 0;
-
-                remainingViewPortSize -= _cellSizes[i] + spacing;
-                _minimumItemsInViewPort++;
-
-                if (remainingViewPortSize <= 0)
-                    break;
-            }
-
-            _minVisibleItemInViewPort = 0;
-            _minExtraVisibleItemInViewPort = 0;
-            _maxVisibleItemInViewPort = _minimumItemsInViewPort - 1;
-            _maxExtraVisibleItemInViewPort = _maxVisibleItemInViewPort + _extraItemsVisible;
-        }
-
-        /// <summary>
         /// Set prefab names for when needed to retrieve from pool
         /// </summary>
         private void SetPrototypeNames()
@@ -251,40 +222,30 @@ namespace RecyclableSR
         }
         
         /// <summary>
-        /// Initialize all cells needed to fill the view port
-        /// If cell size is know we initiate the amount of cells calculated CalculateMinimumItemsInViewPort
-        /// if not we keep initializing cells until the view port is filled
+        /// Initialize all cells needed until the view port is filled
         /// extra visible items is an additional amount of cells that can be shown to prevent showing an empty view port if the scrolling is too fast and the update function didnt show all the items
         /// that need to be shown
         /// </summary>
         /// <param name="startIndex">the starting cell index on which we want initialized</param>
         private void InitializeCells(int startIndex = 0)
         {
-            if (_dataSource.IsCellSizeKnown)
+            GetContentBounds();
+            var contentHasSpace = startIndex == 0 || _itemPositions[startIndex - 1].bottomRightPosition[_axis] + _spacing <= _contentBottomRightCorner[_axis];
+            var extraItemsInitialized = contentHasSpace ? 0 : _maxExtraVisibleItemInViewPort - _maxVisibleItemInViewPort;
+            var i = startIndex;
+            while (contentHasSpace || extraItemsInitialized < _extraItemsVisible)
             {
-                var endIndex = Mathf.Min(_itemsCount, _minimumItemsInViewPort + _extraItemsVisible);
-                for (var i = startIndex; i < endIndex; i++)
-                    InitializeCell(i);
-            }
-            else
-            {
-                GetContentBounds();
-                var contentHasSpace = startIndex == 0 || _itemPositions[startIndex - 1].bottomRightPosition[_axis] + _spacing <= _contentBottomRightCorner[_axis];
-                var extraItemsInitialized = _maxExtraVisibleItemInViewPort - _maxVisibleItemInViewPort;
-                var i = startIndex;
-                while (contentHasSpace || extraItemsInitialized < _extraItemsVisible)
-                {
-                    InitializeCell(i);
-                    if (!contentHasSpace)
-                        extraItemsInitialized++;
-                    else
-                        _maxVisibleItemInViewPort = i;
+                ShowCellAtIndex(i, i - 1);
+                Debug.Log($"Inializig cell {i} {contentHasSpace} {extraItemsInitialized}");
+                if (!contentHasSpace)
+                    extraItemsInitialized++;
+                else
+                    _maxVisibleItemInViewPort = i;
 
-                    contentHasSpace = _itemPositions[i].bottomRightPosition[_axis] + _spacing <= _contentBottomRightCorner[_axis];
-                    i++;
-                }
-                _maxExtraVisibleItemInViewPort = i - 1;
+                contentHasSpace = _itemPositions[i].bottomRightPosition[_axis] + _spacing <= _contentBottomRightCorner[_axis];
+                i++;
             }
+            _maxExtraVisibleItemInViewPort = i - 1;
         }
 
         /// <summary>
@@ -307,7 +268,7 @@ namespace RecyclableSR
             _dataSource.SetCellData(cell, index);
 
             SetCellSize(rect);
-            SetCellPosition(rect, index, index - 1);
+            SetCellPosition(rect, index);
         }
         
         /// <summary>
@@ -321,8 +282,13 @@ namespace RecyclableSR
         {
             // No need to reload cell at index {cellIndex} as its currently not visible and everything will be automatically handled when it appears
             if (!_visibleItems.ContainsKey(cellIndex))
+            {
+                _itemsMarkedForReload.Add(cellIndex);
                 return;
+            }
             
+            Debug.Log($"Reloading Cell {cellIndex}");
+
             var cell = _visibleItems[cellIndex];
             if (reloadData)
                 _dataSource.SetCellData(cell.cell, cellIndex);
@@ -330,35 +296,111 @@ namespace RecyclableSR
             var oldSize = _cellSizes[cellIndex];
             CalculateCellSize(cell.transform, cellIndex);
             _itemPositions[cellIndex].SetSize(cell.transform.rect.size);
-            var shrank = _cellSizes[cellIndex] < oldSize;
-
-            // need to adjust all the following cells position
-            var startingCellToAdjustPosition = cellIndex + 1;
-            var lastCellToAdjustPosition = _maxVisibleItemInViewPort + _extraItemsVisible;
             
-            var currentMaxVisibleItemInViewPort = cellIndex;
-            GetContentBounds();
-            for (var i = startingCellToAdjustPosition; i <= lastCellToAdjustPosition; i++)
-            {
-                SetCellPosition(_visibleItems[i].transform, i, i - 1);
+            // need to adjust all the cells position after cellIndex 
+            var startingCellToAdjustPosition = cellIndex + 1;
+            for (var i = startingCellToAdjustPosition; i <= _maxExtraVisibleItemInViewPort; i++)
+                SetCellPosition(_visibleItems[i].transform, i);
 
-                // need to check if more item have appeared in Viewport which will require recalculation of _maxVisibleItemInViewPort
-                if (_itemPositions[i].topLeftPosition[_axis] < _contentBottomRightCorner[_axis])
-                    currentMaxVisibleItemInViewPort = i;
-            }
-            _maxVisibleItemInViewPort = currentMaxVisibleItemInViewPort;
-            if (shrank)
+            var contentPosition = content.anchoredPosition;
+            var contentMoved = false;
+            Debug.Log(cellIndex + " " + _minExtraVisibleItemInViewPort);
+            if (cellIndex < _minExtraVisibleItemInViewPort)
             {
-                InitializeCells(_maxExtraVisibleItemInViewPort + 1);
+                // this is a very special case as items reloaded at the top or right will have a different bottomRight position
+                // and since we are here at the item, if we don't manually set the position of the content, it will seem as the content suddenly shifted and disorient the user
+                contentPosition[_axis] = _itemPositions[cellIndex].bottomRightPosition[_axis];
+                
+                // set the normalized position as well, because why not
+                // (viewMin - (itemPosition - contentSize)) / (contentSize - viewSize)
+                // var viewportRect = viewport.rect;
+                // var contentRect = content.rect;
+                // var viewPortBounds = new Bounds(viewportRect.center, viewportRect.size);
+                // var newNormalizedPosition = (viewPortBounds.min[_axis] - (_itemPositions[cellIndex].bottomRightPosition[_axis] - contentRect.size[_axis])) / (contentRect.size[_axis] - viewportRect.size[_axis]);
+                // SetNormalizedPosition(newNormalizedPosition, _axis);
+                
+                contentMoved = true;
+                Debug.LogWarning("ASD");
+            }
+            else if (_minExtraVisibleItemInViewPort <= cellIndex && _minVisibleItemInViewPort > cellIndex)
+            {
+                contentPosition[_axis] -= oldSize - _cellSizes[cellIndex];
+                contentMoved = true;
+                Debug.LogWarning("ASD");
+            }
+
+            if (contentMoved)
+            {
+                content.anchoredPosition = contentPosition;
+                // this is important since the scroll rect will likely be dragging and it will cause a jump
+                // this only took me 6 hours to figure out :(
+                m_ContentStartPosition = contentPosition;
+                return;
+            }
+
+            Debug.Log($"Minimum item in viewport {_minVisibleItemInViewPort}, Maximum item in viewport {_maxVisibleItemInViewPort}, Minimum extra item in viewport {_minExtraVisibleItemInViewPort}, Maximum extra item in viewport {_maxExtraVisibleItemInViewPort}");
+            
+            // figure out the new _minVisibleItemInViewPort && _maxVisibleItemInViewPort
+            GetContentBounds();
+            var newMinVisibleItemInViewPortSet = false;
+            var newMinVisibleItemInViewPort = 0;
+            var newMaxVisibleItemInViewPort = 0;
+            foreach (var item in _visibleItems)
+            {
+                var itemPosition = _itemPositions[item.Key];
+                if (itemPosition.bottomRightPosition[_axis] >= _contentTopLeftCorner[_axis] && !newMinVisibleItemInViewPortSet)
+                {
+                    newMinVisibleItemInViewPort = item.Key;
+                    newMinVisibleItemInViewPortSet = true; // this boolean is needed as all items in the view port will satisfy the above condition and we only need the first one
+                }
+
+                if (itemPosition.topLeftPosition[_axis] <= _contentBottomRightCorner[_axis])
+                {
+                    newMaxVisibleItemInViewPort = item.Key;
+                }
+            }
+
+            var newMinExtraVisibleItemInViewPort = Mathf.Max (0, newMinVisibleItemInViewPort - _extraItemsVisible);
+            var newMaxExtraVisibleItemInViewPort = Mathf.Min (_itemsCount - 1, newMaxVisibleItemInViewPort + _extraItemsVisible);
+            Debug.Log($"New Minimum item in viewport {newMinVisibleItemInViewPort}, New Maximum item in viewport {newMaxVisibleItemInViewPort}, New Minimum extra item in viewport {newMinExtraVisibleItemInViewPort}, New Maximum extra item in viewport {newMaxExtraVisibleItemInViewPort}");
+            // Debug.Break();
+            
+            if (newMaxExtraVisibleItemInViewPort < _maxExtraVisibleItemInViewPort)
+            {
+                for (var i = newMaxExtraVisibleItemInViewPort + 1; i <= _maxExtraVisibleItemInViewPort; i++)
+                {
+                    Debug.Log($"Hide cell at index {i}");
+                    HideCellAtIndex(i);
+                }
+                _maxVisibleItemInViewPort = newMaxVisibleItemInViewPort;
+                _maxExtraVisibleItemInViewPort = newMaxExtraVisibleItemInViewPort;
             }
             else
             {
-                // hide the items that left the viewport if there any
-                // while generally leaving items that are out of viewport won't hurt, we do it for performance
-                for (var i = _maxVisibleItemInViewPort + _extraItemsVisible + 1; i <= _maxExtraVisibleItemInViewPort; i++)
-                    HideCellAtIndex(i);
-                _maxExtraVisibleItemInViewPort = _maxVisibleItemInViewPort + _extraItemsVisible;
+                // here we initialize cells instead of using ShowCellAtIndex because we don't know much viewport space is left
+                InitializeCells(_maxExtraVisibleItemInViewPort + 1);
             }
+            
+            if (newMinExtraVisibleItemInViewPort > _minExtraVisibleItemInViewPort)
+            {
+                for (var i = _minExtraVisibleItemInViewPort; i < newMinExtraVisibleItemInViewPort; i++)
+                {
+                    Debug.Log($"Hide cell at index {i}");
+                    HideCellAtIndex(i);
+                }
+            }
+            else
+            {
+                for (var i = _minExtraVisibleItemInViewPort - 1; i >= newMinExtraVisibleItemInViewPort; i--)
+                {
+                    Debug.Log($"Showing cell at index {i}");
+                    ShowCellAtIndex(i, i + 1);
+                }
+            }
+
+            _minVisibleItemInViewPort = newMinVisibleItemInViewPort;
+            _minExtraVisibleItemInViewPort = newMinExtraVisibleItemInViewPort;
+            Debug.Log($"Minimum item in viewport {_minVisibleItemInViewPort}, Maximum item in viewport {_maxVisibleItemInViewPort}, Minimum extra item in viewport {_minExtraVisibleItemInViewPort}, Maximum extra item in viewport {_maxExtraVisibleItemInViewPort}");
         }
 
         /// <summary>
@@ -453,12 +495,11 @@ namespace RecyclableSR
         /// </summary>
         /// <param name="rect">rect of the item which position will be set</param>
         /// <param name="newIndex">index of the item that needs its position set</param>
-        /// <param name="prevIndex">index of the item that new position will be based upon</param>
-        private void SetCellPosition(RectTransform rect, int newIndex, int prevIndex)
+        private void SetCellPosition(RectTransform rect, int newIndex)
         {
-            if ((int)_cellSizes[newIndex] == -1)
+            if ((int) _cellSizes[newIndex] == -1)
                 CalculateCellSize(rect, newIndex);
-            
+
             // figure out where the prev cell position was
             var newItemPosition = rect.anchoredPosition;
             if (newIndex == 0)
@@ -468,23 +509,16 @@ namespace RecyclableSR
                 else
                     newItemPosition.x = _padding.left;
             }
-
-            if (prevIndex > -1 && prevIndex < _itemsCount - 1)
+            else
             {
-                var isAfter = newIndex > prevIndex;
-                
-                newItemPosition = _visibleItems[prevIndex].transform.anchoredPosition;
-
-                var sign = isAfter ? -1 : 1;
-                var cellSizeToUse = isAfter ? _cellSizes[prevIndex] : _cellSizes[newIndex];
-                if (vertical)
-                    newItemPosition[_axis] += (cellSizeToUse * sign) + (_spacing * sign);
-                else
-                    newItemPosition[_axis] -= (cellSizeToUse * sign) + (_spacing * sign);
+                var verticalSign = vertical ? -1 : 1;
+                newItemPosition[_axis] = verticalSign * _itemPositions[newIndex - 1].bottomRightPosition[_axis] + verticalSign * _spacing;
             }
 
             rect.anchoredPosition = newItemPosition;
-            _itemPositions[newIndex].SetPositionAndSize(newItemPosition.Abs(), rect.rect.size);
+            var cellSize = rect.rect.size;
+            cellSize[_axis] = _cellSizes[newIndex];
+            _itemPositions[newIndex].SetPositionAndSize(newItemPosition, cellSize);
         }
 
         /// <summary>
@@ -505,7 +539,6 @@ namespace RecyclableSR
             else
             {
                 newCellSize = _dataSource.GetCellSize(index);
-                CalculateMinimumItemsInViewPort();
             }
 
             // get difference in cell size if its size has changed
@@ -532,22 +565,20 @@ namespace RecyclableSR
         protected override void LateUpdate()
         {
             base.LateUpdate();
-
             if (!_init)
                 return;
             if (_visibleItems.Count <= 0)
                 return;
-            GetContentBounds();
-            if (_contentTopLeftCorner == _lastContentPosition && !_needsClearance)
+            if (Mathf.Approximately(content.anchoredPosition[_axis], _lastContentPosition[_axis]) && !_needsClearance)
                 return;
-            
+            _lastContentPosition = content.anchoredPosition;
+
             // figure out which items that need to be rendered, bottom right or top left
             // generally if the content position is smaller than the position of _minVisibleItemInViewPort, this means we need to show items in tops left
             // if content position is bigger than the the position of _maxVisibleItemInViewPort, this means we need to show items in bottom right
             // _needsClearance is needed because sometimes the scrolling happens so fast that the items are not showing and normalizedPosition & _lastScrollPosition would be the same stopping the update loop
+            GetContentBounds();
             var showBottomRight = _contentTopLeftCorner[_axis] > _lastContentPosition[_axis];
-            _lastContentPosition = _contentTopLeftCorner;
-            
             _needsClearance = false;
             if (_itemPositions[_minVisibleItemInViewPort].topLeftPosition[_axis] - _contentTopLeftCorner[_axis] > 0.1f)
             {
@@ -609,6 +640,7 @@ namespace RecyclableSR
                 {
                     var newMinItemToCheck = _minVisibleItemInViewPort - 1;
                     var itemToShow = newMinItemToCheck - _extraItemsVisible;
+                    Debug.Log(itemToShow + " " + _minExtraVisibleItemInViewPort);
                     if (itemToShow > -1)
                     {
                         _minExtraVisibleItemInViewPort = itemToShow;
@@ -618,6 +650,7 @@ namespace RecyclableSR
                     _minVisibleItemInViewPort = newMinItemToCheck;
                 }
             }
+            // Debug.Log($"Minimum item in viewport {_minVisibleItemInViewPort}, Maximum item in viewport {_maxVisibleItemInViewPort}, Minimum extra item in viewport {_minExtraVisibleItemInViewPort}, Maximum extra item in viewport {_maxExtraVisibleItemInViewPort}");
         }
 
         /// <summary>
@@ -647,7 +680,14 @@ namespace RecyclableSR
                 _visibleItems.Add(newIndex, item);
                 _dataSource.SetCellData(item.cell, newIndex);
 
-                SetCellPosition(item.transform, newIndex, prevIndex);
+                SetCellPosition(item.transform, newIndex);
+                
+                if (_itemsMarkedForReload.Contains(newIndex))
+                {
+                    // item needs to be reloaded
+                    ReloadCell(newIndex);
+                    _itemsMarkedForReload.Remove(newIndex);
+                }
             }
             else
             {
@@ -661,6 +701,7 @@ namespace RecyclableSR
         /// <param name="cellIndex">cellIndex which will be hidden</param>
         private void HideCellAtIndex(int cellIndex)
         {
+            // Debug.Log("Hiding cell at " + cellIndex);
             _visibleItems[cellIndex].transform.gameObject.SetActive(false);
             SetVisibilityInHierarchy(_visibleItems[cellIndex].transform, cellIndex, false);
             _pooledItems[_prototypeNames[cellIndex]].Add(_visibleItems[cellIndex]);
