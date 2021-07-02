@@ -236,7 +236,6 @@ namespace RecyclableSR
             while (contentHasSpace || extraItemsInitialized < _extraItemsVisible)
             {
                 ShowCellAtIndex(i, i - 1);
-                Debug.Log($"Inializig cell {i} {contentHasSpace} {extraItemsInitialized}");
                 if (!contentHasSpace)
                     extraItemsInitialized++;
                 else
@@ -287,8 +286,6 @@ namespace RecyclableSR
                 return;
             }
             
-            Debug.Log($"Reloading Cell {cellIndex}");
-
             var cell = _visibleItems[cellIndex];
             if (reloadData)
                 _dataSource.SetCellData(cell.cell, cellIndex);
@@ -304,7 +301,6 @@ namespace RecyclableSR
 
             var contentPosition = content.anchoredPosition;
             var contentMoved = false;
-            Debug.Log(cellIndex + " " + _minExtraVisibleItemInViewPort);
             if (cellIndex < _minExtraVisibleItemInViewPort)
             {
                 // this is a very special case as items reloaded at the top or right will have a different bottomRight position
@@ -320,13 +316,11 @@ namespace RecyclableSR
                 // SetNormalizedPosition(newNormalizedPosition, _axis);
                 
                 contentMoved = true;
-                Debug.LogWarning("ASD");
             }
             else if (_minExtraVisibleItemInViewPort <= cellIndex && _minVisibleItemInViewPort > cellIndex)
             {
                 contentPosition[_axis] -= oldSize - _cellSizes[cellIndex];
                 contentMoved = true;
-                Debug.LogWarning("ASD");
             }
 
             if (contentMoved)
@@ -338,8 +332,6 @@ namespace RecyclableSR
                 return;
             }
 
-            Debug.Log($"Minimum item in viewport {_minVisibleItemInViewPort}, Maximum item in viewport {_maxVisibleItemInViewPort}, Minimum extra item in viewport {_minExtraVisibleItemInViewPort}, Maximum extra item in viewport {_maxExtraVisibleItemInViewPort}");
-            
             // figure out the new _minVisibleItemInViewPort && _maxVisibleItemInViewPort
             GetContentBounds();
             var newMinVisibleItemInViewPortSet = false;
@@ -362,16 +354,11 @@ namespace RecyclableSR
 
             var newMinExtraVisibleItemInViewPort = Mathf.Max (0, newMinVisibleItemInViewPort - _extraItemsVisible);
             var newMaxExtraVisibleItemInViewPort = Mathf.Min (_itemsCount - 1, newMaxVisibleItemInViewPort + _extraItemsVisible);
-            Debug.Log($"New Minimum item in viewport {newMinVisibleItemInViewPort}, New Maximum item in viewport {newMaxVisibleItemInViewPort}, New Minimum extra item in viewport {newMinExtraVisibleItemInViewPort}, New Maximum extra item in viewport {newMaxExtraVisibleItemInViewPort}");
-            // Debug.Break();
-            
             if (newMaxExtraVisibleItemInViewPort < _maxExtraVisibleItemInViewPort)
             {
                 for (var i = newMaxExtraVisibleItemInViewPort + 1; i <= _maxExtraVisibleItemInViewPort; i++)
-                {
-                    Debug.Log($"Hide cell at index {i}");
                     HideCellAtIndex(i);
-                }
+                
                 _maxVisibleItemInViewPort = newMaxVisibleItemInViewPort;
                 _maxExtraVisibleItemInViewPort = newMaxExtraVisibleItemInViewPort;
             }
@@ -384,23 +371,16 @@ namespace RecyclableSR
             if (newMinExtraVisibleItemInViewPort > _minExtraVisibleItemInViewPort)
             {
                 for (var i = _minExtraVisibleItemInViewPort; i < newMinExtraVisibleItemInViewPort; i++)
-                {
-                    Debug.Log($"Hide cell at index {i}");
                     HideCellAtIndex(i);
-                }
             }
             else
             {
                 for (var i = _minExtraVisibleItemInViewPort - 1; i >= newMinExtraVisibleItemInViewPort; i--)
-                {
-                    Debug.Log($"Showing cell at index {i}");
                     ShowCellAtIndex(i, i + 1);
-                }
             }
 
             _minVisibleItemInViewPort = newMinVisibleItemInViewPort;
             _minExtraVisibleItemInViewPort = newMinExtraVisibleItemInViewPort;
-            Debug.Log($"Minimum item in viewport {_minVisibleItemInViewPort}, Maximum item in viewport {_maxVisibleItemInViewPort}, Minimum extra item in viewport {_minExtraVisibleItemInViewPort}, Maximum extra item in viewport {_maxExtraVisibleItemInViewPort}");
         }
 
         /// <summary>
@@ -640,7 +620,6 @@ namespace RecyclableSR
                 {
                     var newMinItemToCheck = _minVisibleItemInViewPort - 1;
                     var itemToShow = newMinItemToCheck - _extraItemsVisible;
-                    Debug.Log(itemToShow + " " + _minExtraVisibleItemInViewPort);
                     if (itemToShow > -1)
                     {
                         _minExtraVisibleItemInViewPort = itemToShow;
@@ -650,7 +629,6 @@ namespace RecyclableSR
                     _minVisibleItemInViewPort = newMinItemToCheck;
                 }
             }
-            // Debug.Log($"Minimum item in viewport {_minVisibleItemInViewPort}, Maximum item in viewport {_maxVisibleItemInViewPort}, Minimum extra item in viewport {_minExtraVisibleItemInViewPort}, Maximum extra item in viewport {_maxExtraVisibleItemInViewPort}");
         }
 
         /// <summary>
@@ -701,7 +679,6 @@ namespace RecyclableSR
         /// <param name="cellIndex">cellIndex which will be hidden</param>
         private void HideCellAtIndex(int cellIndex)
         {
-            // Debug.Log("Hiding cell at " + cellIndex);
             _visibleItems[cellIndex].transform.gameObject.SetActive(false);
             SetVisibilityInHierarchy(_visibleItems[cellIndex].transform, cellIndex, false);
             _pooledItems[_prototypeNames[cellIndex]].Add(_visibleItems[cellIndex]);
