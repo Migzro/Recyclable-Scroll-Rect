@@ -8,13 +8,10 @@ namespace RecyclableSR
     public class RecyclableScrollRect : ScrollRect
     {
         // todo: test horizontal for the seventeenth time
-        // todo: that function that can be only one call
-        // todo: convert cell size to vector2
         // todo: static cell
         // todo: check reload data and add maybe a new method that just adds items
         // todo: ExecuteInEditMode?
         // todo: add a scrollTo method?
-        // todo: Simulate content size (O.o)^(o.O)
 
         private VerticalLayoutGroup _verticalLayoutGroup;
         private HorizontalLayoutGroup _horizontalLayoutGroup;
