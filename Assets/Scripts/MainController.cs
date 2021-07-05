@@ -26,12 +26,12 @@ public class MainController : MonoBehaviour, IDataSource
         for (var i = 0; i < _itemsCount; i++)
         {
             // _dataSource.Add(i.ToString());
-            if (i == 40)
-                _dataSource.Add("40");
+            if (i == 5)
+                _dataSource.Add("5");
                 // _dataSource.Add(i + " " + RandomString(Random.Range(200, 300)));
             else
-                // _dataSource.Add(i + " " + RandomString(Random.Range(100, 200)));
-                _dataSource.Add(i.ToString());
+                _dataSource.Add(i + " " + RandomString(Random.Range(0, 200)));
+                // _dataSource.Add(i.ToString());
         }
         _scrollRect.Initialize(this);
         Invoke(nameof(ChangeCell), 5);
@@ -41,9 +41,11 @@ public class MainController : MonoBehaviour, IDataSource
     {
         Debug.LogWarning("Lets Go");
         // _dataSource[5] = "5";
-        _dataSource[40] = "40 " + RandomString(Random.Range(200, 300));
+        _dataSource[5] = "5 " + RandomString(Random.Range(0, 200));
+        // _dataSource[40] = "40 " + RandomString(Random.Range(0, 200));
+        // _dataSource[40] = "40";
         sizeChanged = true;
-        _scrollRect.ReloadCell(40, true);
+        _scrollRect.ReloadCell(5, true);
     }
 
     public float GetCellSize(int cellIndex)

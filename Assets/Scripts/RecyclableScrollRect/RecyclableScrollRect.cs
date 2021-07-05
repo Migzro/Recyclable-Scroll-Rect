@@ -548,7 +548,6 @@ namespace RecyclableSR
                 return;
             if (Mathf.Approximately(content.anchoredPosition[_axis], _lastContentPosition[_axis]) && !_needsClearance)
                 return;
-            _lastContentPosition = content.anchoredPosition;
 
             // figure out which items that need to be rendered, bottom right or top left
             // generally if the content position is smaller than the position of _minVisibleItemInViewPort, this means we need to show items in tops left
@@ -567,63 +566,59 @@ namespace RecyclableSR
                 showBottomRight = true;
                 _needsClearance = true;
             }
-            
+            _lastContentPosition = content.anchoredPosition;
             if (showBottomRight)
             {
                 // item at top or left is not in viewport
-                if (_minVisibleItemInViewPort < _itemsCount - 1 && _contentTopLeftCorner[_axis] > _itemPositions[_minVisibleItemInViewPort].bottomRightPosition[_axis])
+                if (_minVisibleItemInViewPort < _itemsCount - 1 && _contentTopLeftCorner[_axis] >= _itemPositions[_minVisibleItemInViewPort].bottomRightPosition[_axis])
                 {
                     var itemToHide = _minVisibleItemInViewPort - _extraItemsVisible;
+                    _minVisibleItemInViewPort++;
                     if (itemToHide > -1)
                     {
                         _minExtraVisibleItemInViewPort++;
                         HideCellAtIndex(itemToHide);
                     }
-
-                    _minVisibleItemInViewPort++;
                 }
 
                 // item at bottom or right needs to appear
-                if (_maxVisibleItemInViewPort < _itemsCount - 1 && _contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleItemInViewPort].bottomRightPosition[_axis])
+                if (_maxVisibleItemInViewPort < _itemsCount - 1 && _contentBottomRightCorner[_axis] >= _itemPositions[_maxVisibleItemInViewPort].bottomRightPosition[_axis] + _spacing)
                 {
                     var newMaxItemToCheck = _maxVisibleItemInViewPort + 1;
                     var itemToShow = newMaxItemToCheck + _extraItemsVisible;
+                    _maxVisibleItemInViewPort = newMaxItemToCheck;
                     if (itemToShow < _itemsCount)
                     {
                         _maxExtraVisibleItemInViewPort = itemToShow;
                         ShowCellAtIndex(itemToShow, itemToShow - 1);
                     }
-
-                    _maxVisibleItemInViewPort = newMaxItemToCheck;
                 }
             }
             else
             {
                 // item at bottom or right not in viewport
-                if (_maxVisibleItemInViewPort > 0 && _contentBottomRightCorner[_axis] < _itemPositions[_maxVisibleItemInViewPort].topLeftPosition[_axis])
+                if (_maxVisibleItemInViewPort > 0 && _contentBottomRightCorner[_axis] <= _itemPositions[_maxVisibleItemInViewPort].topLeftPosition[_axis])
                 {
                     var itemToHide = _maxVisibleItemInViewPort + _extraItemsVisible;
+                    _maxVisibleItemInViewPort--;
                     if (itemToHide < _itemsCount)
                     {
                         _maxExtraVisibleItemInViewPort--;
                         HideCellAtIndex(itemToHide);
                     }
-
-                    _maxVisibleItemInViewPort--;
                 }
 
                 // item at top or left needs to appear
-                if (_minVisibleItemInViewPort > 0 && _contentTopLeftCorner[_axis] < _itemPositions[_minVisibleItemInViewPort].topLeftPosition[_axis])
+                if (_minVisibleItemInViewPort > 0 && _contentTopLeftCorner[_axis] <= _itemPositions[_minVisibleItemInViewPort].topLeftPosition[_axis] - _spacing)
                 {
                     var newMinItemToCheck = _minVisibleItemInViewPort - 1;
                     var itemToShow = newMinItemToCheck - _extraItemsVisible;
+                    _minVisibleItemInViewPort = newMinItemToCheck;
                     if (itemToShow > -1)
                     {
                         _minExtraVisibleItemInViewPort = itemToShow;
                         ShowCellAtIndex(itemToShow, itemToShow + 1);
                     }
-
-                    _minVisibleItemInViewPort = newMinItemToCheck;
                 }
             }
         }
