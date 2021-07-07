@@ -3,9 +3,8 @@ using System.Linq;
 using RecyclableSR;
 using UnityEngine;
 
-public class MainController : MonoBehaviour, IDataSource
+public class DemoMainController : MonoBehaviour, IDataSource
 {
-    [SerializeField] private bool _isVertical;
     [SerializeField] private int _itemsCount;
     [SerializeField] private RecyclableScrollRect _scrollRect;
     [SerializeField] private GameObject[] _prototypeCells;
@@ -19,49 +18,32 @@ public class MainController : MonoBehaviour, IDataSource
     public bool IsCellSizeKnown => false;
     public GameObject[] PrototypeCells => _prototypeCells;
 
-    private bool sizeChanged = false;
     private void Start()
     {
         _dataSource = new List<string>();
         for (var i = 0; i < _itemsCount; i++)
         {
-            // _dataSource.Add(i.ToString());
-            if (i == 5)
-                _dataSource.Add("5");
-                // _dataSource.Add(i + " " + RandomString(Random.Range(200, 300)));
-            else
-                _dataSource.Add(i + " " + RandomString(Random.Range(0, 200)));
-                // _dataSource.Add(i.ToString());
+            _dataSource.Add(i.ToString());
         }
         _scrollRect.Initialize(this);
-        Invoke(nameof(ChangeCell), 5);
+        Invoke(nameof(ChangeCellData), 5);
     }
 
-    private void ChangeCell()
+    private void ChangeCellData()
     {
-        Debug.LogWarning("Lets Go");
-        // _dataSource[5] = "5";
         _dataSource[5] = "5 " + RandomString(Random.Range(0, 200));
-        // _dataSource[40] = "40 " + RandomString(Random.Range(0, 200));
-        // _dataSource[40] = "40";
-        sizeChanged = true;
-        _scrollRect.ReloadCell(5, true);
+        _scrollRect.ReloadCell(5, "Tag", true);
     }
 
     public float GetCellSize(int cellIndex)
     {
-        var verticalCellSize = cellIndex % 2 == 0 ? 100 : 200;
-        if (cellIndex == 5 && _isVertical)
-        {
-            return !sizeChanged ? 40.22f * 3 : 40.22f;
-        }
-        return _isVertical ? 40.22f : 60.28f;
+        // return _scrollRect.vertical ? 40.22f : 60.28f; // if cell size is known
         return -1;
     }
 
     public void SetCellData(ICell cell, int cellIndex)
     {
-        (cell as DemoCellPrototype)?.Initialize(_dataSource[cellIndex], cellIndex);
+        (cell as DemoCellPrototype)?.Initialize(_dataSource[cellIndex]);
     }
 
     public GameObject GetPrototypeCell(int cellIndex)
@@ -70,6 +52,11 @@ public class MainController : MonoBehaviour, IDataSource
             return _prototypeCells[0]; 
         
         return _prototypeCells[1];
+    }
+
+    public void CellCreated(ICell cell, GameObject cellGo)
+    {
+        
     }
 
     public bool IsCellStatic(int cellIndex)

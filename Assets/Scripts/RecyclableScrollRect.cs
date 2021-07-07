@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,6 +8,7 @@ namespace RecyclableSR
 {
     public class RecyclableScrollRect : ScrollRect
     {
+        // todo: convert CellSizes to Vector2 and Integrate it into itemPosition
         // todo: test horizontal for the seventeenth time
         // todo: static cell
         // todo: check reload data and add maybe a new method that just adds items
@@ -36,6 +38,7 @@ namespace RecyclableSR
         private HashSet<int> _itemsMarkedForReload;
         private Dictionary<string, List<Item>> _pooledItems;
         private SortedDictionary<int, Item> _visibleItems;
+        private Dictionary<int, HashSet<string>> _reloadTags;
         private Vector2 _lastContentPosition;
         private Vector2 _contentTopLeftCorner;
         private Vector2 _contentBottomRightCorner;
@@ -121,6 +124,7 @@ namespace RecyclableSR
 
             _itemsCount = _dataSource.ItemsCount;
             _itemPositions = new List<ItemPosition>();
+            _reloadTags = new Dictionary<int, HashSet<string>>();
             _extraItemsVisible = _dataSource.ExtraItemsVisible;
             _lastContentPosition = _contentTopLeftCorner;
 
@@ -230,7 +234,7 @@ namespace RecyclableSR
             var contentHasSpace = startIndex == 0 || _itemPositions[startIndex - 1].bottomRightPosition[_axis] + _spacing <= _contentBottomRightCorner[_axis];
             var extraItemsInitialized = contentHasSpace ? 0 : _maxExtraVisibleItemInViewPort - _maxVisibleItemInViewPort;
             var i = startIndex;
-            while (contentHasSpace || extraItemsInitialized < _extraItemsVisible)
+            while ((contentHasSpace || extraItemsInitialized < _extraItemsVisible) && i < _itemsCount)
             {
                 ShowCellAtIndex(i, i - 1);
                 if (!contentHasSpace)
@@ -258,9 +262,12 @@ namespace RecyclableSR
 
             var cell = itemGo.GetComponent<ICell>();
             var rect = itemGo.GetComponent<RectTransform>();
-            
+
+            cell.recyclableScrollRect = this;
+            cell.cellIndex = index;
             var item = new Item(cell, rect);
             _visibleItems.Add(index, item);
+            _dataSource.CellCreated(cell, itemGo);
             _dataSource.SetCellData(cell, index);
 
             SetCellSize(rect);
@@ -273,8 +280,9 @@ namespace RecyclableSR
         /// it also hides items that left the viewport
         /// </summary>
         /// <param name="cellIndex">cell index to reload</param>
+        /// <param name="reloadTag">used to reload cell based on a tag, so if the reload is called more than once with the same tag, we can ignore it</param>
         /// <param name="reloadData">when set true, it will fetch data from IDataSource</param>
-        public void ReloadCell(int cellIndex, bool reloadData = false)
+        public void ReloadCell(int cellIndex, string reloadTag = "", bool reloadData = false)
         {
             // No need to reload cell at index {cellIndex} as its currently not visible and everything will be automatically handled when it appears
             if (!_visibleItems.ContainsKey(cellIndex))
@@ -282,7 +290,32 @@ namespace RecyclableSR
                 _itemsMarkedForReload.Add(cellIndex);
                 return;
             }
-            
+
+            // add the reloadTag if it doesn't exist for the cellIndex
+            // if reloading data, clear all the reloadTags for the cellIndex
+            if (reloadData && _reloadTags.ContainsKey(cellIndex))
+                _reloadTags[cellIndex].Clear();
+
+            if (!string.IsNullOrEmpty(reloadTag))
+            {
+                if (_reloadTags.ContainsKey(cellIndex))
+                {
+                    if (_reloadTags[cellIndex].Contains(reloadTag))
+                        return;
+                    else
+                        _reloadTags[cellIndex].Add(reloadTag);
+                }
+                else
+                {
+                    _reloadTags.Add(cellIndex, new HashSet<string>{reloadTag});
+                }
+            }
+            StartCoroutine(ReloadCellInternal(cellIndex, reloadData));
+        }
+        
+        private IEnumerator ReloadCellInternal (int cellIndex, bool reloadData = false)
+        {
+            yield return new WaitForEndOfFrame();
             var cell = _visibleItems[cellIndex];
             if (reloadData)
                 _dataSource.SetCellData(cell.cell, cellIndex);
@@ -326,7 +359,7 @@ namespace RecyclableSR
                 // this is important since the scroll rect will likely be dragging and it will cause a jump
                 // this only took me 6 hours to figure out :(
                 m_ContentStartPosition = contentPosition;
-                return;
+                yield break;
             }
 
             // figure out the new _minVisibleItemInViewPort && _maxVisibleItemInViewPort
@@ -648,6 +681,7 @@ namespace RecyclableSR
                 SetVisibilityInHierarchy(item.transform, newIndex, true);
 
                 _visibleItems.Add(newIndex, item);
+                item.cell.cellIndex = newIndex;
                 _dataSource.SetCellData(item.cell, newIndex);
 
                 SetCellPosition(item.transform, newIndex);

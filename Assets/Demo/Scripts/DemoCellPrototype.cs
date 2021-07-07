@@ -5,11 +5,11 @@ using UnityEngine;
 public class DemoCellPrototype : MonoBehaviour, ICell
 {
     [SerializeField] private TextMeshProUGUI _text;
-    public int index { get; private set; }
+    public int cellIndex { get; set; }
+    public RecyclableScrollRect recyclableScrollRect { get; set; }
 
-    public void Initialize(string text, int cellIndex)
+    public void Initialize(string text)
     {
         _text.text = text;
-        index = cellIndex;
     }
 }

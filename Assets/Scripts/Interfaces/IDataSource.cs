@@ -12,6 +12,7 @@ namespace RecyclableSR
         float GetCellSize(int cellIndex);
         void SetCellData(ICell cell, int cellIndex);
         GameObject GetPrototypeCell(int cellIndex);
+        void CellCreated(ICell cell, GameObject cellGo);
         bool IsCellStatic(int cellIndex);
     }
 }
