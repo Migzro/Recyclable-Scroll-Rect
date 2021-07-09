@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -284,13 +285,6 @@ namespace RecyclableSR
         /// <param name="reloadData">when set true, it will fetch data from IDataSource</param>
         public void ReloadCell(int cellIndex, string reloadTag = "", bool reloadData = false)
         {
-            // No need to reload cell at index {cellIndex} as its currently not visible and everything will be automatically handled when it appears
-            if (!_visibleItems.ContainsKey(cellIndex))
-            {
-                _itemsMarkedForReload.Add(cellIndex);
-                return;
-            }
-
             // add the reloadTag if it doesn't exist for the cellIndex
             // if reloading data, clear all the reloadTags for the cellIndex
             if (reloadData && _reloadTags.ContainsKey(cellIndex))
@@ -315,7 +309,17 @@ namespace RecyclableSR
         
         private IEnumerator ReloadCellInternal (int cellIndex, bool reloadData = false)
         {
-            yield return new WaitForEndOfFrame();
+            yield return null;
+            
+            // No need to reload cell at index {cellIndex} as its currently not visible and everything will be automatically handled when it appears
+            // its ok to return here after setting the tag, as if a cell gets marked for reload with multiple tags, it only needs to reload once its visible
+            // reloading the cell multiple times with different tags is needed when multiple changes happen to a cell over the course of some frames when its visible
+            if (!_visibleItems.ContainsKey(cellIndex))
+            {
+                _itemsMarkedForReload.Add(cellIndex);
+                yield break;
+            }
+            
             var cell = _visibleItems[cellIndex];
             if (reloadData)
                 _dataSource.SetCellData(cell.cell, cellIndex);
@@ -496,6 +500,20 @@ namespace RecyclableSR
                 }
                 rect.anchoredPosition = itemPosition;
             }
+        }
+        
+        /// <summary>
+        /// Used to force set cell position, can be used if the cell position is manipulated externally and later would want to restore it
+        /// no need to set the position of an invisible item as it will get set automatically when its in view 
+        /// </summary>
+        /// <param name="cellIndex">cell index to set position to</param>
+        public void SetCellPosition(int cellIndex)
+        {
+            if (!_visibleItems.ContainsKey(cellIndex))
+                return;
+            
+            var cell = _visibleItems[cellIndex];
+            SetCellPosition(cell.transform, cellIndex);
         }
 
         /// <summary>
@@ -718,6 +736,29 @@ namespace RecyclableSR
         {
             _contentTopLeftCorner = content.anchoredPosition * (vertical ? 1f : -1f);
             _contentBottomRightCorner = new Vector2(_contentTopLeftCorner.x + _viewPortSize.x, _contentTopLeftCorner.y + _viewPortSize.y);
+        }
+        
+        /// <summary>
+        /// Scrolls to top of scrollRect
+        /// </summary>
+        /// <param name="animationTime"></param>
+        public void ScrollToTopRight(float animationTime = 0.25f)
+        {
+            var topRight = vertical ? 1 : 0;
+            var topRightVector = Vector2.zero;
+            topRightVector[_axis] = topRight;
+            this.DONormalizedPos(topRightVector, 0.25f);
+        }
+        
+        /// <summary>
+        /// Scrolls to bottom of scroll rect
+        /// </summary>
+        public void ScrollToBottomLeft(float animationTime = 0.25f)
+        {
+            var bottomLeft = vertical ? 0 : 1;
+            var bottomLeftVector = Vector2.zero;
+            bottomLeftVector[_axis] = bottomLeft;
+            this.DONormalizedPos(bottomLeftVector, 0.25f);
         }
 
         /// <summary>
