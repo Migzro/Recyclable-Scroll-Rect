@@ -11,41 +11,52 @@ namespace RecyclableSR
     {
         // todo: convert CellSizes to Vector2 and Integrate it into itemPosition
         // todo: test horizontal for the seventeenth time
-        // todo: static cell
         // todo: check reload data and add maybe a new method that just adds items
         // todo: ExecuteInEditMode?
         // todo: add a scrollTo method?
 
+        private LayoutElement _layoutElement;
+        private ContentSizeFitter _contentSizeFitter;
         private VerticalLayoutGroup _verticalLayoutGroup;
         private HorizontalLayoutGroup _horizontalLayoutGroup;
-        private ContentSizeFitter _contentSizeFitter;
-        private LayoutElement _layoutElement;
 
         private IDataSource _dataSource;
-        private Vector2 _viewPortSize;
+        
         private List<float> _cellSizes;
+        private List<float> _headerSizes;
+        private List<float> _footerSizes;
         private List<string> _prototypeNames;
+        private List<ItemPosition> _itemPositions;
+        private List<ItemPosition> _headerPositions;
+        private List<ItemPosition> _footerPositions;
+        
+        private HashSet<int> _itemsMarkedForReload;
+        private Dictionary<string, List<Item>> _pooledItems;
+        private Dictionary<int, HashSet<string>> _reloadTags;
+        private SortedDictionary<int, Item> _visibleItems;
+        
+        private Vector2 _viewPortSize;
+        private Vector2 _lastContentSize;
+        private Vector2 _lastContentPosition;
+        private Vector2 _contentTopLeftCorner;
+        private Vector2 _contentBottomRightCorner;
+        
+        private RectOffset _padding;
+        private TextAnchor _alignment;
+        
         private int _axis;
         private int _itemsCount;
+        private int _headersCount;
+        private int _footersCount;
+        private int _extraItemsVisible;
         private int _minVisibleItemInViewPort;
         private int _maxVisibleItemInViewPort;
         private int _minExtraVisibleItemInViewPort;
         private int _maxExtraVisibleItemInViewPort;
-        private int _extraItemsVisible;
-        private bool _hasLayoutGroup;
-        private bool _init;
-
-        private List<ItemPosition> _itemPositions;
-        private HashSet<int> _itemsMarkedForReload;
-        private Dictionary<string, List<Item>> _pooledItems;
-        private SortedDictionary<int, Item> _visibleItems;
-        private Dictionary<int, HashSet<string>> _reloadTags;
-        private Vector2 _lastContentPosition;
-        private Vector2 _contentTopLeftCorner;
-        private Vector2 _contentBottomRightCorner;
-        private RectOffset _padding;
-        private TextAnchor _alignment;
         private float _spacing;
+        
+        private bool _init;
+        private bool _hasLayoutGroup;
         private bool _needsClearance;
 
         /// <summary>
@@ -113,26 +124,47 @@ namespace RecyclableSR
             {
                 _pooledItems.Add(prototypeCells[i].name, new List<Item>());
             }
-            ReloadData();
+            LoadData();
         }
         
         /// <summary>
         /// Reload the data in case the content of the RecyclableScrollRect has changed
         /// </summary>
-        public void ReloadData()
+        private void LoadData()
         {
             GetContentBounds();
 
             _itemsCount = _dataSource.ItemsCount;
-            _itemPositions = new List<ItemPosition>();
-            _reloadTags = new Dictionary<int, HashSet<string>>();
             _extraItemsVisible = _dataSource.ExtraItemsVisible;
             _lastContentPosition = _contentTopLeftCorner;
+            
+            _reloadTags = new Dictionary<int, HashSet<string>>();
+            _itemPositions = new List<ItemPosition>();       
+            _cellSizes = new List<float>();
+
+            if (_dataSource.GetHeaderGOs != null)
+            {
+                _headersCount = _dataSource.GetHeaderGOs.Length;
+                _headerPositions = new List<ItemPosition>();
+                _headerSizes = new List<float>();
+                for (var i = 0; i < _headersCount; i++)
+                    _headerSizes.Add(-1);
+            }
+            
+            if (_dataSource.GetFooterGOs != null)
+            {
+                _footersCount = _dataSource.GetFooterGOs.Length;
+                _footerPositions = new List<ItemPosition>();
+                _footerSizes = new List<float>();
+                for (var i = 0; i < _footersCount; i++)
+                    _footerSizes.Add(-1);
+            }
 
             DisableContentLayouts();
-            CalculateContentSize();
             SetPrototypeNames();
             InitializeItemPositions();
+            CalculateContentSize();
+            CalculateHeaderFooterSizesPositions();
             InitializeCells();
         }
 
@@ -152,6 +184,32 @@ namespace RecyclableSR
                 _contentSizeFitter.enabled = false;
             }
         }
+        
+        /// <summary>
+        /// Set prefab names for when needed to retrieve from pool
+        /// </summary>
+        private void SetPrototypeNames()
+        {
+            // set an array of prototype names to be used when getting the correct prefab for the cell index it exists in its respective pool
+            _prototypeNames = new List<string>();
+            for (var i = 0; i < _itemsCount; i++)
+                _prototypeNames.Add(_dataSource.GetPrototypeCell(i).name);
+        }
+
+        /// <summary>
+        /// Initialize item positions as zero to avoid using .Contains when initializing the positions
+        /// </summary>
+        private void InitializeItemPositions()
+        {
+            for (var i = 0; i < _itemsCount; i++)
+                _itemPositions.Add(new ItemPosition());
+            
+            for (var i = 0; i < _headersCount; i++)
+                _headerPositions.Add(new ItemPosition());
+            
+            for (var i = 0; i < _footersCount; i++)
+                _footerPositions.Add(new ItemPosition());
+        }
 
         /// <summary>
         /// Calculate the content size in their respective direction based on the scrolling direction
@@ -163,7 +221,6 @@ namespace RecyclableSR
             var contentSizeDelta = viewport.sizeDelta;
             contentSizeDelta[_axis] = 0;
 
-            _cellSizes = new List<float>();
             if (_dataSource.IsCellSizeKnown)
             {
                 for (var i = 0; i < _itemsCount; i++)
@@ -183,14 +240,15 @@ namespace RecyclableSR
 
             if (_hasLayoutGroup)
             {
+                var totalItems = _headersCount + _itemsCount + _footersCount - 1;
                 if (vertical && _verticalLayoutGroup != null)
                 {
-                    contentSizeDelta.y += _spacing * (_itemsCount - 1);
+                    contentSizeDelta.y += _spacing * totalItems;
                     contentSizeDelta.y += _padding.top + _padding.bottom;
                 }
                 else if (!vertical && _horizontalLayoutGroup != null)
                 {
-                    contentSizeDelta.x += _spacing * (_itemsCount - 1);
+                    contentSizeDelta.x += _spacing * totalItems;
                     contentSizeDelta.x += _padding.right + _padding.left;
                 }
 
@@ -204,23 +262,120 @@ namespace RecyclableSR
         }
 
         /// <summary>
-        /// Set prefab names for when needed to retrieve from pool
+        /// Calculate the size of the headers and footers
+        /// Also set the position of the headers as these will not change unless their sizes change
         /// </summary>
-        private void SetPrototypeNames()
+        private void CalculateHeaderFooterSizesPositions()
         {
-            // set an array of prototype names to be used when getting the correct prefab for the cell index it exists in its respective pool
-            _prototypeNames = new List<string>();
-            for (var i = 0; i < _itemsCount; i++)
-                _prototypeNames.Add(_dataSource.GetPrototypeCell(i).name);
+            var contentSize = content.sizeDelta;
+            
+            // set header positions and sizes
+            var headerGOs = _dataSource.GetHeaderGOs;
+            if (headerGOs != null)
+            {
+                for (var i = 0; i < headerGOs.Length; i++)
+                {
+                    var rect = headerGOs[i];
+                    SetCellSize(rect);
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(rect);
+                    
+                    var oldHeaderSize = 0f;
+                    if ((int) _headerSizes[i] != -1)
+                        oldHeaderSize = _headerSizes[i];
+                    
+                    _headerSizes[i] = rect.rect.size[_axis];
+                    contentSize[_axis] += _headerSizes[i] - oldHeaderSize;
+                    
+                    var headerPosition = rect.anchoredPosition;
+                    var verticalSign = vertical ? -1 : 1;
+                    if (i == 0)
+                    {
+                        if (vertical)
+                            headerPosition.y = -_padding.top;
+                        else
+                            headerPosition.x = _padding.left;
+                    }
+                    else
+                    {
+                        headerPosition[_axis] = verticalSign * _headerPositions[i - 1].bottomRightPosition[_axis] + verticalSign * _spacing;
+                    }
+                    _headerPositions[i].SetPositionAndSize(headerPosition, rect.rect.size);
+                    rect.anchoredPosition = headerPosition;
+                }
+            }
+
+            // set footer positions
+            var footersGOs = _dataSource.GetFooterGOs;
+            if (footersGOs != null)
+            {
+                for (var i = 0; i < footersGOs.Length; i++)
+                {
+                    var rect = footersGOs[i];
+                    SetCellSize(rect);
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(rect);
+                    
+                    var oldFooterSize = 0f;
+                    if ((int) _footerSizes[i] != -1)
+                        oldFooterSize = _footerSizes[i];
+                    
+                    _footerSizes[i] = rect.rect.size[_axis];
+                    contentSize[_axis] += _footerSizes[i] - oldFooterSize;
+                }
+            }
+
+            if (_hasLayoutGroup)
+            {
+                if (vertical)
+                    _layoutElement.preferredHeight = contentSize.y;
+                else
+                    _layoutElement.preferredWidth = contentSize.x;
+            }
+            content.sizeDelta = contentSize;
         }
 
         /// <summary>
-        /// Initialize item positions as zero to avoid using .Contains when initializing the positions
+        /// Set the footers positions as these change everytime the content size increases
+        /// It is now calculated to always stick to the bottom of the content
+        /// It doesn't care if the cell size is known, it can be optimized more if the cell size is known
         /// </summary>
-        private void InitializeItemPositions()
+        private void SetFooterPositions()
         {
-            for (var i = 0; i < _itemsCount; i++)
-                _itemPositions.Add(new ItemPosition());
+            var currentContentSize = content.rect.size;
+            if (currentContentSize == _lastContentSize)
+            {
+                _lastContentSize = currentContentSize;
+                return;
+            }
+            
+            var footersGOs = _dataSource.GetFooterGOs;
+            if (footersGOs != null)
+            {
+                for (var i = footersGOs.Length - 1; i >= 0; i--)
+                {
+                    var rect = footersGOs[i];
+                    var footerPosition = rect.anchoredPosition;
+                    // this is flipped since we are setting their positions from the bottom up
+                    var verticalSign = vertical ? -1 : 1;
+                    var footerSize = _footerSizes[i];
+                    if (i == _footersCount - 1)
+                        footerPosition[_axis] = verticalSign * currentContentSize[_axis] - verticalSign * footerSize;
+                    else
+                        footerPosition[_axis] = verticalSign * _footerPositions[i + 1].topLeftPosition[_axis] - verticalSign * footerSize - verticalSign * _spacing;
+
+                    _footerPositions[i].SetPositionAndSize(footerPosition, rect.rect.size);
+                    rect.anchoredPosition = footerPosition;
+                }
+                SetFooterSiblingIndices();
+            }
+        }
+
+        /// <summary>
+        /// Set footer sibling indices as last
+        /// </summary>
+        private void SetFooterSiblingIndices()
+        {
+            for (var i = 0; i < _footersCount; i++)
+                _dataSource.GetFooterGOs[i].SetAsLastSibling();
         }
         
         /// <summary>
@@ -530,16 +685,23 @@ namespace RecyclableSR
 
             // figure out where the prev cell position was
             var newItemPosition = rect.anchoredPosition;
+            var verticalSign = vertical ? -1 : 1;
             if (newIndex == 0)
             {
-                if (vertical)
-                    newItemPosition.y = _padding.top;
+                if (_headersCount <= 0)
+                {
+                    if (vertical)
+                        newItemPosition.y = -_padding.top;
+                    else
+                        newItemPosition.x = _padding.left;
+                }
                 else
-                    newItemPosition.x = _padding.left;
+                {
+                    newItemPosition[_axis] = verticalSign * _headerPositions[_headersCount - 1].bottomRightPosition[_axis] + verticalSign * _spacing;
+                }
             }
             else
             {
-                var verticalSign = vertical ? -1 : 1;
                 newItemPosition[_axis] = verticalSign * _itemPositions[newIndex - 1].bottomRightPosition[_axis] + verticalSign * _spacing;
             }
 
@@ -585,6 +747,7 @@ namespace RecyclableSR
                     _layoutElement.preferredWidth = contentSize.x;
             }
             content.sizeDelta = contentSize;
+            SetFooterPositions();
         }
 
         /// <summary>
@@ -693,7 +856,8 @@ namespace RecyclableSR
                 if (newIndex > prevIndex)
                     item.transform.SetAsLastSibling();
                 else
-                    item.transform.SetAsFirstSibling();
+                    item.transform.SetSiblingIndex(_headersCount);
+                SetFooterSiblingIndices();
                 
                 item.transform.gameObject.SetActive(true);
                 SetVisibilityInHierarchy(item.transform, newIndex, true);

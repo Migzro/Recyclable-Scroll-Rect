@@ -14,5 +14,7 @@ namespace RecyclableSR
         GameObject GetPrototypeCell(int cellIndex);
         void CellCreated(ICell cell, GameObject cellGo);
         bool IsCellStatic(int cellIndex);
+        RectTransform[] GetHeaderGOs { get; }
+        RectTransform[] GetFooterGOs { get; }
     }
 }

@@ -9,6 +9,8 @@ public class DemoMainController : MonoBehaviour, IDataSource
     [SerializeField] private RecyclableScrollRect _scrollRect;
     [SerializeField] private GameObject[] _prototypeCells;
     [SerializeField] private int _extraItemsVisible;
+    [SerializeField] private RectTransform[] _headerGOs;
+    [SerializeField] private RectTransform[] _footerGOs;
         
     private List<string> _dataSource;
     private int _itemCount;
@@ -31,7 +33,7 @@ public class DemoMainController : MonoBehaviour, IDataSource
 
     private void ChangeCellData()
     {
-        _dataSource[5] = "5 " + RandomString(Random.Range(0, 200));
+        _dataSource[5] = "5 " + RandomString(Random.Range(150, 200));
         _scrollRect.ReloadCell(5, "Tag", true);
     }
 
@@ -63,7 +65,10 @@ public class DemoMainController : MonoBehaviour, IDataSource
     {
         return false;
     }
-    
+
+    public RectTransform[] GetHeaderGOs => _headerGOs;
+    public RectTransform[] GetFooterGOs => _footerGOs;
+
     private static System.Random random = new System.Random();
     public static string RandomString(int length)
     {
