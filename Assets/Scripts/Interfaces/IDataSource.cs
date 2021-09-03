@@ -12,9 +12,11 @@ namespace RecyclableSR
         float GetCellSize(int cellIndex);
         void SetCellData(ICell cell, int cellIndex);
         GameObject GetPrototypeCell(int cellIndex);
-        void CellCreated(ICell cell, GameObject cellGo);
+        void CellCreated(int cellIndex, ICell cell, GameObject cellGo);
         bool IsCellStatic(int cellIndex);
-        RectTransform[] GetHeaderGOs { get; }
-        RectTransform[] GetFooterGOs { get; }
+        void ScrolledToCell(ICell cell, int cellIndex);
+        bool IgnoreContentPadding(int cellIndex);
+        void PullToRefresh();
+        void ReachedScrollEnd();
     }
 }
