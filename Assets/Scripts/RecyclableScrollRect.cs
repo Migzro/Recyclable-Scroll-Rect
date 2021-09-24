@@ -736,7 +736,7 @@ namespace RecyclableSR
             // generally if the content position is smaller than the position of _minVisibleItemInViewPort, this means we need to show items in tops left
             // if content position is bigger than the the position of _maxVisibleItemInViewPort, this means we need to show items in bottom right
             // _needsClearance is needed because sometimes the scrolling happens so fast that the items are not showing and normalizedPosition & _lastScrollPosition would be the same stopping the update loop
-            if (_contentTopLeftCorner[ _axis ] < 0 || _contentBottomRightCorner[ _axis ] > content.rect.size[ _axis ] && _maxExtraVisibleItemInViewPort == _itemsCount - 1)
+            if (_contentTopLeftCorner[ _axis ] <= 0 || _contentBottomRightCorner[ _axis ] >= content.rect.size[ _axis ] && _maxExtraVisibleItemInViewPort == _itemsCount - 1)
             {
                 movementType = _movementType;
                 if (!_needsClearance)
@@ -1072,6 +1072,7 @@ namespace RecyclableSR
                         reachedCell = true;
                     }
 
+                    // reached bottom
                     if (_maxExtraVisibleItemInViewPort == _itemsCount - 1 && Mathf.Abs(contentBottomRightCorner[_axis]) >= content.sizeDelta[_axis])
                     {
                         contentTopLeftCorner[_axis] = (content.rect.size[_axis] - _viewPortSize[_axis]) * (vertical ? 1 : -1);
@@ -1086,7 +1087,8 @@ namespace RecyclableSR
                         reachedCell = true;
                     }
 
-                    if (_minExtraVisibleItemInViewPort == 0 && (vertical && content.anchoredPosition[_axis] <= 0 || !vertical && content.anchoredPosition[_axis] >= 0))
+                    // reached top
+                    if (vertical && content.anchoredPosition[_axis] <= 0 || !vertical && content.anchoredPosition[_axis] >= 0)
                     {
                         contentTopLeftCorner[_axis] = 0;
                         reachedCell = true;
