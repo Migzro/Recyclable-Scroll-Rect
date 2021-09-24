@@ -36,7 +36,6 @@ namespace RecyclableSR
         private bool _needsClearance;
         private bool _hasLayoutGroup;
         private bool _pullToRefresh;
-        private bool _contentSizeCalculated;
 
         private HashSet<int> _itemsMarkedForReload;
         private Dictionary<string, List<Item>> _pooledItems;
@@ -49,6 +48,7 @@ namespace RecyclableSR
         private Vector2 _contentBottomRightCorner;
         private RectOffset _padding;
         private TextAnchor _alignment;
+        private MovementType _movementType;
 
         /// <summary>
         /// Initialize the scroll rect with the data source that contains all the details required to build the RecyclableScrollRect
@@ -141,8 +141,8 @@ namespace RecyclableSR
             _itemsMarkedForReload = new HashSet<int>();
             _extraItemsVisible = _dataSource.ExtraItemsVisible;
             _lastContentPosition = _contentTopLeftCorner;
+            _movementType = movementType;
             _isAnimating = false;
-            _contentSizeCalculated = false;
 
             _visibleItems = new SortedDictionary<int, Item>();
             
@@ -736,8 +736,15 @@ namespace RecyclableSR
             // generally if the content position is smaller than the position of _minVisibleItemInViewPort, this means we need to show items in tops left
             // if content position is bigger than the the position of _maxVisibleItemInViewPort, this means we need to show items in bottom right
             // _needsClearance is needed because sometimes the scrolling happens so fast that the items are not showing and normalizedPosition & _lastScrollPosition would be the same stopping the update loop
-            if (!_needsClearance && (_contentTopLeftCorner[_axis] < 0 || _contentBottomRightCorner[_axis] > content.rect.size[_axis] && _maxExtraVisibleItemInViewPort == _itemsCount - 1))
-                return;
+            if (_contentTopLeftCorner[ _axis ] < 0 || _contentBottomRightCorner[ _axis ] > content.rect.size[ _axis ] && _maxExtraVisibleItemInViewPort == _itemsCount - 1)
+            {
+                movementType = _movementType;
+                if (!_needsClearance)
+                    return;
+            }
+            else
+                movementType = MovementType.Unrestricted;
+
 
             var showBottomRight = _contentTopLeftCorner[_axis] > _lastContentPosition[_axis];
             _needsClearance = false;
@@ -850,10 +857,7 @@ namespace RecyclableSR
             }
 
             if (newIndex == _itemsCount - 1)
-            {
                 _dataSource.ReachedScrollEnd();
-                _contentSizeCalculated = true;
-            }
             
             if (_scrollToTargetIndex != -1 && _scrollToTargetIndex == newIndex)
             {
@@ -957,6 +961,16 @@ namespace RecyclableSR
                 _staticCells[cellIndex] = _dataSource.IsCellStatic(cellIndex);
             }
         }
+
+        /// <summary>
+        /// Change the movement type of the scroll view, needed to keep track of internal _movementType
+        /// </summary>
+        /// <param name="type"></param>
+        public void SetMovementType(MovementType type)
+        {
+            _movementType = type;
+            movementType = type;
+        }
         
         /// <summary>
         /// Scrolls to top of scrollRect
@@ -1058,7 +1072,7 @@ namespace RecyclableSR
                         reachedCell = true;
                     }
 
-                    if (_contentSizeCalculated && Mathf.Abs(contentBottomRightCorner[_axis]) >= content.sizeDelta[_axis])
+                    if (_maxExtraVisibleItemInViewPort == _itemsCount - 1 && Mathf.Abs(contentBottomRightCorner[_axis]) >= content.sizeDelta[_axis])
                     {
                         contentTopLeftCorner[_axis] = (content.rect.size[_axis] - _viewPortSize[_axis]) * (vertical ? 1 : -1);
                         reachedCell = true;
@@ -1072,7 +1086,7 @@ namespace RecyclableSR
                         reachedCell = true;
                     }
 
-                    if (vertical && content.anchoredPosition[_axis] <= 0 || !vertical && content.anchoredPosition[_axis] >= 0)
+                    if (_minExtraVisibleItemInViewPort == 0 && (vertical && content.anchoredPosition[_axis] <= 0 || !vertical && content.anchoredPosition[_axis] >= 0))
                     {
                         contentTopLeftCorner[_axis] = 0;
                         reachedCell = true;
