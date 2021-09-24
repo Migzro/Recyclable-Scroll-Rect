@@ -36,6 +36,7 @@ namespace RecyclableSR
         private bool _needsClearance;
         private bool _hasLayoutGroup;
         private bool _pullToRefresh;
+        private bool _contentSizeCalculated;
 
         private HashSet<int> _itemsMarkedForReload;
         private Dictionary<string, List<Item>> _pooledItems;
@@ -141,6 +142,7 @@ namespace RecyclableSR
             _extraItemsVisible = _dataSource.ExtraItemsVisible;
             _lastContentPosition = _contentTopLeftCorner;
             _isAnimating = false;
+            _contentSizeCalculated = false;
 
             _visibleItems = new SortedDictionary<int, Item>();
             
@@ -848,14 +850,13 @@ namespace RecyclableSR
             }
 
             if (newIndex == _itemsCount - 1)
+            {
                 _dataSource.ReachedScrollEnd();
+                _contentSizeCalculated = true;
+            }
             
             if (_scrollToTargetIndex != -1 && _scrollToTargetIndex == newIndex)
             {
-                var currentContentPosition = content.anchoredPosition;
-                currentContentPosition[_axis] = _itemPositions[_scrollToTargetIndex].topLeftPosition[_axis];
-                content.anchoredPosition = currentContentPosition;
-                m_ContentStartPosition = currentContentPosition;
                 _dataSource.ScrolledToCell(_visibleItems[newIndex].cell, _scrollToTargetIndex);
                 _scrollToTargetIndex = -1;
                 _isAnimating = false;
@@ -1027,7 +1028,7 @@ namespace RecyclableSR
                 
                 cellSizeAverage /= i;
                 _isAnimating = true;
-                StartCoroutine(StartScrolling(cellSizeAverage * direction));
+                StartCoroutine(StartScrolling(cellSizeAverage, direction, cellIndex));
             }
         }
 
@@ -1035,20 +1036,56 @@ namespace RecyclableSR
         /// Coroutine that keeps scrolling until we find the designated scrollToTargetIndex which is set ShowCellAtIndex
         /// </summary>
         /// <param name="cellSizeAverage">Average cell size used as a content position increment</param>
+        /// <param name="direction">direction of scroll, 1 for down or right, -1 for up or left</param>
+        /// <param name="cellIndex">cell index which we want to scroll to</param>
         /// <returns></returns>
-        private IEnumerator StartScrolling(float cellSizeAverage)
+        private IEnumerator StartScrolling(float cellSizeAverage, int direction, int cellIndex)
         {
-            if (_scrollToTargetIndex != -1)
+            var reachedCell = false;
+            var increment = cellSizeAverage * direction * (vertical ? 1 : -1);
+            var contentTopLeftCorner = content.anchoredPosition;
+            contentTopLeftCorner[_axis] += increment;
+            var contentBottomRightCorner = contentTopLeftCorner + _viewPortSize * (vertical ? 1 : -1);
+
+            if (_itemPositions[cellIndex].positionSet)
             {
-                var currentContentPosition = content.anchoredPosition;
-                currentContentPosition[_axis] += cellSizeAverage;
-                if (currentContentPosition[_axis] <= 0)
-                    currentContentPosition[_axis] = 0;
-                content.anchoredPosition = currentContentPosition;
-                m_ContentStartPosition = currentContentPosition;
-                yield return new WaitForEndOfFrame();
-                StartCoroutine(StartScrolling(cellSizeAverage));
+                var itemTopLeftCorner = _itemPositions[cellIndex].topLeftPosition[_axis];
+                if (direction == 1) 
+                {
+                    if (itemTopLeftCorner <= Mathf.Abs(contentTopLeftCorner[_axis]))
+                    {
+                        contentTopLeftCorner[_axis] = itemTopLeftCorner * (vertical ? 1 : -1);
+                        reachedCell = true;
+                    }
+
+                    if (_contentSizeCalculated && Mathf.Abs(contentBottomRightCorner[_axis]) >= content.sizeDelta[_axis])
+                    {
+                        contentTopLeftCorner[_axis] = (content.rect.size[_axis] - _viewPortSize[_axis]) * (vertical ? 1 : -1);
+                        reachedCell = true;
+                    }
+                }
+                else 
+                {
+                    if (itemTopLeftCorner >= Mathf.Abs(content.anchoredPosition[_axis]))
+                    {
+                        contentTopLeftCorner[_axis] = itemTopLeftCorner * (vertical ? 1 : -1);
+                        reachedCell = true;
+                    }
+
+                    if (vertical && content.anchoredPosition[_axis] <= 0 || !vertical && content.anchoredPosition[_axis] >= 0)
+                    {
+                        contentTopLeftCorner[_axis] = 0;
+                        reachedCell = true;
+                    }
+                }
             }
+            
+            content.anchoredPosition = contentTopLeftCorner;
+            m_ContentStartPosition = contentTopLeftCorner;
+
+            yield return new WaitForEndOfFrame();
+            if (!reachedCell)
+                StartCoroutine(StartScrolling(cellSizeAverage, direction, cellIndex));
         }
 
         /// <summary>
