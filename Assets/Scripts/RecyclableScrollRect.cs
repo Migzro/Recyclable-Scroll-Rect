@@ -9,8 +9,6 @@ namespace RecyclableSR
 {
     public class RecyclableScrollRect : ScrollRect
     {
-        // todo: test horizontal for the seventeenth time
-
         private VerticalLayoutGroup _verticalLayoutGroup;
         private HorizontalLayoutGroup _horizontalLayoutGroup;
         private ContentSizeFitter _contentSizeFitter;
@@ -30,7 +28,6 @@ namespace RecyclableSR
         private int _minExtraVisibleItemInViewPort;
         private int _maxExtraVisibleItemInViewPort;
         private int _scrollToTargetIndex;
-        private float _spacing;
         private bool _init;
         private bool _isAnimating;
         private bool _needsClearance;
@@ -46,6 +43,7 @@ namespace RecyclableSR
         private Vector2 _lastContentPosition;
         private Vector2 _contentTopLeftCorner;
         private Vector2 _contentBottomRightCorner;
+        private Vector2 _spacing;
         private RectOffset _padding;
         private TextAnchor _alignment;
         private MovementType _movementType;
@@ -77,7 +75,7 @@ namespace RecyclableSR
                 {
                     _hasLayoutGroup = true;
                     _padding = _verticalLayoutGroup.padding;
-                    _spacing = _verticalLayoutGroup.spacing;
+                    _spacing = new Vector2(0, _verticalLayoutGroup.spacing);
                     _alignment = _verticalLayoutGroup.childAlignment;
                 }
             }
@@ -88,7 +86,7 @@ namespace RecyclableSR
                 {
                     _hasLayoutGroup = true;
                     _padding = _horizontalLayoutGroup.padding;
-                    _spacing = _horizontalLayoutGroup.spacing;
+                    _spacing = new Vector2(_horizontalLayoutGroup.spacing, 0);
                     _alignment = _horizontalLayoutGroup.childAlignment;
                 }
             }
@@ -210,12 +208,12 @@ namespace RecyclableSR
             {
                 if (vertical && _verticalLayoutGroup != null)
                 {
-                    contentSizeDelta.y += _spacing * (_itemsCount - 1);
+                    contentSizeDelta.y += _spacing[_axis] * (_itemsCount - 1);
                     contentSizeDelta.y += _padding.top + _padding.bottom;
                 }
                 else if (!vertical && _horizontalLayoutGroup != null)
                 {
-                    contentSizeDelta.x += _spacing * (_itemsCount - 1);
+                    contentSizeDelta.x += _spacing[_axis] * (_itemsCount - 1);
                     contentSizeDelta.x += _padding.right + _padding.left;
                 }
 
@@ -299,7 +297,7 @@ namespace RecyclableSR
         private void InitializeCells(int startIndex = 0)
         {
             GetContentBounds();
-            var contentHasSpace = startIndex == 0 || _itemPositions[startIndex - 1].bottomRightPosition[_axis] + _spacing <= _contentBottomRightCorner[_axis];
+            var contentHasSpace = startIndex == 0 || _itemPositions[startIndex - 1].bottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
             var extraItemsInitialized = contentHasSpace ? 0 : _maxExtraVisibleItemInViewPort - _maxVisibleItemInViewPort;
             var i = startIndex;
             while ((contentHasSpace || extraItemsInitialized < _extraItemsVisible) && i < _itemsCount)
@@ -310,7 +308,7 @@ namespace RecyclableSR
                 else
                     _maxVisibleItemInViewPort = i;
 
-                contentHasSpace = _itemPositions[i].bottomRightPosition[_axis] + _spacing <= _contentBottomRightCorner[_axis];
+                contentHasSpace = _itemPositions[i].bottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
                 i++;
             }
             _maxExtraVisibleItemInViewPort = i - 1;
@@ -663,7 +661,7 @@ namespace RecyclableSR
             else
             {
                 var verticalSign = vertical ? -1 : 1;
-                newItemPosition[_axis] = verticalSign * _itemPositions[newIndex - 1].bottomRightPosition[_axis] + verticalSign * _spacing;
+                newItemPosition[_axis] = verticalSign * _itemPositions[newIndex - 1].bottomRightPosition[_axis] + verticalSign * _spacing[_axis];
             }
 
             rect.anchoredPosition = newItemPosition;
@@ -774,7 +772,7 @@ namespace RecyclableSR
                 }
 
                 // item at bottom or right needs to appear
-                if (_maxVisibleItemInViewPort < _itemsCount - 1 && _contentBottomRightCorner[_axis] >= _itemPositions[_maxVisibleItemInViewPort].bottomRightPosition[_axis] + _spacing)
+                if (_maxVisibleItemInViewPort < _itemsCount - 1 && _contentBottomRightCorner[_axis] >= _itemPositions[_maxVisibleItemInViewPort].bottomRightPosition[_axis] + _spacing[_axis])
                 {
                     var newMaxItemToCheck = _maxVisibleItemInViewPort + 1;
                     var itemToShow = newMaxItemToCheck + _extraItemsVisible;
@@ -801,7 +799,7 @@ namespace RecyclableSR
                 }
 
                 // item at top or left needs to appear
-                if (_minVisibleItemInViewPort > 0 && _contentTopLeftCorner[_axis] <= _itemPositions[_minVisibleItemInViewPort].topLeftPosition[_axis] - _spacing)
+                if (_minVisibleItemInViewPort > 0 && _contentTopLeftCorner[_axis] <= _itemPositions[_minVisibleItemInViewPort].topLeftPosition[_axis] - _spacing[_axis])
                 {
                     var newMinItemToCheck = _minVisibleItemInViewPort - 1;
                     var itemToShow = newMinItemToCheck - _extraItemsVisible;
