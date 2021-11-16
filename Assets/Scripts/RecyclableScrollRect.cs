@@ -856,6 +856,7 @@ namespace RecyclableSR
             // generally if the content position is smaller than the position of _minVisibleItemInViewPort, this means we need to show items in tops left
             // if content position is bigger than the the position of _maxVisibleItemInViewPort, this means we need to show items in bottom right
             // _needsClearance is needed because sometimes the scrolling happens so fast that the items are not showing and normalizedPosition & _lastScrollPosition would be the same stopping the update loop
+            // TODO: if writing code for reversed grids _maxExtraVisibleItemInViewPort needs to be _maxGridItemsInAxis - 1
             if (_contentTopLeftCorner[ _axis ] <= 0 || _contentBottomRightCorner[ _axis ] >= content.rect.size[ _axis ] && _maxExtraVisibleItemInViewPort == _itemsCount - 1)
             {
                 movementType = _movementType;
