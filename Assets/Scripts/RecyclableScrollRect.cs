@@ -815,7 +815,8 @@ namespace RecyclableSR
                 return;
             if (_visibleItems.Count <= 0)
                 return;
-            if (Mathf.Approximately(content.anchoredPosition[_axis], _lastContentPosition[_axis]) && !_needsClearance)
+            var currentContentAnchoredPosition = content.anchoredPosition * (vertical ? 1f : -1f);
+            if (Mathf.Approximately(currentContentAnchoredPosition[_axis], _lastContentPosition[_axis]) && !_needsClearance)
                 return;
             
             GetContentBounds();
@@ -843,20 +844,21 @@ namespace RecyclableSR
             else
                 movementType = MovementType.Unrestricted;
 
-
             var showBottomRight = _contentTopLeftCorner[_axis] > _lastContentPosition[_axis];
             _needsClearance = false;
-            if (_itemPositions[_minVisibleItemInViewPort].topLeftPosition[_axis] - _contentTopLeftCorner[_axis] > 0.1f)
+            var topLeftMinClearance = 0.1f + (vertical ? _padding.top : _padding.left) * (_minVisibleItemInViewPort == 0 ? 1 : 0) + _spacing[_axis] * (_minVisibleItemInViewPort == 0 ? 0 : 1);
+            var bottomRightMinClearance = 0.1f + (vertical ? _padding.bottom : _padding.right) * (_maxVisibleItemInViewPort == _itemsCount - 1 ? 1 : 0) + _spacing[_axis] * (_maxVisibleItemInViewPort == _itemsCount - 1 ? 0 : 1);
+            if (_itemPositions[_minVisibleItemInViewPort].topLeftPosition[_axis] - _contentTopLeftCorner[_axis] > topLeftMinClearance)
             {
                 showBottomRight = false;
                 _needsClearance = true;
             }
-            else if (_itemPositions[_maxVisibleItemInViewPort].bottomRightPosition[_axis] - _contentBottomRightCorner[_axis] < -0.1f)
+            else if (_itemPositions[_maxVisibleItemInViewPort].bottomRightPosition[_axis] - _contentBottomRightCorner[_axis] < -bottomRightMinClearance)
             {
                 showBottomRight = true;
                 _needsClearance = true;
             }
-            _lastContentPosition = content.anchoredPosition;
+            _lastContentPosition = currentContentAnchoredPosition;
             if (showBottomRight)
             {
                 // item at top or left is not in viewport
