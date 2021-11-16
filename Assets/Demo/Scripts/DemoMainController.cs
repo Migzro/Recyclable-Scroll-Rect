@@ -23,23 +23,33 @@ public class DemoMainController : MonoBehaviour, IDataSource
         _dataSource = new List<string>();
         for (var i = 0; i < _itemsCount; i++)
         {
-            _dataSource.Add(i + " " + RandomString(Random.Range(0, 200)));
+            // _dataSource.Add(i + " " + RandomString(Random.Range(0, 200)));
+            _dataSource.Add( i.ToString() );
         }
         _scrollRect.Initialize(this);
-        Invoke(nameof(ChangeCellData), 5);
+        // Invoke(nameof(ChangeCellData), 2.5f);
     }
 
     private void ChangeCellData()
     {
+        _dataSource[5] = "5 " + RandomString(Random.Range(0, 200));
+        _scrollRect.ReloadCell(5, "Tag", true);
+        // _scrollRect.ScrollToCell(99);
+        Invoke(nameof(Test), 5f);
+    }
+    private void Test()
+    {
+        _dataSource[ 5 ] = "5";
+        _scrollRect.ReloadCell(5, "Tag", true);
         // _dataSource[5] = "5 " + RandomString(Random.Range(0, 200));
         // _scrollRect.ReloadCell(5, "Tag", true);
-        _scrollRect.ScrollToCell(40);
+        // _scrollRect.ScrollToCell(0);
     }
 
     public float GetCellSize(int cellIndex)
     {
         // return _scrollRect.vertical ? 40.22f : 60.28f; // if cell size is known
-        return -1;
+        return 500;
     }
 
     public void SetCellData(ICell cell, int cellIndex)
@@ -49,10 +59,10 @@ public class DemoMainController : MonoBehaviour, IDataSource
 
     public GameObject GetPrototypeCell(int cellIndex)
     {
-        if (cellIndex % 2 == 0)
+        // if (cellIndex % 2 == 0)
             return _prototypeCells[0]; 
         
-        return _prototypeCells[1];
+        // return _prototypeCells[1];
     }
 
     public void CellCreated(int cellIndex, ICell cell, GameObject cellGo)
@@ -77,11 +87,12 @@ public class DemoMainController : MonoBehaviour, IDataSource
 
     public void PullToRefresh()
     {
+        Debug.Log( "Pull to refresh" );
     }
 
     public void ReachedScrollEnd()
     {
-        
+        Debug.Log( "End" );
     }
 
     private static System.Random random = new System.Random();
