@@ -10,6 +10,7 @@ namespace RecyclableSR
     public class RecyclableScrollRect : ScrollRect
     {
         // TODO: different start axes for grid layout
+        // TODO: FixedColumnCount with Vertical Grids & FixedRowCount with Horizontal Grids (remaining _maxExtraVisibleItemInViewPort needs to be / _maxGridsItemsInAxis
         
         private VerticalLayoutGroup _verticalLayoutGroup;
         private HorizontalLayoutGroup _horizontalLayoutGroup;
@@ -65,12 +66,12 @@ namespace RecyclableSR
 
             if (_dataSource == null)
             {
-                throw new ArgumentNullException(nameof(dataSource), "IDataSource is null");
+                throw new ArgumentNullException(nameof(dataSource), "RSR, IDataSource is null");
             }
 
             if (_dataSource.PrototypeCells == null || _dataSource.PrototypeCells.Length <= 0)
             {
-                throw new ArgumentNullException(nameof(_dataSource.PrototypeCells), "No prototype cell defined IDataSource");
+                throw new ArgumentNullException(nameof(_dataSource.PrototypeCells), "RSR, No prototype cell defined IDataSource");
             }
 
             // get the layouts and their settings if present
@@ -85,16 +86,34 @@ namespace RecyclableSR
 
                 if (_gridLayout.constraint == GridLayoutGroup.Constraint.Flexible)
                 {
-                    if (vertical)
-                    {
-                        Debug.LogWarning("RSR, Flexible constraints is currently not supported, defaulting to 1 Fixed Column Count");
-                        _gridConstraint = 1;
-                    }
-                    else
-                    {
-                        Debug.LogWarning("RSR, Flexible constraints is currently not supported, defaulting to 1 Fixed Row Count");
-                        _gridConstraint = 1;
-                    }
+                    throw new Exception("RSR, Flexible Constraints not currently supported");
+                    // if (vertical)
+                    // {
+                    //     Debug.LogWarning("RSR, Flexible constraints is currently not supported, defaulting to 1 Fixed Column Count");
+                    //     _gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+                    //     _gridLayout.startAxis = GridLayoutGroup.Axis.Horizontal;
+                    //     _gridConstraint = 1;
+                    //     
+                    // }
+                    // else
+                    // {
+                    //     Debug.LogWarning("RSR, Flexible constraints is currently not supported, defaulting to 1 Fixed Row Count");
+                    //     _gridLayout.constraint = GridLayoutGroup.Constraint.FixedRowCount;
+                    //     _gridLayout.startAxis = GridLayoutGroup.Axis.Vertical;
+                    //     _gridConstraint = 1;
+                    // }
+                }
+                else if (_gridLayout.constraint == GridLayoutGroup.Constraint.FixedColumnCount && _gridLayout.startAxis == GridLayoutGroup.Axis.Vertical)
+                {
+                    throw new Exception("RSR, FixedColumnCount Constraints with Vertical Axis not currently supported");
+                    // Debug.LogWarning("RSR, FixedColumnCount constraints with Vertical start axis is currently not supported, defaulting to Horizontal start axis");
+                    // _gridLayout.startAxis = GridLayoutGroup.Axis.Horizontal;
+                }
+                else if (_gridLayout.constraint == GridLayoutGroup.Constraint.FixedRowCount && _gridLayout.startAxis == GridLayoutGroup.Axis.Horizontal)
+                {
+                    throw new Exception("RSR, FixedRowCount Constraints with Horizontal Axis not currently supported");
+                    // Debug.LogWarning("RSR, FixedRowCount constraints with Horizontal start axis is currently not supported, defaulting to Vertical start axis");
+                    // _gridLayout.startAxis = GridLayoutGroup.Axis.Vertical;
                 }
                 else
                     _gridConstraint = _gridLayout.constraintCount;
@@ -720,6 +739,7 @@ namespace RecyclableSR
                     }
                     else
                     {
+                        // TODO: Reversed Grid Code
                         xIndexInGrid = newIndex % _maxGridItemsInAxis;
                         yIndexInGrid = Mathf.FloorToInt(newIndex / (float) _maxGridItemsInAxis);
                     }
@@ -733,6 +753,7 @@ namespace RecyclableSR
                     }
                     else
                     {
+                        // TODO: Reversed Grid Code
                         xIndexInGrid = newIndex % _gridConstraint;
                         yIndexInGrid = Mathf.FloorToInt(newIndex / (float) _gridConstraint);
                     }
@@ -961,6 +982,7 @@ namespace RecyclableSR
                 }
                 else
                 {
+                    // TODO: Reversed Grid Code
                     if (gridLayoutPage == GridLayoutPage.Single)
                         indices.Add(newIndex);
                     else if (newIndex < _maxGridItemsInAxis)
