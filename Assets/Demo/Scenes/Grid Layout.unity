@@ -240,7 +240,7 @@ MonoBehaviour:
   _scrollRect: {fileID: 1904557390}
   _prototypeCells:
   - {fileID: 1638117046129563386, guid: 7d07dc272788b4bc9a294d5f0345009a, type: 3}
-  _extraItemsVisible: 0
+  _extraItemsVisible: 9
 --- !u!1 &1362537419
 GameObject:
   m_ObjectHideFlags: 0
@@ -312,7 +312,7 @@ MonoBehaviour:
     m_Bottom: 50
   m_ChildAlignment: 0
   m_StartCorner: 0
-  m_StartAxis: 0
+  m_StartAxis: 1
   m_CellSize: {x: 500, y: 400}
   m_Spacing: {x: 20, y: 40}
   m_Constraint: 2

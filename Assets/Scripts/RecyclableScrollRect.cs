@@ -368,7 +368,7 @@ namespace RecyclableSR
         private void InitializeCells(int startIndex = 0)
         {
             GetContentBounds();
-            var contentHasSpace = startIndex == 0 || _itemPositions[startIndex - 1].bottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
+            var contentHasSpace = startIndex == 0 || _itemPositions[startIndex - 1].bottomRightPosition[_axis] + _spacing[_axis] + (vertical ? _padding.bottom : _padding.right) <= _contentBottomRightCorner[_axis];
             var extraItemsInitialized = contentHasSpace ? 0 : _maxExtraVisibleItemInViewPort - _maxVisibleItemInViewPort;
             var i = startIndex;
             while ((contentHasSpace || extraItemsInitialized < _extraItemsVisible) && i < _itemsCount)
@@ -494,6 +494,10 @@ namespace RecyclableSR
             var cell = _visibleItems[cellIndex];
             if (reloadData)
                 _dataSource.SetCellData(cell.cell, cellIndex);
+
+            // No need to calculate anything for grid since its cell size doesn't change
+            if (_isGridLayout)
+                return;
 
             var oldSize = _itemPositions[cellIndex].cellSize[_axis];
             CalculateCellAxisSize(cell.transform, cellIndex);
@@ -959,24 +963,22 @@ namespace RecyclableSR
                 if (_gridLayout.constraint == GridLayoutGroup.Constraint.FixedRowCount && _gridLayout.startAxis == GridLayoutGroup.Axis.Vertical
                     || _gridLayout.constraint == GridLayoutGroup.Constraint.FixedColumnCount && _gridLayout.startAxis == GridLayoutGroup.Axis.Horizontal)
                 {
-
-                    if (gridLayoutPage == GridLayoutPage.After && newIndex % _gridConstraint == 0)
+                    if (gridLayoutPage == GridLayoutPage.After)
                     {
-                        for (var i = 0; i < _gridConstraint; i++)
+                        // equation to get the highest multiple of newIndex where _gridConstraint is the multiple
+                        var maxItemToShow = _gridConstraint * Mathf.FloorToInt((float) newIndex / _gridConstraint) + _gridConstraint;
+                        for (var i = newIndex; i < maxItemToShow; i++)
                         {
-                            var cellIndex = newIndex + i;
-                            if (cellIndex < _itemsCount)
-                                indices.Add(cellIndex);
+                            if (i < _itemsCount)
+                                indices.Add(i);
                         }
                     }
-                    else if (gridLayoutPage == GridLayoutPage.Before && newIndex % _gridConstraint == _gridConstraint - 1)
+                    else if (gridLayoutPage == GridLayoutPage.Before)
                     {
-                        for (var i = 0; i < _gridConstraint; i++)
-                        {
-                            var cellIndex = newIndex - i;
-                            if (cellIndex >= 0)
-                                indices.Add(cellIndex);
-                        }
+                        // equation to get the lowest multiple of newIndex where _gridConstraint is the multiple
+                        var minItemToShow = _gridConstraint * Mathf.FloorToInt((float) newIndex / _gridConstraint);  
+                        for (var i = newIndex; i >= minItemToShow; i--)
+                            indices.Add(i);
                     }
                     else if (gridLayoutPage == GridLayoutPage.Single)
                         indices.Add(newIndex);
@@ -999,9 +1001,9 @@ namespace RecyclableSR
 
                 for (var i = 0; i < indices.Count; i++)
                 {
-                    if (show)
+                    if (show && !_visibleItems.ContainsKey(indices[i]))
                         ShowCellAtIndex(indices[i]);
-                    else
+                    else if (!show && _visibleItems.ContainsKey(indices[i]))
                         HideCellAtIndex(indices[i]);
                 }
             }
