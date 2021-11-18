@@ -371,7 +371,8 @@ namespace RecyclableSR
             var contentHasSpace = startIndex == 0 || _itemPositions[startIndex - 1].bottomRightPosition[_axis] + _spacing[_axis] + (vertical ? _padding.bottom : _padding.right) <= _contentBottomRightCorner[_axis];
             var extraItemsInitialized = contentHasSpace ? 0 : _maxExtraVisibleItemInViewPort - _maxVisibleItemInViewPort;
             var i = startIndex;
-            while ((contentHasSpace || extraItemsInitialized < _extraItemsVisible) && i < _itemsCount)
+            var gridHasSpace = _isGridLayout && startIndex % _gridConstraint != 0 && i < _itemsCount;
+            while ((contentHasSpace || gridHasSpace || extraItemsInitialized < _extraItemsVisible) && i < _itemsCount)
             {
                 ShowHideCellsAtIndex(i, true, GridLayoutPage.After);
                 if (!contentHasSpace)
@@ -379,7 +380,8 @@ namespace RecyclableSR
                 else
                     _maxVisibleItemInViewPort = i;
 
-                contentHasSpace = _itemPositions[i].bottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
+                contentHasSpace = _itemPositions[i].bottomRightPosition[_axis] + _spacing[_axis] + (vertical ? _padding.bottom : _padding.right) <= _contentBottomRightCorner[_axis];
+                gridHasSpace = _isGridLayout && startIndex % _gridConstraint != 0 && i < _itemsCount;
                 i++;
             }
             _maxExtraVisibleItemInViewPort = i - 1;
