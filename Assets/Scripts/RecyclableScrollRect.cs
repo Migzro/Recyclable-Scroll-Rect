@@ -313,7 +313,7 @@ namespace RecyclableSR
         
         /// <summary>
         /// Hide the static cells at the start
-        /// Their visibility will depend on whether they are in viewport or ont
+        /// Their visibility will depend on whether they are in viewport or not
         /// </summary>
         private void HideStaticCells()
         {
@@ -321,9 +321,20 @@ namespace RecyclableSR
             {
                 if (_staticCells[i])
                 {
-                    var cellGO = _dataSource.GetPrototypeCell(i);
-                    SetVisibilityInHierarchy((RectTransform)cellGO.transform, false);
-                    cellGO.SetActive(false);
+                    RectTransform cellRect;
+                    if (_visibleItems.ContainsKey(i))
+                        cellRect = _visibleItems[i].transform;
+                    else
+                        cellRect = (RectTransform)_dataSource.GetPrototypeCell(i).transform;
+                    SetVisibilityInHierarchy(cellRect, false);
+
+                    if (_dataSource.IsSetVisibleUsingCanvasGroupAlpha)
+                    {
+                        var cell = cellRect.GetComponent<ICell>() ?? cellRect.gameObject.AddComponent<BaseCell>();
+                        cell.CanvasGroup.alpha = 0;
+                    }
+                    else
+                        cellRect.gameObject.SetActive(false);
                 }
             }
         }
@@ -397,20 +408,26 @@ namespace RecyclableSR
             var itemPrototypeCell = _dataSource.GetPrototypeCell(index);
 
             GameObject itemGo;
-            ICell cell = null;
+            ICell cell;
             if (!_staticCells[index])
             {
                 itemGo = Instantiate(itemPrototypeCell, content, false);
                 cell = itemGo.GetComponent<ICell>();
-                cell.recyclableScrollRect = this;
-                cell.cellIndex = index;
+                cell.RecyclableScrollRect = this;
+                cell.CellIndex = index;
                 itemGo.name = itemPrototypeCell.name + " " + index;
             }
             else
             {
                 itemGo = itemPrototypeCell;
+                cell = itemGo.GetComponent<ICell>() ?? itemGo.AddComponent<BaseCell>();
+                cell.RecyclableScrollRect = this;
+                cell.CellIndex = index;
+                
                 SetVisibilityInHierarchy((RectTransform)itemGo.transform, true);
                 itemGo.SetActive(true);
+                if (_dataSource.IsSetVisibleUsingCanvasGroupAlpha)
+                    cell.CanvasGroup.alpha = 1;
             }
 
             var rect = itemGo.transform as RectTransform;
@@ -1025,13 +1042,15 @@ namespace RecyclableSR
             {
                 var item = _pooledItems[cellPrototypeName][0];
                 _pooledItems[cellPrototypeName].RemoveAt(0);
-                
-                item.transform.gameObject.SetActive(true);
+
+                if (_dataSource.IsSetVisibleUsingCanvasGroupAlpha)
+                    item.cell.CanvasGroup.alpha = 1;
+                else
+                    item.transform.gameObject.SetActive(true);
                 SetVisibilityInHierarchy(item.transform, true);
 
                 _visibleItems.Add(newIndex, item);
-                if (!_staticCells[newIndex])
-                    item.cell.cellIndex = newIndex;
+                item.cell.CellIndex = newIndex;
                 
                 SetCellAxisPosition(item.transform, newIndex);
                 _dataSource.SetCellData(item.cell, newIndex);
@@ -1081,8 +1100,13 @@ namespace RecyclableSR
         /// <param name="cellIndex">cellIndex which will be hidden</param>
         private void HideCellAtIndex(int cellIndex)
         {
-            _visibleItems[cellIndex].transform.gameObject.SetActive(false);
+            if (_dataSource.IsSetVisibleUsingCanvasGroupAlpha)
+                _visibleItems[cellIndex].cell.CanvasGroup.alpha = 0;
+            else
+                _visibleItems[cellIndex].transform.gameObject.SetActive(false);
+            
             SetVisibilityInHierarchy(_visibleItems[cellIndex].transform, false);
+            _dataSource.CellHidden(_visibleItems[cellIndex].cell, cellIndex);
             _pooledItems[_prototypeNames[cellIndex]].Add(_visibleItems[cellIndex]);
             _visibleItems.Remove(cellIndex);
         }

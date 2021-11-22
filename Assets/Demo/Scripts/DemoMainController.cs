@@ -16,6 +16,7 @@ public class DemoMainController : MonoBehaviour, IDataSource
     public int ItemsCount => _itemsCount;
     public int ExtraItemsVisible => _extraItemsVisible;
     public bool IsCellSizeKnown => false;
+    public bool IsSetVisibleUsingCanvasGroupAlpha { get; }
     public GameObject[] PrototypeCells => _prototypeCells;
 
     private void Start()
@@ -55,6 +56,10 @@ public class DemoMainController : MonoBehaviour, IDataSource
     public void SetCellData(ICell cell, int cellIndex)
     {
         (cell as DemoCellPrototype)?.Initialize(_dataSource[cellIndex]);
+    }
+
+    public void CellHidden(ICell cell, int cellIndex)
+    {
     }
 
     public GameObject GetPrototypeCell(int cellIndex)
