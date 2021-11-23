@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace RecyclableSR
@@ -11,6 +12,9 @@ namespace RecyclableSR
     {
         // TODO: different start axes for grid layout
         // TODO: FixedColumnCount with Vertical Grids & FixedRowCount with Horizontal Grids (remaining _maxExtraVisibleItemInViewPort needs to be / _maxGridsItemsInAxis
+        [SerializeField] private float _swipeThreshold = 200;
+        [SerializeField] private bool _paged;
+        [SerializeField] private float _scrollingSpeed;
         
         private VerticalLayoutGroup _verticalLayoutGroup;
         private HorizontalLayoutGroup _horizontalLayoutGroup;
@@ -34,12 +38,14 @@ namespace RecyclableSR
         private int _scrollToTargetIndex;
         private int _gridConstraint;
         private int _maxGridItemsInAxis;
+        private int _currentPage;
         private bool _init;
         private bool _isAnimating;
         private bool _needsClearance;
         private bool _hasLayoutGroup;
         private bool _pullToRefresh;
         private bool _isGridLayout;
+        private bool _isDragging;
 
         private HashSet<int> _itemsMarkedForReload;
         private Dictionary<string, List<Item>> _pooledItems;
@@ -51,6 +57,7 @@ namespace RecyclableSR
         private Vector2 _contentTopLeftCorner;
         private Vector2 _contentBottomRightCorner;
         private Vector2 _spacing;
+        private Vector2 _dragStartingPosition;
         private RectOffset _padding;
         private TextAnchor _alignment;
         private MovementType _movementType;
@@ -155,6 +162,7 @@ namespace RecyclableSR
                     _layoutElement = content.gameObject.AddComponent<LayoutElement>();
             }
 
+            _currentPage = 0;
             _viewPortSize = viewport.rect.size;
             _axis = vertical ? 1 : 0;
             
@@ -1074,12 +1082,6 @@ namespace RecyclableSR
             if (newIndex == _itemsCount - 1)
                 _dataSource.ReachedScrollEnd();
             
-            if (_scrollToTargetIndex != -1 && _scrollToTargetIndex == newIndex)
-            {
-                _dataSource.ScrolledToCell(_visibleItems[newIndex].cell, _scrollToTargetIndex);
-                _scrollToTargetIndex = -1;
-                _isAnimating = false;
-            }
             SetChildrenIndices();
         }
 
@@ -1235,35 +1237,47 @@ namespace RecyclableSR
         /// if not keep scrolling until its known
         /// </summary>
         /// <param name="cellIndex">cell index needed to scroll to</param>
-        public void ScrollToCell(int cellIndex)
+        /// <param name="callEvent">call scroll to cell event, usually not needed when calling ScrollToCell from OnEndDrag if RSR is paged</param>
+        /// <param name="instant">scroll instantly</param>
+        public void ScrollToCell(int cellIndex, bool callEvent = true, bool instant = false)
         {
             StopMovement();
-            if (_itemPositions[cellIndex].positionSet && _visibleItems.ContainsKey(cellIndex))
+            var itemVisiblePositionKnown = _itemPositions[cellIndex].positionSet && _visibleItems.ContainsKey(cellIndex);
+            if (itemVisiblePositionKnown && instant)
             {
                 var currentContentPosition = content.anchoredPosition;
-                currentContentPosition[_axis] = _itemPositions[cellIndex].topLeftPosition[_axis];
+                currentContentPosition[_axis] = _itemPositions[cellIndex].topLeftPosition[_axis] * (vertical ? 1 : -1);
                 content.anchoredPosition = currentContentPosition;
                 m_ContentStartPosition = currentContentPosition;
-                _dataSource.ScrolledToCell(_visibleItems[cellIndex].cell, cellIndex);
+                if (callEvent)
+                    _dataSource.ScrolledToCell(_visibleItems[cellIndex].cell, cellIndex);
                 _scrollToTargetIndex = -1;
+                _currentPage = cellIndex;
+                _isAnimating = false;
             }
             else
             {
                 _scrollToTargetIndex = cellIndex;
-                var direction = cellIndex > _minVisibleItemInViewPort ? 1 : -1; 
-                var cellSizeAverage = 0f;
-                int i;
-                for (i = 0; i < _itemPositions.Count; i++)
+                var direction = cellIndex > _minVisibleItemInViewPort ? 1 : -1;
+
+                if (_scrollingSpeed == 0)
                 {
-                    if (_itemPositions[i].sizeSet)
-                        cellSizeAverage += _itemPositions[i].cellSize[_axis];
-                    else
-                        break;
+                    var cellSizeAverage = 0f;
+                    int i;
+                    for (i = 0; i < _itemPositions.Count; i++)
+                    {
+                        if (_itemPositions[i].sizeSet)
+                            cellSizeAverage += _itemPositions[i].cellSize[_axis];
+                        else
+                            break;
+                    }
+
+                    cellSizeAverage /= i;
+                    _scrollingSpeed = cellSizeAverage;
                 }
-                
-                cellSizeAverage /= i;
+
                 _isAnimating = true;
-                StartCoroutine(StartScrolling(cellSizeAverage, direction, cellIndex));
+                StartCoroutine(StartScrolling(_scrollingSpeed, direction, cellIndex, callEvent));
             }
         }
 
@@ -1273,8 +1287,9 @@ namespace RecyclableSR
         /// <param name="cellSizeAverage">Average cell size used as a content position increment</param>
         /// <param name="direction">direction of scroll, 1 for down or right, -1 for up or left</param>
         /// <param name="cellIndex">cell index which we want to scroll to</param>
+        /// <param name="callEvent">call scroll to cell event, usually not needed when calling ScrollToCell from OnEndDrag if RSR is paged</param>
         /// <returns></returns>
-        private IEnumerator StartScrolling(float cellSizeAverage, int direction, int cellIndex)
+        private IEnumerator StartScrolling(float cellSizeAverage, int direction, int cellIndex, bool callEvent)
         {
             var reachedCell = false;
             var increment = cellSizeAverage * direction * (vertical ? 1 : -1);
@@ -1293,7 +1308,7 @@ namespace RecyclableSR
                         reachedCell = true;
                     }
 
-                    // reached bottom
+                    // reached bottom or right
                     if (_maxExtraVisibleItemInViewPort == _itemsCount - 1 && Mathf.Abs(contentBottomRightCorner[_axis]) >= content.sizeDelta[_axis])
                     {
                         contentTopLeftCorner[_axis] = (content.rect.size[_axis] - _viewPortSize[_axis]) * (vertical ? 1 : -1);
@@ -1302,14 +1317,14 @@ namespace RecyclableSR
                 }
                 else 
                 {
-                    if (itemTopLeftCorner >= Mathf.Abs(content.anchoredPosition[_axis]))
+                    if (itemTopLeftCorner >= Mathf.Abs(contentTopLeftCorner[_axis]))
                     {
                         contentTopLeftCorner[_axis] = itemTopLeftCorner * (vertical ? 1 : -1);
                         reachedCell = true;
                     }
 
-                    // reached top
-                    if (vertical && content.anchoredPosition[_axis] <= 0 || !vertical && content.anchoredPosition[_axis] >= 0)
+                    // reached top or left
+                    if (vertical && contentTopLeftCorner[_axis] <= 0 || !vertical && contentTopLeftCorner[_axis] >= 0)
                     {
                         contentTopLeftCorner[_axis] = 0;
                         reachedCell = true;
@@ -1322,7 +1337,15 @@ namespace RecyclableSR
 
             yield return new WaitForEndOfFrame();
             if (!reachedCell)
-                StartCoroutine(StartScrolling(cellSizeAverage, direction, cellIndex));
+                StartCoroutine(StartScrolling(cellSizeAverage, direction, cellIndex, callEvent));
+            else
+            {
+                if (callEvent)
+                    _dataSource.ScrolledToCell(_visibleItems[cellIndex].cell, cellIndex);
+                _scrollToTargetIndex = -1;
+                _currentPage = cellIndex;
+                _isAnimating = false;
+            }
         }
 
         /// <summary>
@@ -1337,6 +1360,39 @@ namespace RecyclableSR
             var itemTransform = item.transform;
             itemTransform.hideFlags = visible ? HideFlags.None : HideFlags.HideInHierarchy;
 #endif
+        }
+        
+        public override void OnBeginDrag(PointerEventData eventData)
+        {
+            base.OnBeginDrag(eventData);
+
+            if (!_paged)
+                return;
+            
+            _isDragging = true;
+            _dragStartingPosition = content.anchoredPosition * (vertical ? 1f : -1f);
+        }
+
+        public override void OnEndDrag(PointerEventData eventData)
+        {
+            base.OnEndDrag(eventData);
+            if (!_isDragging || !_paged)
+                return;
+            
+            _isDragging = false;
+            var currentContentPosition = content.anchoredPosition * (vertical ? 1f : -1f);
+            var distance = Vector3.Distance(_dragStartingPosition, currentContentPosition);
+            var isNextPage = currentContentPosition[_axis] > _dragStartingPosition[_axis];
+            var newPage = _currentPage;
+            if (distance > _swipeThreshold)
+            {
+                if (isNextPage && _currentPage < _itemsCount - 1)
+                    newPage++;
+                else if (!isNextPage && _currentPage > 0)
+                    newPage--;
+            }
+            
+            ScrollToCell(newPage, false);
         }
     }
 }

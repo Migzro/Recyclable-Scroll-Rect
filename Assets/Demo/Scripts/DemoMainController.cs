@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using RecyclableSR;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class DemoMainController : MonoBehaviour, IDataSource
 {
@@ -15,7 +17,7 @@ public class DemoMainController : MonoBehaviour, IDataSource
     
     public int ItemsCount => _itemsCount;
     public int ExtraItemsVisible => _extraItemsVisible;
-    public bool IsCellSizeKnown => false;
+    public bool IsCellSizeKnown => true;
     public bool IsSetVisibleUsingCanvasGroupAlpha { get; }
     public GameObject[] PrototypeCells => _prototypeCells;
 
@@ -50,7 +52,7 @@ public class DemoMainController : MonoBehaviour, IDataSource
     public float GetCellSize(int cellIndex)
     {
         // return _scrollRect.vertical ? 40.22f : 60.28f; // if cell size is known
-        return 500;
+        return 750;
     }
 
     public void SetCellData(ICell cell, int cellIndex)
@@ -64,10 +66,10 @@ public class DemoMainController : MonoBehaviour, IDataSource
 
     public GameObject GetPrototypeCell(int cellIndex)
     {
-        // if (cellIndex % 2 == 0)
+        if (cellIndex % 2 == 0)
             return _prototypeCells[0]; 
         
-        // return _prototypeCells[1];
+        return _prototypeCells[1];
     }
 
     public void CellCreated(int cellIndex, ICell cell, GameObject cellGo)
