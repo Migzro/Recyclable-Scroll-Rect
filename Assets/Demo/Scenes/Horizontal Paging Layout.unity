@@ -241,7 +241,7 @@ MonoBehaviour:
   _prototypeCells:
   - {fileID: 1638117046129563386, guid: 5f88a912c63114bf5956ff1a0d6b41b6, type: 3}
   - {fileID: 1638117046129563386, guid: b8cbbbf5ec9f84862a015809422f9fbe, type: 3}
-  _extraItemsVisible: 0
+  _extraItemsVisible: 1
 --- !u!1 &1362537419
 GameObject:
   m_ObjectHideFlags: 0
@@ -306,12 +306,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Padding:
-    m_Left: 20
-    m_Right: 20
+    m_Left: 0
+    m_Right: 0
     m_Top: 0
     m_Bottom: 0
   m_ChildAlignment: 0
-  m_Spacing: 10
+  m_Spacing: 0
   m_ChildForceExpandWidth: 0
   m_ChildForceExpandHeight: 0
   m_ChildControlWidth: 0
@@ -544,6 +544,9 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+  _swipeThreshold: 100
+  _paged: 1
+  _scrollingSpeed: 50
 --- !u!114 &1904557391
 MonoBehaviour:
   m_ObjectHideFlags: 0
