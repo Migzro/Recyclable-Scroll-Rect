@@ -35,7 +35,6 @@ namespace RecyclableSR
         private int _maxVisibleItemInViewPort;
         private int _minExtraVisibleItemInViewPort;
         private int _maxExtraVisibleItemInViewPort;
-        private int _scrollToTargetIndex;
         private int _gridConstraint;
         private int _maxGridItemsInAxis;
         private int _currentPage;
@@ -193,7 +192,6 @@ namespace RecyclableSR
             content.anchoredPosition = zeroContentPosition;
             GetContentBounds();
 
-            _scrollToTargetIndex = -1;
             _itemsCount = _dataSource.ItemsCount;
             _staticCells = new List<bool>();
             _prototypeNames = new List<string>();
@@ -1251,13 +1249,11 @@ namespace RecyclableSR
                 m_ContentStartPosition = currentContentPosition;
                 if (callEvent)
                     _dataSource.ScrolledToCell(_visibleItems[cellIndex].cell, cellIndex);
-                _scrollToTargetIndex = -1;
                 _currentPage = cellIndex;
                 _isAnimating = false;
             }
             else
             {
-                _scrollToTargetIndex = cellIndex;
                 var direction = cellIndex > _minVisibleItemInViewPort ? 1 : -1;
 
                 if (_scrollingSpeed == 0)
@@ -1342,7 +1338,6 @@ namespace RecyclableSR
             {
                 if (callEvent)
                     _dataSource.ScrolledToCell(_visibleItems[cellIndex].cell, cellIndex);
-                _scrollToTargetIndex = -1;
                 _currentPage = cellIndex;
                 _isAnimating = false;
             }
