@@ -14,7 +14,6 @@ namespace RecyclableSR
         // TODO: FixedColumnCount with Vertical Grids & FixedRowCount with Horizontal Grids (remaining _maxExtraVisibleItemInViewPort needs to be / _maxGridsItemsInAxis
         [SerializeField] private float _swipeThreshold = 200;
         [SerializeField] private bool _paged;
-        [SerializeField] private float _scrollingSpeed;
         
         private VerticalLayoutGroup _verticalLayoutGroup;
         private HorizontalLayoutGroup _horizontalLayoutGroup;
@@ -385,7 +384,7 @@ namespace RecyclableSR
         private void InitializeCells(int startIndex = 0)
         {
             GetContentBounds();
-            var contentHasSpace = startIndex == 0 || _itemPositions[startIndex - 1].bottomRightPosition[_axis] + _spacing[_axis] + (vertical ? _padding.bottom : _padding.right) <= _contentBottomRightCorner[_axis];
+            var contentHasSpace = startIndex == 0 || _itemPositions[startIndex - 1].bottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
             var extraItemsInitialized = contentHasSpace ? 0 : _maxExtraVisibleItemInViewPort - _maxVisibleItemInViewPort;
             var i = startIndex;
             var gridHasSpace = _isGridLayout && startIndex % _gridConstraint != 0 && i < _itemsCount;
@@ -397,7 +396,7 @@ namespace RecyclableSR
                 else
                     _maxVisibleItemInViewPort = i;
 
-                contentHasSpace = _itemPositions[i].bottomRightPosition[_axis] + _spacing[_axis] + (vertical ? _padding.bottom : _padding.right) <= _contentBottomRightCorner[_axis];
+                contentHasSpace = _itemPositions[i].bottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
                 gridHasSpace = _isGridLayout && startIndex % _gridConstraint != 0 && i < _itemsCount;
                 i++;
             }
@@ -884,14 +883,9 @@ namespace RecyclableSR
             // figure out which items that need to be rendered, bottom right or top left
             // generally if the content position is smaller than the position of _minVisibleItemInViewPort, this means we need to show items in tops left
             // if content position is bigger than the the position of _maxVisibleItemInViewPort, this means we need to show items in bottom right
-            // _needsClearance is needed because sometimes the scrolling happens so fast that the items are not showing and normalizedPosition & _lastScrollPosition would be the same stopping the update loop
             // TODO: if writing code for reversed grids _maxExtraVisibleItemInViewPort needs to be _maxGridItemsInAxis - 1
             if (_contentTopLeftCorner[ _axis ] <= 0 || _contentBottomRightCorner[ _axis ] >= content.rect.size[ _axis ] && _maxExtraVisibleItemInViewPort == _itemsCount - 1)
-            {
                 movementType = _movementType;
-                if (!_needsClearance)
-                    return;
-            }
             else
                 movementType = MovementType.Unrestricted;
 
@@ -925,7 +919,7 @@ namespace RecyclableSR
                 }
 
                 // item at bottom or right needs to appear
-                if (_maxVisibleItemInViewPort < _itemsCount - 1 && _contentBottomRightCorner[_axis] >= _itemPositions[_maxVisibleItemInViewPort].bottomRightPosition[_axis] + _spacing[_axis])
+                if (_maxVisibleItemInViewPort < _itemsCount - 1 && _contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleItemInViewPort].bottomRightPosition[_axis] + _spacing[_axis])
                 {
                     var newMaxItemToCheck = _maxVisibleItemInViewPort + 1;
                     var itemToShow = newMaxItemToCheck + _extraItemsVisible;
@@ -952,7 +946,7 @@ namespace RecyclableSR
                 }
 
                 // item at top or left needs to appear
-                if (_minVisibleItemInViewPort > 0 && _contentTopLeftCorner[_axis] <= _itemPositions[_minVisibleItemInViewPort].topLeftPosition[_axis] - _spacing[_axis])
+                if (_minVisibleItemInViewPort > 0 && _contentTopLeftCorner[_axis] < _itemPositions[_minVisibleItemInViewPort].topLeftPosition[_axis] - _spacing[_axis])
                 {
                     var newMinItemToCheck = _minVisibleItemInViewPort - 1;
                     var itemToShow = newMinItemToCheck - _extraItemsVisible;
@@ -1256,39 +1250,52 @@ namespace RecyclableSR
             {
                 var direction = cellIndex > _minVisibleItemInViewPort ? 1 : -1;
 
-                if (_scrollingSpeed == 0)
+                float speedToUse;
+                var cellSizeAverage = 0f;
+                int i;
+                for (i = 0; i < _itemsCount; i++)
                 {
-                    var cellSizeAverage = 0f;
-                    int i;
-                    for (i = 0; i < _itemPositions.Count; i++)
-                    {
-                        if (_itemPositions[i].sizeSet)
-                            cellSizeAverage += _itemPositions[i].cellSize[_axis];
-                        else
-                            break;
-                    }
+                    if (!_dataSource.IsCellSizeKnown && _itemPositions[i].sizeSet)
+                        cellSizeAverage += _itemPositions[i].cellSize[_axis];
+                    else if (_dataSource.IsCellSizeKnown)
+                        cellSizeAverage += _dataSource.GetCellSize(i);
+                    else
+                        break;
+                }
 
-                    cellSizeAverage /= i;
-                    _scrollingSpeed = cellSizeAverage;
+                cellSizeAverage /= i;
+                if (instant)
+                {
+                    speedToUse = cellSizeAverage;
+                }
+                else
+                {
+                    var currentVisibleIndexEstimate = _currentPage;
+                    if (!_paged)
+                        currentVisibleIndexEstimate = Mathf.FloorToInt((_maxVisibleItemInViewPort + _minVisibleItemInViewPort) / 2f);
+                    var scrollingDistance = Mathf.Max(1, Mathf.Abs(currentVisibleIndexEstimate - cellIndex));
+                    var scrollingDistancePercentage = (float)scrollingDistance / _itemsCount;
+                    var exponentialSpeed = (Mathf.Exp(scrollingDistancePercentage) - 1) * cellSizeAverage;
+                    speedToUse = Mathf.Min(cellSizeAverage, exponentialSpeed);
                 }
 
                 _isAnimating = true;
-                StartCoroutine(StartScrolling(_scrollingSpeed, direction, cellIndex, callEvent));
+                var increment = speedToUse * direction * (vertical ? 1 : -1);
+                StartCoroutine(StartScrolling(increment, direction, cellIndex, callEvent));
             }
         }
 
         /// <summary>
         /// Coroutine that keeps scrolling until we find the designated scrollToTargetIndex which is set ShowCellAtIndex
         /// </summary>
-        /// <param name="cellSizeAverage">Average cell size used as a content position increment</param>
+        /// <param name="increment">increment in which we scroll by, based on direction, vertical or horizontal, instant scrolling or not</param>
         /// <param name="direction">direction of scroll, 1 for down or right, -1 for up or left</param>
         /// <param name="cellIndex">cell index which we want to scroll to</param>
         /// <param name="callEvent">call scroll to cell event, usually not needed when calling ScrollToCell from OnEndDrag if RSR is paged</param>
         /// <returns></returns>
-        private IEnumerator StartScrolling(float cellSizeAverage, int direction, int cellIndex, bool callEvent)
+        private IEnumerator StartScrolling(float increment, int direction, int cellIndex, bool callEvent)
         {
             var reachedCell = false;
-            var increment = cellSizeAverage * direction * (vertical ? 1 : -1);
             var contentTopLeftCorner = content.anchoredPosition;
             contentTopLeftCorner[_axis] += increment;
             var contentBottomRightCorner = contentTopLeftCorner + _viewPortSize * (vertical ? 1 : -1);
@@ -1333,7 +1340,7 @@ namespace RecyclableSR
 
             yield return new WaitForEndOfFrame();
             if (!reachedCell)
-                StartCoroutine(StartScrolling(cellSizeAverage, direction, cellIndex, callEvent));
+                StartCoroutine(StartScrolling(increment, direction, cellIndex, callEvent));
             else
             {
                 if (callEvent)
@@ -1387,7 +1394,15 @@ namespace RecyclableSR
                     newPage--;
             }
             
+            _dataSource.ScrolledToCell(_visibleItems[newPage].cell, newPage);
             ScrollToCell(newPage, false);
+        }
+
+        public Item? GetCellAtIndex(int cellIndex)
+        {
+            if (_visibleItems.ContainsKey(cellIndex))
+                return _visibleItems[ cellIndex ];
+            return null;
         }
     }
 }
