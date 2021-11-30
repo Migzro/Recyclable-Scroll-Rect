@@ -30,16 +30,26 @@ public class DemoMainController : MonoBehaviour, IDataSource
             _dataSource.Add( i.ToString() );
         }
         _scrollRect.Initialize(this);
-        // Invoke(nameof(ChangeCellData), 2.5f);
+        Invoke(nameof(ChangeCellData), 2.5f);
     }
 
     private void ChangeCellData()
     {
-        _dataSource[5] = "5 " + RandomString(Random.Range(0, 200));
-        _scrollRect.ReloadCell(5, "Tag", true);
-        // _scrollRect.ScrollToCell(99);
-        Invoke(nameof(Test), 5f);
+        // _dataSource[5] = "5 " + RandomString(Random.Range(0, 200));
+        // _scrollRect.ReloadCell(5, "Tag", true);
+        _scrollRect.ScrollToCell(10);
+        Invoke(nameof(ScrollBack), 7f);
+        // Invoke(nameof(Test), 5f);
     }
+    
+    private void ScrollBack()
+    {
+        // _dataSource[5] = "5 " + RandomString(Random.Range(0, 200));
+        // _scrollRect.ReloadCell(5, "Tag", true);
+        _scrollRect.ScrollToCell(0);
+        // Invoke(nameof(Test), 5f);
+    }
+    
     private void Test()
     {
         _dataSource[ 5 ] = "5";
@@ -57,6 +67,7 @@ public class DemoMainController : MonoBehaviour, IDataSource
 
     public void SetCellData(ICell cell, int cellIndex)
     {
+        Debug.LogWarning($"Setting cell data {cellIndex}");
         (cell as DemoCellPrototype)?.Initialize(_dataSource[cellIndex]);
     }
 

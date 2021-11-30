@@ -46,6 +46,7 @@ namespace RecyclableSR
         private bool _isDragging;
 
         private HashSet<int> _itemsMarkedForReload;
+        private HashSet<int> _ignoreSetCellDataIndices;
         private Dictionary<string, List<Item>> _pooledItems;
         private Dictionary<int, HashSet<string>> _reloadTags;
         private SortedDictionary<int, Item> _visibleItems;
@@ -197,6 +198,7 @@ namespace RecyclableSR
             _itemPositions = new List<ItemPosition>();
             _reloadTags = new Dictionary<int, HashSet<string>>();
             _itemsMarkedForReload = new HashSet<int>();
+            _ignoreSetCellDataIndices = new HashSet<int>();
             _extraItemsVisible = _dataSource.ExtraItemsVisible;
             _lastContentPosition = _contentTopLeftCorner;
             _movementType = movementType;
@@ -1053,7 +1055,8 @@ namespace RecyclableSR
                 item.cell.CellIndex = newIndex;
                 
                 SetCellAxisPosition(item.transform, newIndex);
-                _dataSource.SetCellData(item.cell, newIndex);
+                if (_ignoreSetCellDataIndices.Count <= 0 || _ignoreSetCellDataIndices.Count > 0 && !_ignoreSetCellDataIndices.Contains(newIndex))
+                    _dataSource.SetCellData(item.cell, newIndex);
                 CalculateCellAxisSize(item.transform, newIndex);
                 
                 if (_itemsMarkedForReload.Contains(newIndex))
@@ -1264,17 +1267,47 @@ namespace RecyclableSR
                 }
 
                 cellSizeAverage /= i;
+                
+                // create a list that will stop ScrollTo method from calling SetCellData on items that will only be visible in the one frame while scrolling, this assumes
+                // that the paging cell is taking up the entire width or height
+                if (_paged)
+                {
+                    var endingIndex = cellIndex;
+                    _ignoreSetCellDataIndices.Clear();
+                    if (direction > 0)
+                    {
+                        endingIndex -= _extraItemsVisible;
+                        endingIndex = Mathf.Clamp(endingIndex, 0, _itemsCount - 1);
+                        for (var j = _currentPage; j < endingIndex; j++)
+                        {
+                            if (!_visibleItems.ContainsKey(j) && _itemPositions[j].positionSet)
+                            {
+                                _ignoreSetCellDataIndices.Add(j);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        endingIndex += _extraItemsVisible;
+                        endingIndex = Mathf.Clamp(endingIndex, 0, _itemsCount - 1);
+                        for (var j = _currentPage - 1; j > endingIndex; j--)
+                        {
+                            if (!_visibleItems.ContainsKey(j) && _itemPositions[j].positionSet)
+                            {
+                                _ignoreSetCellDataIndices.Add(j);
+                            }
+                        }
+                    }
+                }
+
                 if (instant)
                 {
                     speedToUse = cellSizeAverage;
                 }
                 else
                 {
-                    var currentVisibleIndexEstimate = _currentPage;
-                    if (!_paged)
-                        currentVisibleIndexEstimate = Mathf.FloorToInt((_maxVisibleItemInViewPort + _minVisibleItemInViewPort) / 2f);
-                    var scrollingDistance = Mathf.Max(1, Mathf.Abs(currentVisibleIndexEstimate - cellIndex));
-                    var scrollingDistancePercentage = (float)scrollingDistance / _itemsCount;
+                    var scrollingDistance = Mathf.Max(1, Mathf.Abs(_minVisibleItemInViewPort - cellIndex));
+                    var scrollingDistancePercentage = Mathf.Clamp01((float)scrollingDistance / Mathf.Min(10, _itemsCount));
                     var exponentialSpeed = (Mathf.Exp(scrollingDistancePercentage) - 1) * cellSizeAverage;
                     speedToUse = Mathf.Min(cellSizeAverage, exponentialSpeed);
                 }
@@ -1347,6 +1380,7 @@ namespace RecyclableSR
                     _dataSource.ScrolledToCell(_visibleItems[cellIndex].cell, cellIndex);
                 _currentPage = cellIndex;
                 _isAnimating = false;
+                _ignoreSetCellDataIndices.Clear();
             }
         }
 
