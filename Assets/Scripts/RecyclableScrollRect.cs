@@ -61,6 +61,8 @@ namespace RecyclableSR
         private TextAnchor _alignment;
         private MovementType _movementType;
 
+        public bool IsInitialized => _init;
+
         /// <summary>
         /// Initialize the scroll rect with the data source that contains all the details required to build the RecyclableScrollRect
         /// </summary>
@@ -1234,7 +1236,8 @@ namespace RecyclableSR
         /// <param name="cellIndex">cell index needed to scroll to</param>
         /// <param name="callEvent">call scroll to cell event, usually not needed when calling ScrollToCell from OnEndDrag if RSR is paged</param>
         /// <param name="instant">scroll instantly</param>
-        public void ScrollToCell(int cellIndex, bool callEvent = true, bool instant = false)
+        /// <param name="maxSpeedMultiplier">a multiplier that is used at max speed for scrolling</param>
+        public void ScrollToCell(int cellIndex, bool callEvent = true, bool instant = false, float maxSpeedMultiplier = 1)
         {
             StopMovement();
             var itemVisiblePositionKnown = _itemPositions[cellIndex].positionSet && _visibleItems.ContainsKey(cellIndex);
@@ -1311,6 +1314,9 @@ namespace RecyclableSR
                     var exponentialSpeed = (Mathf.Exp(scrollingDistancePercentage) - 1) * cellSizeAverage;
                     speedToUse = Mathf.Min(cellSizeAverage, exponentialSpeed);
                 }
+
+                if (speedToUse >= cellSizeAverage)
+                    speedToUse *= maxSpeedMultiplier;
 
                 _isAnimating = true;
                 var increment = speedToUse * direction * (vertical ? 1 : -1);
@@ -1434,6 +1440,8 @@ namespace RecyclableSR
 
         public Item? GetCellAtIndex(int cellIndex)
         {
+            if (_visibleItems == null || _visibleItems.Count <= 0)
+                return null;
             if (_visibleItems.ContainsKey(cellIndex))
                 return _visibleItems[ cellIndex ];
             return null;
