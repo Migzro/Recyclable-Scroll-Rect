@@ -14,6 +14,7 @@ namespace RecyclableSR
         // TODO: FixedColumnCount with Vertical Grids & FixedRowCount with Horizontal Grids (remaining _maxExtraVisibleItemInViewPort needs to be / _maxGridsItemsInAxis
         [SerializeField] private float _swipeThreshold = 200;
         [SerializeField] private bool _paged;
+        [SerializeField] private bool _reverseDirection;
         
         private VerticalLayoutGroup _verticalLayoutGroup;
         private HorizontalLayoutGroup _horizontalLayoutGroup;
@@ -37,6 +38,7 @@ namespace RecyclableSR
         private int _gridConstraint;
         private int _maxGridItemsInAxis;
         private int _currentPage;
+        private int _queuedScrollToCell;
         private bool _init;
         private bool _isAnimating;
         private bool _needsClearance;
@@ -204,7 +206,6 @@ namespace RecyclableSR
             _extraItemsVisible = _dataSource.ExtraItemsVisible;
             _lastContentPosition = _contentTopLeftCorner;
             _movementType = movementType;
-            _isAnimating = false;
 
             _visibleItems = new SortedDictionary<int, Item>();
             
@@ -219,6 +220,8 @@ namespace RecyclableSR
                     _pooledItems.Add(prototypeCells[i].name, new List<Item>());
             }
 
+            ResetVariables();
+            SetContentAnchorsPivot();
             SetStaticCells();
             HideStaticCells();
             SetPrototypeNames();
@@ -226,6 +229,52 @@ namespace RecyclableSR
             CalculateContentSize();
             InitializeCells();
             _init = true;
+        }
+
+        /// <summary>
+        /// Sets the content anchors and pivot based on the direction of the scroll and if its reversed or not
+        /// </summary>
+        private void SetContentAnchorsPivot()
+        {
+            if (_reverseDirection)
+            {
+                if (vertical)
+                {
+                    content.anchorMin = Vector2.zero;
+                    content.anchorMax = new Vector2(1, 0);
+                    content.pivot = Vector2.zero;
+                }
+                else
+                {
+                    content.anchorMin = new Vector2(1, 0);
+                    content.anchorMax = new Vector2(1, 1);
+                    content.pivot = new Vector2(1, 1);
+                }
+            }
+            else
+            {
+                if (vertical)
+                {
+                    content.anchorMin = new Vector2(0, 1);
+                    content.anchorMax = new Vector2(1, 1);
+                    content.pivot = new Vector2(0, 1);
+                }
+                else
+                {
+                    content.anchorMin = Vector2.zero;
+                    content.anchorMax = new Vector2(0, 1);
+                    content.pivot = new Vector2(0, 1);
+                }
+            }
+        }
+
+        /// <summary>
+        /// A common function to reset variables when calling ResetData or ReloadData
+        /// </summary>
+        private void ResetVariables()
+        {
+            _isAnimating = false;
+            _queuedScrollToCell = -1;
         }
 
         /// <summary>
@@ -633,14 +682,22 @@ namespace RecyclableSR
         /// <param name="cellIndex">The index of the cell that its size will be adjusted</param>
         private void CalculateNonAxisSizePosition(RectTransform rect, int cellIndex)
         {
-            if (_isGridLayout)
-                return;
-            
-            // all items are pivoted & anchored to top left
-            var anchorVector = new Vector2(0, 1);
+            Vector2 anchorVector;
+            if (_reverseDirection)
+            {
+                if (vertical)
+                    anchorVector = new Vector2(0, 0);
+                else
+                    anchorVector = new Vector2(1, 1);
+            }
+            else
+                anchorVector = new Vector2(0, 1);
             rect.anchorMin = anchorVector;
             rect.anchorMax = anchorVector;
             rect.pivot = anchorVector;
+            
+            if (_isGridLayout)
+                return;
 
             var forceSize = false;
             // set size
@@ -780,18 +837,35 @@ namespace RecyclableSR
                 {
                     if (_gridLayout.startAxis == GridLayoutGroup.Axis.Vertical)
                     {
+                        // TODO: Reversed Grid Code
                         xIndexInGrid = Mathf.FloorToInt(newIndex / (float) _maxGridItemsInAxis);
                         yIndexInGrid = newIndex % _maxGridItemsInAxis;
                     }
                     else
                     {
-                        // TODO: Reversed Grid Code
                         xIndexInGrid = newIndex % _gridConstraint;
                         yIndexInGrid = Mathf.FloorToInt(newIndex / (float) _gridConstraint);
                     }
                 }
-                newItemPosition.x = _padding.left + xIndexInGrid * _itemPositions[newIndex].cellSize[0] + _spacing[0] * xIndexInGrid;
-                newItemPosition.y = -_padding.top - yIndexInGrid * _itemPositions[newIndex].cellSize[1] - _spacing[1] * yIndexInGrid;
+
+                if (_reverseDirection)
+                {
+                    if (_gridLayout.constraint == GridLayoutGroup.Constraint.FixedRowCount && _gridLayout.startAxis == GridLayoutGroup.Axis.Vertical)
+                    {
+                        newItemPosition.x = -_padding.right - xIndexInGrid * _itemPositions[newIndex].cellSize[0] - _spacing[0] * xIndexInGrid;
+                        newItemPosition.y = -_padding.bottom - yIndexInGrid * _itemPositions[newIndex].cellSize[1] - _spacing[1] * yIndexInGrid;
+                    }
+                    else if (_gridLayout.constraint == GridLayoutGroup.Constraint.FixedColumnCount && _gridLayout.startAxis == GridLayoutGroup.Axis.Horizontal)
+                    {
+                        newItemPosition.x = _padding.right + xIndexInGrid * _itemPositions[newIndex].cellSize[0] + _spacing[0] * xIndexInGrid;
+                        newItemPosition.y = _padding.bottom + yIndexInGrid * _itemPositions[newIndex].cellSize[1] + _spacing[1] * yIndexInGrid;
+                    }
+                }
+                else
+                {
+                    newItemPosition.x = _padding.left + xIndexInGrid * _itemPositions[newIndex].cellSize[0] + _spacing[0] * xIndexInGrid;
+                    newItemPosition.y = -_padding.top - yIndexInGrid * _itemPositions[newIndex].cellSize[1] - _spacing[1] * yIndexInGrid;
+                }
             }
             else
             {
@@ -799,13 +873,23 @@ namespace RecyclableSR
                 if (newIndex == 0)
                 {
                     if (vertical)
-                        newItemPosition.y = -_padding.top;
+                    {
+                        if (_reverseDirection)
+                            newItemPosition.y = _padding.bottom;
+                        else
+                            newItemPosition.y = -_padding.top;
+                    }
                     else
-                        newItemPosition.x = _padding.left;
+                    {
+                        if (_reverseDirection)
+                            newItemPosition.x = -_padding.right;
+                        else
+                            newItemPosition.x = _padding.left;
+                    }
                 }
                 else
                 {
-                    var verticalSign = vertical ? -1 : 1;
+                    var verticalSign = (vertical ? -1 : 1) * (_reverseDirection ? -1 : 1);
                     newItemPosition[_axis] = verticalSign * _itemPositions[newIndex - 1].bottomRightPosition[_axis] + verticalSign * _spacing[_axis];
                 }
             }
@@ -830,7 +914,7 @@ namespace RecyclableSR
                 return;
             }
 
-            Vector2 newCellSize = _itemPositions[index].cellSize;
+            var newCellSize = _itemPositions[index].cellSize;
             var oldCellSize = newCellSize[_axis];
 
             if (!_dataSource.IsCellSizeKnown)
@@ -868,7 +952,7 @@ namespace RecyclableSR
                 return;
             if (_visibleItems.Count <= 0)
                 return;
-            var currentContentAnchoredPosition = content.anchoredPosition * (vertical ? 1f : -1f);
+            var currentContentAnchoredPosition = content.anchoredPosition * ((vertical ? 1f : -1f) * (_reverseDirection ? -1f : 1f));
             if (Mathf.Approximately(currentContentAnchoredPosition[_axis], _lastContentPosition[_axis]) && !_needsClearance)
                 return;
             
@@ -1076,6 +1160,12 @@ namespace RecyclableSR
                 InitializeCell(newIndex);
             }
 
+            if (_queuedScrollToCell != -1 && _queuedScrollToCell == newIndex)
+            {
+                _dataSource.ScrolledToCell(_visibleItems[newIndex].cell, newIndex);
+                _queuedScrollToCell = -1;
+            }
+
             if (newIndex == _itemsCount - 1)
                 _dataSource.ReachedScrollEnd();
             
@@ -1115,7 +1205,7 @@ namespace RecyclableSR
         /// </summary>
         private void GetContentBounds()
         {
-            _contentTopLeftCorner = content.anchoredPosition * (vertical ? 1f : -1f);
+            _contentTopLeftCorner = content.anchoredPosition * ((vertical ? 1f : -1f) * (_reverseDirection ? -1f : 1f));
             _contentBottomRightCorner[1 - _axis] = _contentTopLeftCorner[1 - _axis];
             _contentBottomRightCorner[_axis] = _contentTopLeftCorner[_axis] + _viewPortSize[_axis];
         }
@@ -1147,6 +1237,8 @@ namespace RecyclableSR
                 _maxExtraVisibleItemInViewPort = Mathf.Min(_itemsCount - 1, _maxVisibleItemInViewPort + _extraItemsVisible);
             }
             
+            ResetVariables();
+            SetContentAnchorsPivot();
             SetPrototypeNames();
             SetStaticCells();
             InitializeItemPositions();
@@ -1198,7 +1290,8 @@ namespace RecyclableSR
         public void ScrollToTopRight()
         {
             // either or, both methods work fine
-            StartCoroutine(ScrollToTargetNormalisedPosition(vertical ? 1 : 0));
+            StopMovement();
+            StartCoroutine(ScrollToTargetNormalisedPosition((vertical ? 1 : 0) * (_reverseDirection ? 0 : 1)));
             // ScrollToCell(0);
         }
 
@@ -1209,7 +1302,6 @@ namespace RecyclableSR
         /// <returns></returns>
         private IEnumerator ScrollToTargetNormalisedPosition(float targetNormalisedPos)
         {
-            StopMovement();
             _isAnimating = true;
             var currentNormalisedPosition = Mathf.Clamp01(normalizedPosition[_axis]);
             var increment = 1f / _itemsCount;
@@ -1244,7 +1336,7 @@ namespace RecyclableSR
             if (itemVisiblePositionKnown && instant)
             {
                 var currentContentPosition = content.anchoredPosition;
-                currentContentPosition[_axis] = _itemPositions[cellIndex].topLeftPosition[_axis] * (vertical ? 1 : -1);
+                currentContentPosition[_axis] = _itemPositions[cellIndex].topLeftPosition[_axis] * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
                 content.anchoredPosition = currentContentPosition;
                 m_ContentStartPosition = currentContentPosition;
                 if (callEvent)
@@ -1319,7 +1411,7 @@ namespace RecyclableSR
                     speedToUse *= maxSpeedMultiplier;
 
                 _isAnimating = true;
-                var increment = speedToUse * direction * (vertical ? 1 : -1);
+                var increment = speedToUse * direction * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
                 StartCoroutine(StartScrolling(increment, direction, cellIndex, callEvent));
             }
         }
@@ -1337,7 +1429,7 @@ namespace RecyclableSR
             var reachedCell = false;
             var contentTopLeftCorner = content.anchoredPosition;
             contentTopLeftCorner[_axis] += increment;
-            var contentBottomRightCorner = contentTopLeftCorner + _viewPortSize * (vertical ? 1 : -1);
+            var contentBottomRightCorner = contentTopLeftCorner + _viewPortSize * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
 
             if (_itemPositions[cellIndex].positionSet)
             {
@@ -1346,14 +1438,14 @@ namespace RecyclableSR
                 {
                     if (itemTopLeftCorner <= Mathf.Abs(contentTopLeftCorner[_axis]))
                     {
-                        contentTopLeftCorner[_axis] = itemTopLeftCorner * (vertical ? 1 : -1);
+                        contentTopLeftCorner[_axis] = itemTopLeftCorner * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
                         reachedCell = true;
                     }
 
                     // reached bottom or right
                     if (_maxExtraVisibleItemInViewPort == _itemsCount - 1 && Mathf.Abs(contentBottomRightCorner[_axis]) >= content.sizeDelta[_axis])
                     {
-                        contentTopLeftCorner[_axis] = (content.rect.size[_axis] - _viewPortSize[_axis]) * (vertical ? 1 : -1);
+                        contentTopLeftCorner[_axis] = (content.rect.size[_axis] - _viewPortSize[_axis]) * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
                         reachedCell = true;
                     }
                 }
@@ -1361,12 +1453,13 @@ namespace RecyclableSR
                 {
                     if (itemTopLeftCorner >= Mathf.Abs(contentTopLeftCorner[_axis]))
                     {
-                        contentTopLeftCorner[_axis] = itemTopLeftCorner * (vertical ? 1 : -1);
+                        contentTopLeftCorner[_axis] = itemTopLeftCorner * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
                         reachedCell = true;
                     }
 
                     // reached top or left
-                    if (vertical && contentTopLeftCorner[_axis] <= 0 || !vertical && contentTopLeftCorner[_axis] >= 0)
+                    if (!_reverseDirection && (vertical && contentTopLeftCorner[_axis] <= 0 || !vertical && contentTopLeftCorner[_axis] >= 0)
+                        || _reverseDirection && (vertical && contentTopLeftCorner[_axis] >= 0 || !vertical && contentTopLeftCorner[_axis] <= 0))
                     {
                         contentTopLeftCorner[_axis] = 0;
                         reachedCell = true;
@@ -1383,7 +1476,12 @@ namespace RecyclableSR
             else
             {
                 if (callEvent)
-                    _dataSource.ScrolledToCell(_visibleItems[cellIndex].cell, cellIndex);
+                {
+                    if (_visibleItems.ContainsKey(cellIndex))
+                        _dataSource.ScrolledToCell(_visibleItems[cellIndex].cell, cellIndex);
+                    else
+                        _queuedScrollToCell = cellIndex;
+                } 
                 _currentPage = cellIndex;
                 _isAnimating = false;
                 _ignoreSetCellDataIndices.Clear();
@@ -1412,7 +1510,7 @@ namespace RecyclableSR
                 return;
             
             _isDragging = true;
-            _dragStartingPosition = content.anchoredPosition * (vertical ? 1f : -1f);
+            _dragStartingPosition = content.anchoredPosition * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
         }
 
         public override void OnEndDrag(PointerEventData eventData)
@@ -1422,7 +1520,7 @@ namespace RecyclableSR
                 return;
             
             _isDragging = false;
-            var currentContentPosition = content.anchoredPosition * (vertical ? 1f : -1f);
+            var currentContentPosition = content.anchoredPosition * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
             var distance = Vector3.Distance(_dragStartingPosition, currentContentPosition);
             var isNextPage = currentContentPosition[_axis] > _dragStartingPosition[_axis];
             var newPage = _currentPage;

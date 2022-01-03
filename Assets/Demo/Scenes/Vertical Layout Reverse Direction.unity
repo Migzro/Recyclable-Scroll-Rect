@@ -135,7 +135,7 @@ GameObject:
   - component: {fileID: 658359682}
   - component: {fileID: 658359681}
   - component: {fileID: 658359680}
-  - component: {fileID: 658359684}
+  - component: {fileID: 658359685}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -177,7 +177,7 @@ MonoBehaviour:
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 750, y: 1334}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0.5
+  m_MatchWidthOrHeight: 0
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
@@ -200,7 +200,7 @@ Canvas:
   m_OverrideSorting: 0
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
-  m_AdditionalShaderChannelsFlag: 25
+  m_AdditionalShaderChannelsFlag: 0
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
@@ -224,7 +224,7 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
---- !u!114 &658359684
+--- !u!114 &658359685
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -233,15 +233,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 658359679}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6a9ca35bfa244745bc8e70062f5d7eb, type: 3}
+  m_Script: {fileID: 11500000, guid: c8189f1eb00bc4e00b675e83a0f76dde, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _itemsCount: 100
   _scrollRect: {fileID: 1904557390}
   _prototypeCells:
-  - {fileID: 1638117046129563386, guid: 5f88a912c63114bf5956ff1a0d6b41b6, type: 3}
-  - {fileID: 1638117046129563386, guid: b8cbbbf5ec9f84862a015809422f9fbe, type: 3}
-  _extraItemsVisible: 1
+  - {fileID: 1638117046129563386, guid: e71a2206129434ac9b60b1d7743a0f00, type: 3}
+  - {fileID: 1638117046129563386, guid: a8fbeae1039cd4ea9bf358107f5e5c16, type: 3}
+  _extraItemsVisible: 0
 --- !u!1 &1362537419
 GameObject:
   m_ObjectHideFlags: 0
@@ -251,8 +250,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1362537420}
-  - component: {fileID: 1362537421}
   - component: {fileID: 1362537422}
+  - component: {fileID: 1362537421}
   m_Layer: 5
   m_Name: Content
   m_TagString: Untagged
@@ -274,11 +273,11 @@ RectTransform:
   m_Father: {fileID: 1896353322}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 1, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -0.06518555, y: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 1, y: 1}
+  m_Pivot: {x: 0, y: 0}
 --- !u!114 &1362537421
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -291,8 +290,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3245ec927659c4140ac4f8d17403cc18, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_HorizontalFit: 2
-  m_VerticalFit: 0
+  m_HorizontalFit: 0
+  m_VerticalFit: 2
 --- !u!114 &1362537422
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -302,19 +301,19 @@ MonoBehaviour:
   m_GameObject: {fileID: 1362537419}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 30649d3a9faa99c48a7b1166b86bf2a0, type: 3}
+  m_Script: {fileID: 11500000, guid: 59f8146938fff824cb5fd77236b75775, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_Padding:
     m_Left: 0
     m_Right: 0
-    m_Top: 0
-    m_Bottom: 0
-  m_ChildAlignment: 0
-  m_Spacing: 0
-  m_ChildForceExpandWidth: 0
+    m_Top: 20
+    m_Bottom: 20
+  m_ChildAlignment: 1
+  m_Spacing: 10
+  m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 0
-  m_ChildControlWidth: 0
+  m_ChildControlWidth: 1
   m_ChildControlHeight: 0
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
@@ -527,8 +526,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Content: {fileID: 1362537420}
-  m_Horizontal: 1
-  m_Vertical: 0
+  m_Horizontal: 0
+  m_Vertical: 1
   m_MovementType: 1
   m_Elasticity: 0.1
   m_Inertia: 1
@@ -544,9 +543,9 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
-  _swipeThreshold: 100
-  _paged: 1
-  _reverseOrder: 1
+  _swipeThreshold: 200
+  _paged: 0
+  _reverseDirection: 1
 --- !u!114 &1904557391
 MonoBehaviour:
   m_ObjectHideFlags: 0

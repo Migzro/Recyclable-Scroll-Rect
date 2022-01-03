@@ -5,41 +5,40 @@ using RecyclableSR;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class DemoMainController : MonoBehaviour, IDataSource
+public class ScrollDemoController : MonoBehaviour, IDataSource
 {
-    [SerializeField] private int _itemsCount;
     [SerializeField] private RecyclableScrollRect _scrollRect;
     [SerializeField] private GameObject[] _prototypeCells;
     [SerializeField] private int _extraItemsVisible;
         
     private List<string> _dataSource;
-    private int _itemCount;
     
     public int ItemsCount => _itemsCount;
     public int ExtraItemsVisible => _extraItemsVisible;
     public bool IsCellSizeKnown => true;
-    public bool IsSetVisibleUsingCanvasGroupAlpha { get; }
+    public bool IsSetVisibleUsingCanvasGroupAlpha => false;
     public GameObject[] PrototypeCells => _prototypeCells;
+
+    private int _itemsCount;
 
     private void Start()
     {
+        _itemsCount = 30;
         _dataSource = new List<string>();
         for (var i = 0; i < _itemsCount; i++)
         {
-            // _dataSource.Add(i + " " + RandomString(Random.Range(0, 200)));
             _dataSource.Add( i.ToString() );
         }
         _scrollRect.Initialize(this);
-        // Invoke(nameof(ChangeCellData), 2.5f);
+        // _scrollRect.ScrollToCell(_itemsCount - 1, true, true);
+        // Invoke(nameof(test), 5f);
+        // Invoke(nameof(Test), 5f);
     }
 
-    private void ChangeCellData()
+    private void test()
     {
-        // _dataSource[5] = "5 " + RandomString(Random.Range(0, 200));
-        // _scrollRect.ReloadCell(5, "Tag", true);
-        _scrollRect.ScrollToCell(10);
-        Invoke(nameof(ScrollBack), 7f);
-        // Invoke(nameof(Test), 5f);
+        _scrollRect.ScrollToCell(50);
+        Invoke(nameof(ScrollBack), 5f);
     }
     
     private void ScrollBack()
@@ -48,27 +47,16 @@ public class DemoMainController : MonoBehaviour, IDataSource
         // _scrollRect.ReloadCell(5, "Tag", true);
         _scrollRect.ScrollToCell(0);
         // Invoke(nameof(Test), 5f);
-    }
-    
-    private void Test()
-    {
-        _dataSource[ 5 ] = "5";
-        _scrollRect.ReloadCell(5, "Tag", true);
-        // _dataSource[5] = "5 " + RandomString(Random.Range(0, 200));
-        // _scrollRect.ReloadCell(5, "Tag", true);
-        // _scrollRect.ScrollToCell(0);
+        // _scrollRect.ScrollToTopRight();
     }
 
     public float GetCellSize(int cellIndex)
     {
-        // return _scrollRect.vertical ? 40.22f : 60.28f; // if cell size is known
-        return 1334;
-        // return 500;
+        return _scrollRect.vertical ? 40.22f : 60.28f; // if cell size is known
     }
 
     public void SetCellData(ICell cell, int cellIndex)
     {
-        Debug.LogWarning($"Setting cell data {cellIndex}");
         (cell as DemoCellPrototype)?.Initialize(_dataSource[cellIndex]);
     }
 
@@ -112,6 +100,15 @@ public class DemoMainController : MonoBehaviour, IDataSource
     public void ReachedScrollEnd()
     {
         Debug.Log( "End" );
+        
+        // var newData = new List<string>();
+        // for (var i = _itemsCount; i < _itemsCount + 10; i++)
+        // {
+        //     newData.Add(i.ToString());
+        // }
+        // _dataSource.AddRange(newData);
+        // _itemsCount += 10;
+        // _scrollRect.ReloadData();
     }
 
     private static System.Random random = new System.Random();

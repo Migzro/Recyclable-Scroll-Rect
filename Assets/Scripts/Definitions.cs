@@ -49,8 +49,8 @@ namespace RecyclableSR
         
         public void SetPositionAndSize (Vector2 position, Vector2 size)
         {
-            topLeftPosition = position.Abs();
             cellSize = size;
+            topLeftPosition = position.Abs();
             bottomRightPosition = topLeftPosition + cellSize;
             positionSet = true;
             sizeSet = true;
@@ -60,7 +60,6 @@ namespace RecyclableSR
         {
             cellSize = size;
             bottomRightPosition = topLeftPosition + cellSize;
-            bottomRightPosition = topLeftPosition + size;
             sizeSet = true;
         }
 
