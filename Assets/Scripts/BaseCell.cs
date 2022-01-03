@@ -1,4 +1,3 @@
-using RecyclableSR;
 using UnityEngine;
 
 namespace RecyclableSR
@@ -14,9 +13,12 @@ namespace RecyclableSR
         {
             get
             {
-                if ( canvasGroup == null )
+                if (canvasGroup == null)
                 {
-                    canvasGroup = gameObject.AddComponent< CanvasGroup >();
+                    if (gameObject.GetComponent<CanvasGroup>() != null)
+                        canvasGroup = gameObject.GetComponent<CanvasGroup>();
+                    else
+                        canvasGroup = gameObject.AddComponent<CanvasGroup>();
                 }
 
                 return canvasGroup;
