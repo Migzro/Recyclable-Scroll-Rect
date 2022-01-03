@@ -742,8 +742,8 @@ namespace RecyclableSR
                 var itemPosition = rect.anchoredPosition;
                 if (vertical)
                 {
-                    var rightPadding = _padding.right;
-                    var leftPadding = _padding.left;
+                    var rightPadding = _reverseDirection ? _padding.left : _padding.right;
+                    var leftPadding = _reverseDirection ? _padding.right : _padding.left;
                     if (_dataSource.IgnoreContentPadding(cellIndex))
                     {
                         rightPadding = 0;
@@ -765,8 +765,8 @@ namespace RecyclableSR
                 }
                 else
                 {
-                    var topPadding = _padding.top;
-                    var bottomPadding = _padding.bottom;
+                    var topPadding = _reverseDirection ? _padding.bottom : _padding.top;
+                    var bottomPadding = _reverseDirection ? _padding.top : _padding.bottom;
                     if (_dataSource.IgnoreContentPadding(cellIndex))
                     {
                         topPadding = 0;
@@ -972,26 +972,49 @@ namespace RecyclableSR
             // generally if the content position is smaller than the position of _minVisibleItemInViewPort, this means we need to show items in tops left
             // if content position is bigger than the the position of _maxVisibleItemInViewPort, this means we need to show items in bottom right
             // TODO: if writing code for reversed grids _maxExtraVisibleItemInViewPort needs to be _maxGridItemsInAxis - 1
-            if (_contentTopLeftCorner[ _axis ] <= 0 || _contentBottomRightCorner[ _axis ] >= content.rect.size[ _axis ] && _maxExtraVisibleItemInViewPort == _itemsCount - 1)
+            var reachedLimits = false;
+            if (_contentTopLeftCorner[_axis] <= 0 || _contentBottomRightCorner[_axis] >= content.rect.size[_axis] && _maxExtraVisibleItemInViewPort == _itemsCount - 1)
+            {
                 movementType = _movementType;
+                reachedLimits = true;
+            }
             else
                 movementType = MovementType.Unrestricted;
 
             var showBottomRight = _contentTopLeftCorner[_axis] > _lastContentPosition[_axis];
             _needsClearance = false;
-            var topLeftMinClearance = 0.1f + (vertical ? _padding.top : _padding.left) * (_minVisibleItemInViewPort == 0 ? 1 : 0) + _spacing[_axis] * (_minVisibleItemInViewPort == 0 ? 0 : 1);
-            var bottomRightMinClearance = 0.1f + (vertical ? _padding.bottom : _padding.right) * (_maxVisibleItemInViewPort == _itemsCount - 1 ? 1 : 0) + _spacing[_axis] * (_maxVisibleItemInViewPort == _itemsCount - 1 ? 0 : 1);
-            if (_itemPositions[_minVisibleItemInViewPort].topLeftPosition[_axis] - _contentTopLeftCorner[_axis] > topLeftMinClearance)
+            
+            int topLeftPadding;
+            int bottomLeftPadding;
+            if (_reverseDirection)
+            {
+                topLeftPadding = vertical ? _padding.bottom : _padding.right;
+                bottomLeftPadding = vertical ? _padding.top : _padding.left;
+            }
+            else
+            {
+                topLeftPadding = vertical ? _padding.top : _padding.left;
+                bottomLeftPadding = vertical ? _padding.bottom : _padding.right;
+            }
+            
+            var topLeftMinClearance = 0.1f + topLeftPadding * (_minVisibleItemInViewPort == 0 ? 1 : 0) + _spacing[_axis] * (_minVisibleItemInViewPort == 0 ? 0 : 1);
+            var bottomRightMinClearance = 0.1f + bottomLeftPadding * (_maxVisibleItemInViewPort == _itemsCount - 1 ? 1 : 0) + _spacing[_axis] * (_maxVisibleItemInViewPort == _itemsCount - 1 ? 0 : 1);
+            
+            if (_itemPositions[_minVisibleItemInViewPort].topLeftPosition[_axis] - _contentTopLeftCorner[_axis] > topLeftMinClearance && _minVisibleItemInViewPort != 0)
             {
                 showBottomRight = false;
                 _needsClearance = true;
             }
-            else if (_itemPositions[_maxVisibleItemInViewPort].bottomRightPosition[_axis] - _contentBottomRightCorner[_axis] < -bottomRightMinClearance)
+            else if (_itemPositions[_maxVisibleItemInViewPort].bottomRightPosition[_axis] - _contentBottomRightCorner[_axis] < -bottomRightMinClearance && _maxVisibleItemInViewPort != _itemsCount - 1)
             {
                 showBottomRight = true;
                 _needsClearance = true;
             }
             _lastContentPosition = currentContentAnchoredPosition;
+
+            if (reachedLimits && !_needsClearance)
+                return;
+            
             if (showBottomRight)
             {
                 // item at top or left is not in viewport
