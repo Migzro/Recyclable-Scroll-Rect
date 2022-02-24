@@ -70,6 +70,10 @@ public class HorizontalPagingRSRDemo : MonoBehaviour, IDataSource
     {
     }
 
+    public void ReachedScrollStart()
+    {
+    }
+
     public void ReachedScrollEnd()
     {
     }

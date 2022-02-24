@@ -989,7 +989,9 @@ namespace RecyclableSR
                 movementType = _movementType;
                 reachedLimits = true;
                 
-                if (atEnd)
+                if (atStart)
+                    _dataSource.ReachedScrollStart();
+                else
                     _dataSource.ReachedScrollEnd();
             }
             else

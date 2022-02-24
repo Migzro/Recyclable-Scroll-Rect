@@ -70,6 +70,10 @@ public class VerticalDynamicRSRDemo : MonoBehaviour, IDataSource
     {
     }
 
+    public void ReachedScrollStart()
+    {
+    }
+
     public void ReachedScrollEnd()
     {
     }

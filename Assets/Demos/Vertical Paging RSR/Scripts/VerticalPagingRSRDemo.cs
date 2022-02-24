@@ -70,6 +70,10 @@ public class VerticalPagingRSRDemo : MonoBehaviour, IDataSource
     {
     }
 
+    public void ReachedScrollStart()
+    {
+    }
+
     public void ReachedScrollEnd()
     {
     }

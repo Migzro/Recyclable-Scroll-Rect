@@ -97,6 +97,10 @@ public class ScrollDemoController : MonoBehaviour, IDataSource
         Debug.Log( "Pull to refresh" );
     }
 
+    public void ReachedScrollStart()
+    {
+    }
+
     public void ReachedScrollEnd()
     {
         Debug.Log( "End" );
