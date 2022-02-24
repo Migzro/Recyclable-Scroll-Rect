@@ -633,7 +633,7 @@ namespace RecyclableSR
             }
             else if (_minExtraVisibleItemInViewPort <= cellIndex && _minVisibleItemInViewPort > cellIndex)
             {
-                contentPosition[_axis] -= oldSize - _itemPositions[cellIndex].cellSize[_axis];
+                contentPosition[_axis] -= (oldSize - _itemPositions[cellIndex].cellSize[_axis]) * (_reverseDirection ? -1 : 1);
                 contentMoved = true;
             }
 
