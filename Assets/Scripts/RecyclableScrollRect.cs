@@ -63,7 +63,6 @@ namespace RecyclableSR
         private TextAnchor _alignment;
         private MovementType _movementType;
         private MovementType _initialMovementType;
-        private bool _isReloadingData;
 
         public bool IsInitialized => _init;
 
@@ -508,18 +507,29 @@ namespace RecyclableSR
         }
         
         /// <summary>
-        /// Reloads cell size and adjusts all the visible cells that follow that cell
-        /// Creates new cells if the cell size has shrunk and there is room in the view port
-        /// it also hides items that left the viewport
+        /// Hides private ReloadCell implementation to avoid calling it with unneeded variables (isReloadingAllData)
         /// </summary>
         /// <param name="cellIndex">cell index to reload</param>
         /// <param name="reloadTag">used to reload cell based on a tag, so if the reload is called more than once with the same tag, we can ignore it</param>
-        /// <param name="reloadData">when set true, it will fetch data from IDataSource</param>
-        public void ReloadCell(int cellIndex, string reloadTag = "", bool reloadData = false)
+        /// <param name="reloadCellData">when set true, it will fetch cell data from IDataSource</param>
+        public void ReloadCell(int cellIndex, string reloadTag = "", bool reloadCellData = false)
+        {
+            PreReloadCell(cellIndex, reloadTag, reloadCellData, false);
+        }
+
+        /// <summary>
+        /// Creates and checks tags for reloading cells, this avoids calling calculating the cell size if its called with same tag more than once and only calls ForceLayoutRebuild
+        /// </summary>
+        /// <param name="cellIndex">cell index to reload</param>
+        /// <param name="reloadTag">used to reload cell based on a tag, so if the reload is called more than once with the same tag, we can ignore it</param>
+        /// <param name="reloadCellData">when set true, it will fetch cell data from IDataSource</param>
+        /// <param name="isReloadingAllData">Used to prevent calling CalculateNewMinMaxItemsAfterReloadCell in ReloadCellInternal each time when this function is called from ReloadData since we call
+        /// CalculateNewMinMaxItemsAfterReloadCell at the end of ReloadData</param> 
+        private void PreReloadCell(int cellIndex, string reloadTag = "", bool reloadCellData = false, bool isReloadingAllData = false)
         {
             // add the reloadTag if it doesn't exist for the cellIndex
             // if reloading data, clear all the reloadTags for the cellIndex
-            if (reloadData && _reloadTags.ContainsKey(cellIndex))
+            if (reloadCellData && _reloadTags.ContainsKey(cellIndex))
                 _reloadTags[cellIndex].Clear();
 
             if (!string.IsNullOrEmpty(reloadTag))
@@ -539,7 +549,7 @@ namespace RecyclableSR
                     _reloadTags.Add(cellIndex, new HashSet<string>{reloadTag});
                 }
             }
-            ReloadCellInternal(cellIndex, reloadData);
+            ReloadCellInternal(cellIndex, reloadCellData, isReloadingAllData);
         }
 
         /// <summary>
@@ -565,7 +575,15 @@ namespace RecyclableSR
             }
         }
 
-        private void ReloadCellInternal (int cellIndex, bool reloadData = false)
+        /// <summary>
+        /// Reloads cell size and data
+        /// Persists content position to avoid sudden jumps if a cell size changes
+        /// </summary>
+        /// <param name="cellIndex">cell index to reload</param>
+        /// <param name="reloadCellData">when set true, it will fetch cell data from IDataSource</param>
+        /// <param name="isReloadingAllData">Used to prevent calling CalculateNewMinMaxItemsAfterReloadCell in ReloadCellInternal each time when this function is called from ReloadData since we call
+        /// CalculateNewMinMaxItemsAfterReloadCell at the end of ReloadData</param> 
+        private void ReloadCellInternal (int cellIndex, bool reloadCellData = false, bool isReloadingAllData = false)
         {
             // No need to reload cell at index {cellIndex} as its currently not visible and everything will be automatically handled when it appears
             // its ok to return here after setting the tag, as if a cell gets marked for reload with multiple tags, it only needs to reload once its visible
@@ -577,7 +595,7 @@ namespace RecyclableSR
             }
             
             var cell = _visibleItems[cellIndex];
-            if (reloadData)
+            if (reloadCellData)
                 _dataSource.SetCellData(cell.cell, cellIndex);
 
             // No need to calculate anything for grid since its cell size doesn't change
@@ -627,7 +645,17 @@ namespace RecyclableSR
                 m_ContentStartPosition = contentPosition;
                 return;
             }
-            
+
+            if (!isReloadingAllData)
+                CalculateNewMinMaxItemsAfterReloadCell();
+        }
+
+        /// <summary>
+        /// Checks if cells need to be hidden, shown, instantiated after a cell is reloaded and its size changes
+        /// </summary>
+        private void CalculateNewMinMaxItemsAfterReloadCell()
+        {
+            Debug.Log("CalculateNewMinMaxItemsAfterReloadCell");
             // figure out the new _minVisibleItemInViewPort && _maxVisibleItemInViewPort
             GetContentBounds();
             var newMinVisibleItemInViewPortSet = false;
@@ -661,8 +689,7 @@ namespace RecyclableSR
             else
             {
                 // here we initialize cells instead of using ShowCellAtIndex because we don't know much viewport space is left
-                if (!_isReloadingData)
-                    InitializeCells(_maxExtraVisibleItemInViewPort + 1);
+                InitializeCells(_maxExtraVisibleItemInViewPort + 1);
             }
             
             if (newMinExtraVisibleItemInViewPort > _minExtraVisibleItemInViewPort)
@@ -1252,7 +1279,6 @@ namespace RecyclableSR
         /// <param name="reloadAllItems">should be only used when adding items to the top of the current visible items</param>
         public void ReloadData(bool reloadAllItems = false)
         {
-            _isReloadingData = true;
             var oldItemsCount = _itemsCount;
             _itemsCount = _dataSource.ItemsCount;
             
@@ -1280,15 +1306,14 @@ namespace RecyclableSR
             SetStaticCells();
             InitializeItemPositions();
             CalculateContentSize();
-            InitializeCells(_maxExtraVisibleItemInViewPort + 1);
 
             if (reloadAllItems)
             {
                 var visibleItemKeys = _visibleItems.Keys.ToList();
                 foreach (var index in visibleItemKeys)
-                    ReloadCell(index, "", true);
+                    PreReloadCell(index, "", true, true);
             }
-            _isReloadingData = false;
+            CalculateNewMinMaxItemsAfterReloadCell();
         }
 
         /// <summary>
