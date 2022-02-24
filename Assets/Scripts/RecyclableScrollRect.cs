@@ -62,6 +62,8 @@ namespace RecyclableSR
         private RectOffset _padding;
         private TextAnchor _alignment;
         private MovementType _movementType;
+        private MovementType _initialMovementType;
+        private bool _isReloadingData;
 
         public bool IsInitialized => _init;
 
@@ -168,6 +170,7 @@ namespace RecyclableSR
             _currentPage = 0;
             _viewPortSize = viewport.rect.size;
             _axis = vertical ? 1 : 0;
+            _initialMovementType = movementType;
             
             DisableContentLayouts();
             ResetData();
@@ -190,6 +193,11 @@ namespace RecyclableSR
                 _visibleItems.Clear();
             }
 
+            _minVisibleItemInViewPort = 0;
+            _minExtraVisibleItemInViewPort = 0;
+            _maxVisibleItemInViewPort = 0;
+            _maxExtraVisibleItemInViewPort = 0;
+
             var zeroContentPosition = content.anchoredPosition;
             zeroContentPosition[_axis] = 0;
             m_ContentStartPosition = zeroContentPosition;
@@ -205,7 +213,7 @@ namespace RecyclableSR
             _ignoreSetCellDataIndices = new HashSet<int>();
             _extraItemsVisible = _dataSource.ExtraItemsVisible;
             _lastContentPosition = _contentTopLeftCorner;
-            _movementType = movementType;
+            _movementType = _initialMovementType;
 
             _visibleItems = new SortedDictionary<int, Item>();
             
@@ -653,7 +661,8 @@ namespace RecyclableSR
             else
             {
                 // here we initialize cells instead of using ShowCellAtIndex because we don't know much viewport space is left
-                InitializeCells(_maxExtraVisibleItemInViewPort + 1);
+                if (!_isReloadingData)
+                    InitializeCells(_maxExtraVisibleItemInViewPort + 1);
             }
             
             if (newMinExtraVisibleItemInViewPort > _minExtraVisibleItemInViewPort)
@@ -973,10 +982,15 @@ namespace RecyclableSR
             // if content position is bigger than the the position of _maxVisibleItemInViewPort, this means we need to show items in bottom right
             // TODO: if writing code for reversed grids _maxExtraVisibleItemInViewPort needs to be _maxGridItemsInAxis - 1
             var reachedLimits = false;
-            if (_contentTopLeftCorner[_axis] <= 0 || _contentBottomRightCorner[_axis] >= content.rect.size[_axis] && _maxExtraVisibleItemInViewPort == _itemsCount - 1)
+            var atStart = _contentTopLeftCorner[_axis] <= 0;
+            var atEnd = _contentBottomRightCorner[_axis] >= content.rect.size[_axis] && _maxExtraVisibleItemInViewPort == _itemsCount - 1;
+            if (atStart || atEnd)
             {
                 movementType = _movementType;
                 reachedLimits = true;
+                
+                if (atEnd)
+                    _dataSource.ReachedScrollEnd();
             }
             else
                 movementType = MovementType.Unrestricted;
@@ -1189,9 +1203,6 @@ namespace RecyclableSR
                 _queuedScrollToCell = -1;
             }
 
-            if (newIndex == _itemsCount - 1)
-                _dataSource.ReachedScrollEnd();
-            
             SetChildrenIndices();
         }
 
@@ -1239,6 +1250,7 @@ namespace RecyclableSR
         /// <param name="reloadAllItems">should be only used when adding items to the top of the current visible items</param>
         public void ReloadData(bool reloadAllItems = false)
         {
+            _isReloadingData = true;
             var oldItemsCount = _itemsCount;
             _itemsCount = _dataSource.ItemsCount;
             
@@ -1274,6 +1286,7 @@ namespace RecyclableSR
                 foreach (var index in visibleItemKeys)
                     ReloadCell(index, "", true);
             }
+            _isReloadingData = false;
         }
 
         /// <summary>
@@ -1352,14 +1365,15 @@ namespace RecyclableSR
         /// <param name="callEvent">call scroll to cell event, usually not needed when calling ScrollToCell from OnEndDrag if RSR is paged</param>
         /// <param name="instant">scroll instantly</param>
         /// <param name="maxSpeedMultiplier">a multiplier that is used at max speed for scrolling</param>
-        public void ScrollToCell(int cellIndex, bool callEvent = true, bool instant = false, float maxSpeedMultiplier = 1)
+        /// <param name="offset">value to offset target scroll position with</param>
+        public void ScrollToCell(int cellIndex, bool callEvent = true, bool instant = false, float maxSpeedMultiplier = 1, float offset = 0)
         {
             StopMovement();
             var itemVisiblePositionKnown = _itemPositions[cellIndex].positionSet && _visibleItems.ContainsKey(cellIndex);
             if (itemVisiblePositionKnown && instant)
             {
                 var currentContentPosition = content.anchoredPosition;
-                currentContentPosition[_axis] = _itemPositions[cellIndex].topLeftPosition[_axis] * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
+                currentContentPosition[_axis] = _itemPositions[cellIndex].topLeftPosition[_axis] * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1)) + offset;
                 content.anchoredPosition = currentContentPosition;
                 m_ContentStartPosition = currentContentPosition;
                 if (callEvent)
@@ -1435,7 +1449,7 @@ namespace RecyclableSR
 
                 _isAnimating = true;
                 var increment = speedToUse * direction * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
-                StartCoroutine(StartScrolling(increment, direction, cellIndex, callEvent));
+                StartCoroutine(StartScrolling(increment, direction, cellIndex, callEvent, offset));
             }
         }
 
@@ -1446,8 +1460,8 @@ namespace RecyclableSR
         /// <param name="direction">direction of scroll, 1 for down or right, -1 for up or left</param>
         /// <param name="cellIndex">cell index which we want to scroll to</param>
         /// <param name="callEvent">call scroll to cell event, usually not needed when calling ScrollToCell from OnEndDrag if RSR is paged</param>
-        /// <returns></returns>
-        private IEnumerator StartScrolling(float increment, int direction, int cellIndex, bool callEvent)
+        /// <param name="offset">value to offset target scroll position with</param>
+        private IEnumerator StartScrolling(float increment, int direction, int cellIndex, bool callEvent, float offset)
         {
             var reachedCell = false;
             var contentTopLeftCorner = content.anchoredPosition;
@@ -1456,7 +1470,7 @@ namespace RecyclableSR
 
             if (_itemPositions[cellIndex].positionSet)
             {
-                var itemTopLeftCorner = _itemPositions[cellIndex].topLeftPosition[_axis];
+                var itemTopLeftCorner = _itemPositions[cellIndex].topLeftPosition[_axis] + offset * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
                 if (direction == 1) 
                 {
                     if (itemTopLeftCorner <= Mathf.Abs(contentTopLeftCorner[_axis]))
@@ -1495,7 +1509,7 @@ namespace RecyclableSR
 
             yield return new WaitForEndOfFrame();
             if (!reachedCell)
-                StartCoroutine(StartScrolling(increment, direction, cellIndex, callEvent));
+                StartCoroutine(StartScrolling(increment, direction, cellIndex, callEvent, offset));
             else
             {
                 if (callEvent)
