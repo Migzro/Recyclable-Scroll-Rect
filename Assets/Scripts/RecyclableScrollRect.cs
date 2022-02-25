@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -514,7 +513,7 @@ namespace RecyclableSR
         /// <param name="reloadCellData">when set true, it will fetch cell data from IDataSource</param>
         public void ReloadCell(int cellIndex, string reloadTag = "", bool reloadCellData = false)
         {
-            PreReloadCell(cellIndex, reloadTag, reloadCellData, false);
+            PreReloadCell(cellIndex, reloadTag, reloadCellData);
         }
 
         /// <summary>
@@ -577,7 +576,6 @@ namespace RecyclableSR
 
         /// <summary>
         /// Reloads cell size and data
-        /// Persists content position to avoid sudden jumps if a cell size changes
         /// </summary>
         /// <param name="cellIndex">cell index to reload</param>
         /// <param name="reloadCellData">when set true, it will fetch cell data from IDataSource</param>
@@ -604,17 +602,39 @@ namespace RecyclableSR
 
             var oldSize = _itemPositions[cellIndex].cellSize[_axis];
             CalculateCellAxisSize(cell.transform, cellIndex);
+            SetCellAxisPosition(cell.transform, cellIndex);
+            
+            // no need to call this while reloading data, since ReloadData will call it after reloading call cells
+            // calling it while reload data will add unneeded redundancy
+            if (!isReloadingAllData)
+            {
+                // no need to call CalculateNewMinMaxItemsAfterReloadCell if content moved since it will be handled in Update
+                var contentMoved = RecalculateFollowingCells(cellIndex, oldSize);
+                if (!contentMoved)
+                    CalculateNewMinMaxItemsAfterReloadCell();
+            }
+        }
 
+        /// <summary>
+        /// Sets the positions of all cells of index + 1
+        /// Persists content position to avoid sudden jumps if a cell size changes
+        /// </summary>
+        /// <param name="cellIndex">index of cell to start calculate following cells from</param>
+        /// <param name="oldSize">old cell size used to offset content position with</param>
+        /// <returns></returns>
+        private bool RecalculateFollowingCells(int cellIndex, float oldSize)
+        {
             // need to adjust all the cells position after cellIndex 
             var startingCellToAdjustPosition = cellIndex + 1;
             for (var i = startingCellToAdjustPosition; i <= _maxExtraVisibleItemInViewPort; i++)
                 SetCellAxisPosition(_visibleItems[i].transform, i);
 
             if (_isAnimating)
-                return;
+                return true;
             
             var contentPosition = content.anchoredPosition;
             var contentMoved = false;
+            var oldContentPosition = contentPosition[_axis];
             if (cellIndex < _minExtraVisibleItemInViewPort)
             {
                 // this is a very special case as items reloaded at the top or right will have a different bottomRight position
@@ -628,14 +648,15 @@ namespace RecyclableSR
                 // var viewPortBounds = new Bounds(viewportRect.center, viewportRect.size);
                 // var newNormalizedPosition = (viewPortBounds.min[_axis] - (_itemPositions[cellIndex].bottomRightPosition[_axis] - contentRect.size[_axis])) / (contentRect.size[_axis] - viewportRect.size[_axis]);
                 // SetNormalizedPosition(newNormalizedPosition, _axis);
-                
-                contentMoved = true;
             }
             else if (_minExtraVisibleItemInViewPort <= cellIndex && _minVisibleItemInViewPort > cellIndex)
             {
                 contentPosition[_axis] -= (oldSize - _itemPositions[cellIndex].cellSize[_axis]) * (_reverseDirection ? -1 : 1);
-                contentMoved = true;
             }
+            
+            var contentPositionDiff = Mathf.Abs(contentPosition[_axis] - oldContentPosition);
+            if (contentPositionDiff > 0)
+                contentMoved = true;
 
             if (contentMoved)
             {
@@ -643,11 +664,9 @@ namespace RecyclableSR
                 // this is important since the scroll rect will likely be dragging and it will cause a jump
                 // this only took me 6 hours to figure out :(
                 m_ContentStartPosition = contentPosition;
-                return;
             }
 
-            if (!isReloadingAllData)
-                CalculateNewMinMaxItemsAfterReloadCell();
+            return contentMoved;
         }
 
         /// <summary>
@@ -655,7 +674,6 @@ namespace RecyclableSR
         /// </summary>
         private void CalculateNewMinMaxItemsAfterReloadCell()
         {
-            Debug.Log("CalculateNewMinMaxItemsAfterReloadCell");
             // figure out the new _minVisibleItemInViewPort && _maxVisibleItemInViewPort
             GetContentBounds();
             var newMinVisibleItemInViewPortSet = false;
@@ -1309,9 +1327,8 @@ namespace RecyclableSR
 
             if (reloadAllItems)
             {
-                var visibleItemKeys = _visibleItems.Keys.ToList();
-                foreach (var index in visibleItemKeys)
-                    PreReloadCell(index, "", true, true);
+                foreach (var item in _visibleItems)
+                    PreReloadCell(item.Key, "", true, true);
             }
             CalculateNewMinMaxItemsAfterReloadCell();
         }
