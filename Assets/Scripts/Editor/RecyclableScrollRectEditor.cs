@@ -7,9 +7,11 @@ namespace RecyclableSR
     [CanEditMultipleObjects]
     public class RecyclableScrollRectEditor : ScrollRectEditor
     {
-        SerializedProperty _paged;
-        SerializedProperty _swipeThreshold;
-        SerializedProperty _reverseDirection;
+        private SerializedProperty _paged;
+        private SerializedProperty _swipeThreshold;
+        private SerializedProperty _reverseDirection;
+        private SerializedProperty _useCardsAnimation;
+        private SerializedProperty _cardZMultiplier;
 
         protected override void OnEnable()
         {
@@ -17,6 +19,9 @@ namespace RecyclableSR
             _paged = serializedObject.FindProperty(nameof(_paged));
             _swipeThreshold = serializedObject.FindProperty(nameof(_swipeThreshold));
             _reverseDirection = serializedObject.FindProperty(nameof(_reverseDirection));
+            
+            _useCardsAnimation = serializedObject.FindProperty(nameof(_useCardsAnimation));
+            _cardZMultiplier = serializedObject.FindProperty(nameof(_cardZMultiplier));
         }
 
         public override void OnInspectorGUI()
@@ -26,7 +31,13 @@ namespace RecyclableSR
             EditorGUILayout.PropertyField(_reverseDirection);
             EditorGUILayout.PropertyField(_paged);
             if (_paged.boolValue)
+            {
                 EditorGUILayout.PropertyField(_swipeThreshold);
+                EditorGUILayout.PropertyField(_useCardsAnimation);
+                if (_useCardsAnimation.boolValue)
+                    EditorGUILayout.PropertyField(_cardZMultiplier);
+            }
+
             serializedObject.ApplyModifiedProperties();
         }
     }

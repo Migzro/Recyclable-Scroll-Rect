@@ -14,6 +14,8 @@ namespace RecyclableSR
         [SerializeField] private float _swipeThreshold = 200;
         [SerializeField] private bool _paged;
         [SerializeField] private bool _reverseDirection;
+        [SerializeField] private bool _useCardsAnimation;
+        [SerializeField] private float _cardZMultiplier;
         
         private VerticalLayoutGroup _verticalLayoutGroup;
         private HorizontalLayoutGroup _horizontalLayoutGroup;
@@ -1250,7 +1252,45 @@ namespace RecyclableSR
                 _queuedScrollToCell = -1;
             }
 
-            SetChildrenIndices();
+            if (_paged && _useCardsAnimation)
+                SetCardsZIndices();
+            else
+                SetChildrenIndices();
+        }
+
+        /// <summary>
+        /// Set cell z index on card when after it finishes scrolling
+        /// also set cell canvas group intractability & order in canvas
+        /// </summary>
+        private void SetCardsZIndices()
+        {
+            if (!_paged || !_useCardsAnimation)
+                return;
+
+            var childrenSiblingOrder = new SortedDictionary<int, Transform>();
+            foreach (var visibleItem in _visibleItems)
+            {
+                // set card z position
+                var cellZIndex = Mathf.Abs(visibleItem.Key -_currentPage) * _cardZMultiplier;
+                var cellPosition = visibleItem.Value.transform.anchoredPosition3D; 
+                cellPosition.z = cellZIndex;
+                visibleItem.Value.transform.anchoredPosition3D = cellPosition;
+
+                // set card as interactable if is current index
+                visibleItem.Value.cell.CanvasGroup.interactable = (visibleItem.Key == _currentPage);
+                
+                // sort items
+                var siblingOrder = visibleItem.Key - _currentPage;
+                if (siblingOrder > 0)
+                    siblingOrder = siblingOrder * -1 - _currentPage;
+
+                childrenSiblingOrder.Add(siblingOrder, visibleItem.Value.transform);
+            }
+
+            foreach (var child in childrenSiblingOrder)  
+            {
+                child.Value.SetAsLastSibling();
+            }
         }
 
         /// <summary>
@@ -1424,6 +1464,7 @@ namespace RecyclableSR
                     _dataSource.ScrolledToCell(_visibleItems[cellIndex].cell, cellIndex);
                 _currentPage = cellIndex;
                 _isAnimating = false;
+                SetCardsZIndices();
             }
             else
             {
@@ -1524,7 +1565,7 @@ namespace RecyclableSR
                     }
 
                     // reached bottom or right
-                    if (_maxExtraVisibleItemInViewPort == _itemsCount - 1 && Mathf.Abs(contentBottomRightCorner[_axis]) >= content.sizeDelta[_axis])
+                    else if (_maxExtraVisibleItemInViewPort == _itemsCount - 1 && Mathf.Abs(contentBottomRightCorner[_axis]) >= content.sizeDelta[_axis])
                     {
                         contentTopLeftCorner[_axis] = (content.rect.size[_axis] - _viewPortSize[_axis]) * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
                         reachedCell = true;
@@ -1539,7 +1580,7 @@ namespace RecyclableSR
                     }
 
                     // reached top or left
-                    if (!_reverseDirection && (vertical && contentTopLeftCorner[_axis] <= 0 || !vertical && contentTopLeftCorner[_axis] >= 0)
+                    else if (!_reverseDirection && (vertical && contentTopLeftCorner[_axis] <= 0 || !vertical && contentTopLeftCorner[_axis] >= 0)
                         || _reverseDirection && (vertical && contentTopLeftCorner[_axis] >= 0 || !vertical && contentTopLeftCorner[_axis] <= 0))
                     {
                         contentTopLeftCorner[_axis] = 0;
@@ -1565,6 +1606,7 @@ namespace RecyclableSR
                 } 
                 _currentPage = cellIndex;
                 _isAnimating = false;
+                SetCardsZIndices();
                 _ignoreSetCellDataIndices.Clear();
             }
         }

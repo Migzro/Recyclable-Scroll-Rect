@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using RecyclableSR;
 using UnityEngine;
 
-public class VerticalDynamicRSRDemo : MonoBehaviour, IDataSource
+public class HorizontalCardsRSRDemo : MonoBehaviour, IDataSource
 {
     [SerializeField] private int _itemsCount;
     [SerializeField] private RecyclableScrollRect _scrollRect;
@@ -10,10 +10,11 @@ public class VerticalDynamicRSRDemo : MonoBehaviour, IDataSource
     [SerializeField] private int _extraItemsVisible;
         
     private List<string> _dataSource;
+    private int _itemCount;
     
     public int ItemsCount => _itemsCount;
     public int ExtraItemsVisible => _extraItemsVisible;
-    public bool IsCellSizeKnown => false;
+    public bool IsCellSizeKnown => true;
     public bool IsSetVisibleUsingCanvasGroupAlpha => false;
     public GameObject[] PrototypeCells => _prototypeCells;
 
@@ -21,21 +22,13 @@ public class VerticalDynamicRSRDemo : MonoBehaviour, IDataSource
     {
         _dataSource = new List<string>();
         for (var i = 0; i < _itemsCount; i++)
-            _dataSource.Add(i + " " + HelperFunctions.RandomString(Random.Range(100, 200)));
+            _dataSource.Add( i.ToString() );
         _scrollRect.Initialize(this);
-        Invoke(nameof(ReloadCell), 5);
-    }
-
-    private void ReloadCell()
-    {
-        Debug.Log("Reloading Cell");
-        _dataSource[5] = "5";
-        _scrollRect.ReloadCell(5, "", true);
     }
 
     public float GetCellSize(int cellIndex)
     {
-        return -1;
+        return 1000f;
     }
 
     public void SetCellData(ICell cell, int cellIndex)
