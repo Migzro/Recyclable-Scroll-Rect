@@ -1118,7 +1118,7 @@ namespace RecyclableSR
                 
                 if ( atStart && _canCallReachedScrollStart )
                 {
-                    // _dataSource.ReachedScrollStart();
+                    _dataSource.ReachedScrollStart();
                     _canCallReachedScrollStart = false;
                 }
                 
