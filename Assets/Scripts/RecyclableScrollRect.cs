@@ -47,6 +47,8 @@ namespace RecyclableSR
         private bool _pullToRefresh;
         private bool _isGridLayout;
         private bool _isDragging;
+        private bool _canCallReachedScrollEnd;
+        private bool _canCallReachedScrollStart;
 
         private HashSet<int> _itemsMarkedForReload;
         private HashSet<int> _ignoreSetCellDataIndices;
@@ -60,6 +62,7 @@ namespace RecyclableSR
         private Vector2 _contentBottomRightCorner;
         private Vector2 _spacing;
         private Vector2 _dragStartingPosition;
+        private Vector2 _gridLayoutPadding;
         private RectOffset _padding;
         private TextAnchor _alignment;
         private MovementType _movementType;
@@ -167,7 +170,6 @@ namespace RecyclableSR
                     _layoutElement = content.gameObject.AddComponent<LayoutElement>();
             }
 
-            _currentPage = 0;
             _viewPortSize = viewport.rect.size;
             _axis = vertical ? 1 : 0;
             _initialMovementType = movementType;
@@ -193,10 +195,16 @@ namespace RecyclableSR
                 _visibleItems.Clear();
             }
 
+            StopMovement();
+            
+            _gridLayoutPadding = Vector2.zero;
+            
             _minVisibleItemInViewPort = 0;
             _minExtraVisibleItemInViewPort = 0;
             _maxVisibleItemInViewPort = 0;
             _maxExtraVisibleItemInViewPort = 0;
+            
+            _currentPage = 0;
 
             var zeroContentPosition = content.anchoredPosition;
             zeroContentPosition[_axis] = 0;
@@ -213,7 +221,7 @@ namespace RecyclableSR
             _ignoreSetCellDataIndices = new HashSet<int>();
             _extraItemsVisible = _dataSource.ExtraItemsVisible;
             _lastContentPosition = _contentTopLeftCorner;
-            _movementType = _initialMovementType;
+            SetMovementType( _initialMovementType );
 
             _visibleItems = new SortedDictionary<int, Item>();
             
@@ -235,6 +243,7 @@ namespace RecyclableSR
             SetPrototypeNames();
             InitializeItemPositions();
             CalculateContentSize();
+            CalculateGridLayoutPadding();
             InitializeCells();
             _init = true;
         }
@@ -283,6 +292,8 @@ namespace RecyclableSR
         {
             _isAnimating = false;
             _queuedScrollToCell = -1;
+            _canCallReachedScrollStart = true;
+            _canCallReachedScrollEnd = true;
         }
 
         /// <summary>
@@ -398,6 +409,7 @@ namespace RecyclableSR
                     {
                         var cell = cellRect.GetComponent<ICell>() ?? cellRect.gameObject.AddComponent<BaseCell>();
                         cell.CanvasGroup.alpha = 0;
+                        cell.CanvasGroup.interactable = false;
                     }
                     else
                         cellRect.gameObject.SetActive(false);
@@ -410,6 +422,9 @@ namespace RecyclableSR
         /// </summary>
         private void SetPrototypeNames()
         {
+            // create an array of cells that need their prototype changed
+            var changeCellPrototypeCellList = new List<int>();
+
             // set an array of prototype names to be used when getting the correct prefab for the cell index it exists in its respective pool
             for (var i = 0; i < _itemsCount; i++)
             {
@@ -418,13 +433,16 @@ namespace RecyclableSR
                     var newPrototype = _dataSource.GetPrototypeCell(i).name;
                     var oldPrototype = _prototypeNames[i];
                     if (newPrototype != oldPrototype)
-                        ChangeCellPrototype(i);
+                        changeCellPrototypeCellList.Add(i);
                 }
                 else
                 {
                     _prototypeNames.Add(_dataSource.GetPrototypeCell(i).name);
                 }
             }
+            
+            for (var i = 0; i < changeCellPrototypeCellList.Count; i++)
+                ChangeCellPrototype(changeCellPrototypeCellList);
         }
 
         /// <summary>
@@ -493,7 +511,10 @@ namespace RecyclableSR
                 SetVisibilityInHierarchy((RectTransform)itemGo.transform, true);
                 itemGo.SetActive(true);
                 if (_dataSource.IsSetVisibleUsingCanvasGroupAlpha)
+                {
                     cell.CanvasGroup.alpha = 1;
+                    cell.CanvasGroup.interactable = true;
+                }
             }
 
             var rect = itemGo.transform as RectTransform;
@@ -728,6 +749,65 @@ namespace RecyclableSR
         }
 
         /// <summary>
+        /// Calculates the grid layout padding which offsets each element in the grid based on the padding and anchors set in GridLayout
+        /// </summary>
+        private void CalculateGridLayoutPadding()
+        {
+            if (!_isGridLayout)
+                return;
+            
+            _padding = _gridLayout.padding;
+            _spacing = _gridLayout.spacing;
+            _alignment = _gridLayout.childAlignment;
+
+            // get content size without padding
+            var contentSize = content.rect.size;
+            var contentSizeWithoutPadding = contentSize;
+            contentSizeWithoutPadding.x -= _padding.right + _padding.left;
+            contentSizeWithoutPadding.y -= _padding.top + _padding.bottom;
+            
+            var rectSize = _gridLayout.cellSize;
+            if (vertical)
+            {
+                var rightPadding = _reverseDirection ? _padding.left : _padding.right;
+                var leftPadding = _reverseDirection ? _padding.right : _padding.left;
+
+                if (_alignment == TextAnchor.LowerCenter || _alignment == TextAnchor.MiddleCenter || _alignment == TextAnchor.UpperCenter)
+                {
+                    _gridLayoutPadding.x = leftPadding + (contentSize.x - (rectSize.x * _gridConstraint) - (_spacing.x * (_gridConstraint - 1))) / 2 - rightPadding;
+                }
+                else if (_alignment == TextAnchor.LowerRight || _alignment == TextAnchor.MiddleRight || _alignment == TextAnchor.UpperRight)
+                {
+                    _gridLayoutPadding.x = contentSize.x - rectSize.x - rightPadding;
+                }
+                else
+                {
+                    _gridLayoutPadding.x = leftPadding;
+                }
+                _gridLayoutPadding.y = _reverseDirection ? _padding.bottom : _padding.top;
+            }
+            else
+            {
+                var topPadding = _reverseDirection ? _padding.bottom : _padding.top;
+                var bottomPadding = _reverseDirection ? _padding.top : _padding.bottom;
+                
+                if (_alignment == TextAnchor.MiddleLeft || _alignment == TextAnchor.MiddleCenter || _alignment == TextAnchor.MiddleRight)
+                {
+                    _gridLayoutPadding.y = topPadding + (contentSize.y - (rectSize.y * _gridConstraint) - (_spacing.y * (_gridConstraint - 1))) / 2 - bottomPadding;
+                }
+                else if (_alignment == TextAnchor.LowerLeft || _alignment == TextAnchor.LowerCenter || _alignment == TextAnchor.LowerRight)
+                {
+                    _gridLayoutPadding.y = contentSize.y - rectSize.y - bottomPadding;
+                }
+                else
+                {
+                    _gridLayoutPadding.y = topPadding;
+                }
+                _gridLayoutPadding.x = _reverseDirection ? _padding.right : _padding.left;
+            }
+        }
+
+        /// <summary>
         /// This function call is only needed once when the cell is created as it only sets the vertical size of the cell in a horizontal layout
         /// or the horizontal size of a cell in a vertical layout based on the settings of said layout
         /// It also sets the vertical position in horizontal layout or the horizontal position in a vertical layout based on the padding of said layout since these wont usually
@@ -751,7 +831,7 @@ namespace RecyclableSR
             rect.anchorMin = anchorVector;
             rect.anchorMax = anchorVector;
             rect.pivot = anchorVector;
-            
+
             if (_isGridLayout)
                 return;
 
@@ -786,8 +866,8 @@ namespace RecyclableSR
             // get content size without padding
             var contentSize = content.rect.size;
             var contentSizeWithoutPadding = contentSize;
-            contentSizeWithoutPadding.x -= _padding.right - _padding.left;
-            contentSizeWithoutPadding.y -= _padding.top - _padding.bottom;
+            contentSizeWithoutPadding.x -= _padding.right + _padding.left;
+            contentSizeWithoutPadding.y -= _padding.top + _padding.bottom;
 
             // set position of cell based on layout alignment
             // we check for multiple conditions together since the content is made to fit the items, so they only move in one axis in each different scroll direction
@@ -908,19 +988,19 @@ namespace RecyclableSR
                 {
                     if (_gridLayout.constraint == GridLayoutGroup.Constraint.FixedRowCount && _gridLayout.startAxis == GridLayoutGroup.Axis.Vertical)
                     {
-                        newItemPosition.x = -_padding.right - xIndexInGrid * _itemPositions[newIndex].cellSize[0] - _spacing[0] * xIndexInGrid;
-                        newItemPosition.y = -_padding.bottom - yIndexInGrid * _itemPositions[newIndex].cellSize[1] - _spacing[1] * yIndexInGrid;
+                        newItemPosition.x = -_gridLayoutPadding.x - xIndexInGrid * _itemPositions[newIndex].cellSize[0] - _spacing[0] * xIndexInGrid;
+                        newItemPosition.y = -_gridLayoutPadding.y - yIndexInGrid * _itemPositions[newIndex].cellSize[1] - _spacing[1] * yIndexInGrid;
                     }
                     else if (_gridLayout.constraint == GridLayoutGroup.Constraint.FixedColumnCount && _gridLayout.startAxis == GridLayoutGroup.Axis.Horizontal)
                     {
-                        newItemPosition.x = _padding.right + xIndexInGrid * _itemPositions[newIndex].cellSize[0] + _spacing[0] * xIndexInGrid;
-                        newItemPosition.y = _padding.bottom + yIndexInGrid * _itemPositions[newIndex].cellSize[1] + _spacing[1] * yIndexInGrid;
+                        newItemPosition.x = _gridLayoutPadding.x + xIndexInGrid * _itemPositions[newIndex].cellSize[0] + _spacing[0] * xIndexInGrid;
+                        newItemPosition.y = _gridLayoutPadding.y + yIndexInGrid * _itemPositions[newIndex].cellSize[1] + _spacing[1] * yIndexInGrid;
                     }
                 }
                 else
                 {
-                    newItemPosition.x = _padding.left + xIndexInGrid * _itemPositions[newIndex].cellSize[0] + _spacing[0] * xIndexInGrid;
-                    newItemPosition.y = -_padding.top - yIndexInGrid * _itemPositions[newIndex].cellSize[1] - _spacing[1] * yIndexInGrid;
+                    newItemPosition.x = _gridLayoutPadding.x + xIndexInGrid * _itemPositions[newIndex].cellSize[0] + _spacing[0] * xIndexInGrid;
+                    newItemPosition.y = -_gridLayoutPadding.y - yIndexInGrid * _itemPositions[newIndex].cellSize[1] - _spacing[1] * yIndexInGrid;
                 }
             }
             else
@@ -1036,13 +1116,24 @@ namespace RecyclableSR
                 movementType = _movementType;
                 reachedLimits = true;
                 
-                if (atStart)
-                    _dataSource.ReachedScrollStart();
-                else
+                if ( atStart && _canCallReachedScrollStart )
+                {
+                    // _dataSource.ReachedScrollStart();
+                    _canCallReachedScrollStart = false;
+                }
+                
+                if ( atEnd && _canCallReachedScrollEnd )
+                {
                     _dataSource.ReachedScrollEnd();
+                    _canCallReachedScrollEnd = false;
+                }
             }
             else
+            {
+                _canCallReachedScrollStart = true;
+                _canCallReachedScrollEnd = true;
                 movementType = MovementType.Unrestricted;
+            }
 
             var showBottomRight = _contentTopLeftCorner[_axis] > _lastContentPosition[_axis];
             _needsClearance = false;
@@ -1218,7 +1309,10 @@ namespace RecyclableSR
                 _pooledItems[cellPrototypeName].RemoveAt(0);
 
                 if (_dataSource.IsSetVisibleUsingCanvasGroupAlpha)
+                {
                     item.cell.CanvasGroup.alpha = 1;
+                    item.cell.CanvasGroup.interactable = true;
+                }
                 else
                     item.transform.gameObject.SetActive(true);
                 SetVisibilityInHierarchy(item.transform, true);
@@ -1311,7 +1405,10 @@ namespace RecyclableSR
         private void HideCellAtIndex(int cellIndex)
         {
             if (_dataSource.IsSetVisibleUsingCanvasGroupAlpha)
+            {
                 _visibleItems[cellIndex].cell.CanvasGroup.alpha = 0;
+                _visibleItems[cellIndex].cell.CanvasGroup.interactable = false;
+            }
             else
                 _visibleItems[cellIndex].transform.gameObject.SetActive(false);
             
@@ -1364,6 +1461,7 @@ namespace RecyclableSR
             SetStaticCells();
             InitializeItemPositions();
             CalculateContentSize();
+            CalculateGridLayoutPadding();
 
             if (reloadAllItems)
             {
@@ -1377,20 +1475,27 @@ namespace RecyclableSR
         /// A cell needs its game object type changed
         /// Useful for when adding items and there are static cells that need to be replaced
         /// </summary>
-        /// <param name="cellIndex">cell index in which we need to change prototype for</param>
-        private void ChangeCellPrototype(int cellIndex)
+        /// <param name="cellIndices">cell index in which we need to change prototype for</param>
+        private void ChangeCellPrototype(List<int> cellIndices)
         {
-            if (_visibleItems.ContainsKey(cellIndex))
+            var wasVisible = new List<int>();
+            
+            for (var i = 0; i < cellIndices.Count; i++)
             {
-                ShowHideCellsAtIndex(cellIndex, false, GridLayoutPage.Single);
-                _prototypeNames[cellIndex] = _dataSource.GetPrototypeCell(cellIndex).name;
-                _staticCells[cellIndex] = _dataSource.IsCellStatic(cellIndex);
-                ShowHideCellsAtIndex(cellIndex, true, GridLayoutPage.Single);
+                if (_visibleItems.ContainsKey(cellIndices[i]))
+                {
+                    wasVisible.Add(cellIndices[i]);
+                    ShowHideCellsAtIndex(cellIndices[i], false, GridLayoutPage.Single);
+                }
             }
-            else
+            
+            for (var i = 0; i < cellIndices.Count; i++)
             {
-                _prototypeNames[cellIndex] = _dataSource.GetPrototypeCell(cellIndex).name;
-                _staticCells[cellIndex] = _dataSource.IsCellStatic(cellIndex);
+                _prototypeNames[cellIndices[i]] = _dataSource.GetPrototypeCell(cellIndices[i]).name;
+                _staticCells[cellIndices[i]] = _dataSource.IsCellStatic(cellIndices[i]);
+                
+                if (wasVisible.Contains(cellIndices[i]))
+                    ShowHideCellsAtIndex(cellIndices[i], true, GridLayoutPage.Single);
             }
         }
 
