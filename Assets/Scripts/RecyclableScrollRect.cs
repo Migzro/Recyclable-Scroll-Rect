@@ -9,6 +9,7 @@ namespace RecyclableSR
 {
     public class RecyclableScrollRect : ScrollRect
     {
+        // TODO: reverse direction for cards
         // TODO: different start axes for grid layout
         // TODO: FixedColumnCount with Vertical Grids & FixedRowCount with Horizontal Grids (remaining _maxExtraVisibleItemInViewPort needs to be / _maxGridsItemsInAxis
         [SerializeField] private float _swipeThreshold = 200;
@@ -16,6 +17,10 @@ namespace RecyclableSR
         [SerializeField] private bool _reverseDirection;
         [SerializeField] private bool _useCardsAnimation;
         [SerializeField] private float _cardZMultiplier;
+        [SerializeField] private bool _useConstantScrollingSpeed;
+        [SerializeField] private float _constantScrollingSpeed;
+        [SerializeField] private float _hiddenCardsOffset;
+        [SerializeField] private bool _hideOffsetCards;
         
         private VerticalLayoutGroup _verticalLayoutGroup;
         private HorizontalLayoutGroup _horizontalLayoutGroup;
@@ -463,7 +468,7 @@ namespace RecyclableSR
         private void InitializeCells(int startIndex = 0)
         {
             GetContentBounds();
-            var contentHasSpace = startIndex == 0 || _itemPositions[startIndex - 1].bottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
+            var contentHasSpace = startIndex == 0 || _itemPositions[startIndex - 1].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
             var extraItemsInitialized = contentHasSpace ? 0 : _maxExtraVisibleItemInViewPort - _maxVisibleItemInViewPort;
             var i = startIndex;
             var gridHasSpace = _isGridLayout && startIndex % _gridConstraint != 0 && i < _itemsCount;
@@ -475,7 +480,7 @@ namespace RecyclableSR
                 else
                     _maxVisibleItemInViewPort = i;
 
-                contentHasSpace = _itemPositions[i].bottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
+                contentHasSpace = _itemPositions[i].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
                 gridHasSpace = _isGridLayout && startIndex % _gridConstraint != 0 && i < _itemsCount;
                 i++;
             }
@@ -662,7 +667,7 @@ namespace RecyclableSR
             {
                 // this is a very special case as items reloaded at the top or right will have a different bottomRight position
                 // and since we are here at the item, if we don't manually set the position of the content, it will seem as the content suddenly shifted and disorient the user
-                contentPosition[_axis] = _itemPositions[cellIndex].bottomRightPosition[_axis];
+                contentPosition[_axis] = _itemPositions[cellIndex].absBottomRightPosition[_axis];
                 
                 // set the normalized position as well, because why not
                 // (viewMin - (itemPosition - contentSize)) / (contentSize - viewSize)
@@ -705,13 +710,13 @@ namespace RecyclableSR
             foreach (var item in _visibleItems)
             {
                 var itemPosition = _itemPositions[item.Key];
-                if (itemPosition.bottomRightPosition[_axis] >= _contentTopLeftCorner[_axis] && !newMinVisibleItemInViewPortSet)
+                if (itemPosition.absBottomRightPosition[_axis] >= _contentTopLeftCorner[_axis] && !newMinVisibleItemInViewPortSet)
                 {
                     newMinVisibleItemInViewPort = item.Key;
                     newMinVisibleItemInViewPortSet = true; // this boolean is needed as all items in the view port will satisfy the above condition and we only need the first one
                 }
 
-                if (itemPosition.topLeftPosition[_axis] <= _contentBottomRightCorner[_axis])
+                if (itemPosition.absTopLeftPosition[_axis] <= _contentBottomRightCorner[_axis])
                 {
                     newMaxVisibleItemInViewPort = item.Key;
                 }
@@ -1026,7 +1031,7 @@ namespace RecyclableSR
                 else
                 {
                     var verticalSign = (vertical ? -1 : 1) * (_reverseDirection ? -1 : 1);
-                    newItemPosition[_axis] = verticalSign * _itemPositions[newIndex - 1].bottomRightPosition[_axis] + verticalSign * _spacing[_axis];
+                    newItemPosition[_axis] = verticalSign * _itemPositions[newIndex - 1].absBottomRightPosition[_axis] + verticalSign * _spacing[_axis];
                 }
             }
 
@@ -1154,12 +1159,12 @@ namespace RecyclableSR
             var topLeftMinClearance = 0.1f + topLeftPadding * (_minVisibleItemInViewPort == 0 ? 1 : 0) + _spacing[_axis] * (_minVisibleItemInViewPort == 0 ? 0 : 1);
             var bottomRightMinClearance = 0.1f + bottomLeftPadding * (_maxVisibleItemInViewPort == _itemsCount - 1 ? 1 : 0) + _spacing[_axis] * (_maxVisibleItemInViewPort == _itemsCount - 1 ? 0 : 1);
             
-            if (_itemPositions[_minVisibleItemInViewPort].topLeftPosition[_axis] - _contentTopLeftCorner[_axis] > topLeftMinClearance && _minVisibleItemInViewPort != 0)
+            if (_itemPositions[_minVisibleItemInViewPort].absTopLeftPosition[_axis] - _contentTopLeftCorner[_axis] > topLeftMinClearance && _minVisibleItemInViewPort != 0)
             {
                 showBottomRight = false;
                 _needsClearance = true;
             }
-            else if (_itemPositions[_maxVisibleItemInViewPort].bottomRightPosition[_axis] - _contentBottomRightCorner[_axis] < -bottomRightMinClearance && _maxVisibleItemInViewPort != _itemsCount - 1)
+            else if (_itemPositions[_maxVisibleItemInViewPort].absBottomRightPosition[_axis] - _contentBottomRightCorner[_axis] < -bottomRightMinClearance && _maxVisibleItemInViewPort != _itemsCount - 1)
             {
                 showBottomRight = true;
                 _needsClearance = true;
@@ -1172,7 +1177,7 @@ namespace RecyclableSR
             if (showBottomRight)
             {
                 // item at top or left is not in viewport
-                if (_minVisibleItemInViewPort < _itemsCount - 1 && _contentTopLeftCorner[_axis] >= _itemPositions[_minVisibleItemInViewPort].bottomRightPosition[_axis])
+                if (_minVisibleItemInViewPort < _itemsCount - 1 && _contentTopLeftCorner[_axis] >= _itemPositions[_minVisibleItemInViewPort].absBottomRightPosition[_axis])
                 {
                     var itemToHide = _minVisibleItemInViewPort - _extraItemsVisible;
                     _minVisibleItemInViewPort++;
@@ -1184,7 +1189,7 @@ namespace RecyclableSR
                 }
 
                 // item at bottom or right needs to appear
-                if (_maxVisibleItemInViewPort < _itemsCount - 1 && _contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleItemInViewPort].bottomRightPosition[_axis] + _spacing[_axis])
+                if (_maxVisibleItemInViewPort < _itemsCount - 1 && _contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleItemInViewPort].absBottomRightPosition[_axis] + _spacing[_axis])
                 {
                     var newMaxItemToCheck = _maxVisibleItemInViewPort + 1;
                     var itemToShow = newMaxItemToCheck + _extraItemsVisible;
@@ -1199,7 +1204,7 @@ namespace RecyclableSR
             else
             {
                 // item at bottom or right not in viewport
-                if (_maxVisibleItemInViewPort > 0 && _contentBottomRightCorner[_axis] <= _itemPositions[_maxVisibleItemInViewPort].topLeftPosition[_axis])
+                if (_maxVisibleItemInViewPort > 0 && _contentBottomRightCorner[_axis] <= _itemPositions[_maxVisibleItemInViewPort].absTopLeftPosition[_axis])
                 {
                     var itemToHide = _maxVisibleItemInViewPort + _extraItemsVisible;
                     _maxVisibleItemInViewPort--;
@@ -1211,7 +1216,7 @@ namespace RecyclableSR
                 }
 
                 // item at top or left needs to appear
-                if (_minVisibleItemInViewPort > 0 && _contentTopLeftCorner[_axis] < _itemPositions[_minVisibleItemInViewPort].topLeftPosition[_axis] - _spacing[_axis])
+                if (_minVisibleItemInViewPort > 0 && _contentTopLeftCorner[_axis] < _itemPositions[_minVisibleItemInViewPort].absTopLeftPosition[_axis] - _spacing[_axis])
                 {
                     var newMinItemToCheck = _minVisibleItemInViewPort - 1;
                     var itemToShow = newMinItemToCheck - _extraItemsVisible;
@@ -1377,6 +1382,11 @@ namespace RecyclableSR
                 var siblingOrder = visibleItem.Key - _currentPage;
                 if (siblingOrder > 0)
                     siblingOrder = siblingOrder * -1 - _currentPage;
+
+                if (_hideOffsetCards)
+                {
+                    visibleItem.Value.cell.CanvasGroup.alpha = visibleItem.Key >= _currentPage && !_reverseDirection ? 1 : 0;
+                }
 
                 childrenSiblingOrder.Add(siblingOrder, visibleItem.Value.transform);
             }
@@ -1562,7 +1572,7 @@ namespace RecyclableSR
             if (itemVisiblePositionKnown && instant)
             {
                 var currentContentPosition = content.anchoredPosition;
-                currentContentPosition[_axis] = _itemPositions[cellIndex].topLeftPosition[_axis] * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1)) + offset;
+                currentContentPosition[_axis] = _itemPositions[cellIndex].absTopLeftPosition[_axis] * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1)) + offset;
                 content.anchoredPosition = currentContentPosition;
                 m_ContentStartPosition = currentContentPosition;
                 if (callEvent)
@@ -1573,22 +1583,7 @@ namespace RecyclableSR
             }
             else
             {
-                var direction = cellIndex > _minVisibleItemInViewPort ? 1 : -1;
-
-                float speedToUse;
-                var cellSizeAverage = 0f;
-                int i;
-                for (i = 0; i < _itemsCount; i++)
-                {
-                    if (!_dataSource.IsCellSizeKnown && _itemPositions[i].sizeSet)
-                        cellSizeAverage += _itemPositions[i].cellSize[_axis];
-                    else if (_dataSource.IsCellSizeKnown)
-                        cellSizeAverage += _dataSource.GetCellSize(i);
-                    else
-                        break;
-                }
-
-                cellSizeAverage /= i;
+                var direction = cellIndex > _currentPage ? 1 : -1;
                 
                 // create a list that will stop ScrollTo method from calling SetCellData on items that will only be visible in the one frame while scrolling, this assumes
                 // that the paging cell is taking up the entire width or height
@@ -1622,20 +1617,41 @@ namespace RecyclableSR
                     }
                 }
 
-                if (instant)
+                float speedToUse;
+                if (_useConstantScrollingSpeed)
                 {
-                    speedToUse = cellSizeAverage;
+                    speedToUse = _constantScrollingSpeed;
                 }
                 else
                 {
-                    var scrollingDistance = Mathf.Max(1, Mathf.Abs(_minVisibleItemInViewPort - cellIndex));
-                    var scrollingDistancePercentage = Mathf.Clamp01((float)scrollingDistance / Mathf.Min(10, _itemsCount));
-                    var exponentialSpeed = (Mathf.Exp(scrollingDistancePercentage) - 1) * cellSizeAverage;
-                    speedToUse = Mathf.Min(cellSizeAverage, exponentialSpeed);
-                }
+                    var cellSizeAverage = 0f;
+                    int i;
+                    for (i = 0; i < _itemsCount; i++)
+                    {
+                        if (!_dataSource.IsCellSizeKnown && _itemPositions[i].sizeSet)
+                            cellSizeAverage += _itemPositions[i].cellSize[_axis];
+                        else if (_dataSource.IsCellSizeKnown)
+                            cellSizeAverage += _dataSource.GetCellSize(i);
+                        else
+                            break;
+                    }
 
-                if (speedToUse >= cellSizeAverage)
-                    speedToUse *= maxSpeedMultiplier;
+                    cellSizeAverage /= i;
+                    if (instant)
+                    {
+                        speedToUse = cellSizeAverage;
+                    }
+                    else
+                    {
+                        var scrollingDistance = Mathf.Max(1, Mathf.Abs(_minVisibleItemInViewPort - cellIndex));
+                        var scrollingDistancePercentage = Mathf.Clamp01((float)scrollingDistance / Mathf.Min(10, _itemsCount));
+                        var exponentialSpeed = (Mathf.Exp(scrollingDistancePercentage) - 1) * cellSizeAverage;
+                        speedToUse = Mathf.Min(cellSizeAverage, exponentialSpeed);
+                    }
+
+                    if (speedToUse >= cellSizeAverage)
+                        speedToUse *= maxSpeedMultiplier;
+                }
 
                 _isAnimating = true;
                 var increment = speedToUse * direction * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
@@ -1660,7 +1676,7 @@ namespace RecyclableSR
 
             if (_itemPositions[cellIndex].positionSet)
             {
-                var itemTopLeftCorner = _itemPositions[cellIndex].topLeftPosition[_axis] + offset * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
+                var itemTopLeftCorner = _itemPositions[cellIndex].absTopLeftPosition[_axis] + offset * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
                 if (direction == 1) 
                 {
                     if (itemTopLeftCorner <= Mathf.Abs(contentTopLeftCorner[_axis]))
@@ -1697,6 +1713,9 @@ namespace RecyclableSR
             content.anchoredPosition = contentTopLeftCorner;
             m_ContentStartPosition = contentTopLeftCorner;
 
+            _currentPage = cellIndex;
+            SetCardsZIndices();
+            
             yield return new WaitForEndOfFrame();
             if (!reachedCell)
                 StartCoroutine(StartScrolling(increment, direction, cellIndex, callEvent, offset));
@@ -1708,10 +1727,8 @@ namespace RecyclableSR
                         _dataSource.ScrolledToCell(_visibleItems[cellIndex].cell, cellIndex);
                     else
                         _queuedScrollToCell = cellIndex;
-                } 
-                _currentPage = cellIndex;
+                }
                 _isAnimating = false;
-                SetCardsZIndices();
                 _ignoreSetCellDataIndices.Clear();
             }
         }
@@ -1732,7 +1749,8 @@ namespace RecyclableSR
         
         public override void OnBeginDrag(PointerEventData eventData)
         {
-            base.OnBeginDrag(eventData);
+            if (!_useCardsAnimation)
+                base.OnBeginDrag(eventData);
 
             if (!_paged)
                 return;
@@ -1740,14 +1758,71 @@ namespace RecyclableSR
             _isDragging = true;
             _dragStartingPosition = content.anchoredPosition * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
         }
+        
+        public override void OnDrag(PointerEventData eventData)
+        {
+            if (!_useCardsAnimation)
+                base.OnDrag(eventData);
+
+            if (!_isDragging)
+                return;
+
+            var deltaMovement = eventData.delta;
+            deltaMovement[1 - _axis] = 0;
+            _visibleItems[_currentPage].transform.anchoredPosition += deltaMovement;
+        }
 
         public override void OnEndDrag(PointerEventData eventData)
         {
-            base.OnEndDrag(eventData);
+            if (!_useCardsAnimation)
+                base.OnEndDrag(eventData);
+            
             if (!_isDragging || !_paged)
                 return;
             
             _isDragging = false;
+            int newPage;
+            
+            if (!_useCardsAnimation)
+                newPage = CalculateDraggingNextPage();
+            else
+                newPage = CalculateCardsDraggingNextPage();
+            
+            // why is called here, not in the event?
+            _dataSource.ScrolledToCell(_visibleItems[newPage].cell, newPage);
+            ScrollToCell(newPage, false);
+        }
+
+        private int CalculateCardsDraggingNextPage()
+        {
+            var currentPagePosition = _visibleItems[_currentPage].transform.anchoredPosition;
+            var currentPageStartingPosition = _itemPositions[_currentPage].topLeftPosition;
+            var distance = Vector2.Distance(currentPageStartingPosition, currentPagePosition);
+            var isNextPage = (currentPagePosition[_axis] < currentPageStartingPosition[_axis]) && !_reverseDirection;
+            var newPage = _currentPage;
+            if (distance > _swipeThreshold)
+            {
+                if (isNextPage && _currentPage < _itemsCount - 1)
+                    newPage++;
+                else if (!isNextPage && _currentPage > 0)
+                    newPage--;
+
+                if (!isNextPage)
+                {
+                    _visibleItems[newPage].transform.anchoredPosition = _itemPositions[newPage].topLeftPosition;
+                }
+                else
+                {
+                    currentPageStartingPosition[_axis] += _hiddenCardsOffset * (_reverseDirection ? 1 : -1);
+                }
+            }
+            
+            _visibleItems[_currentPage].transform.anchoredPosition = currentPageStartingPosition;
+            return newPage;
+        }
+        
+        private int CalculateDraggingNextPage()
+        {
             var currentContentPosition = content.anchoredPosition * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
             var distance = Vector3.Distance(_dragStartingPosition, currentContentPosition);
             var isNextPage = currentContentPosition[_axis] > _dragStartingPosition[_axis];
@@ -1760,8 +1835,7 @@ namespace RecyclableSR
                     newPage--;
             }
             
-            _dataSource.ScrolledToCell(_visibleItems[newPage].cell, newPage);
-            ScrollToCell(newPage, false);
+            return newPage;
         }
 
         public Item? GetCellAtIndex(int cellIndex)

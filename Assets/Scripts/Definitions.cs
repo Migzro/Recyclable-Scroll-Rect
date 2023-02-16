@@ -24,15 +24,16 @@ namespace RecyclableSR
     public class ItemPosition
     {
         public Vector2 topLeftPosition{ get; private set; }
-        public Vector2 bottomRightPosition{ get; private set; }
+        public Vector2 absTopLeftPosition{ get; private set; }
+        public Vector2 absBottomRightPosition{ get; private set; }
         public Vector2 cellSize{ get; private set; }
         public bool positionSet { get; private set; }
         public bool sizeSet { get; private set; }
 
         public ItemPosition()
         {
-            topLeftPosition = Vector2.zero;
-            bottomRightPosition = Vector2.zero;
+            absTopLeftPosition = Vector2.zero;
+            absBottomRightPosition = Vector2.zero;
             cellSize = Vector2.zero;
             positionSet = false;
             sizeSet = false;
@@ -40,18 +41,19 @@ namespace RecyclableSR
 
         public void SetPosition(Vector2 position)
         {
-            topLeftPosition = position.Abs();
+            topLeftPosition = position;
+            absTopLeftPosition = position.Abs();
             positionSet = true;
 
             if (sizeSet)
-                bottomRightPosition = topLeftPosition + cellSize;
+                absBottomRightPosition = absTopLeftPosition + cellSize;
         }
         
         public void SetPositionAndSize (Vector2 position, Vector2 size)
         {
             cellSize = size;
-            topLeftPosition = position.Abs();
-            bottomRightPosition = topLeftPosition + cellSize;
+            absTopLeftPosition = position.Abs();
+            absBottomRightPosition = absTopLeftPosition + cellSize;
             positionSet = true;
             sizeSet = true;
         }
@@ -59,13 +61,13 @@ namespace RecyclableSR
         public void SetSize(Vector2 size)
         {
             cellSize = size;
-            bottomRightPosition = topLeftPosition + cellSize;
+            absBottomRightPosition = absTopLeftPosition + cellSize;
             sizeSet = true;
         }
 
         public override string ToString()
         {
-            return $"Top Left Position {topLeftPosition}, Bottom Right Position {bottomRightPosition}, Size {cellSize}";
+            return $"Top Left Position {absTopLeftPosition}, Bottom Right Position {absBottomRightPosition}, Size {cellSize}";
         }
     }
 }
