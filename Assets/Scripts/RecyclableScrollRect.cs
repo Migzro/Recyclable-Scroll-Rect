@@ -1606,8 +1606,10 @@ namespace RecyclableSR
                 if (_currentPage != cellIndex)
                 {
                     var isNextPage = cellIndex > _currentPage && !_reverseDirection;
+                    _pageSource?.PageWillUnFocus(_currentPage, isNextPage, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform);
                     _pageSource?.PageUnFocused(_currentPage, isNextPage, _visibleItems[_currentPage].cell);
                     _currentPage = cellIndex;
+                    _pageSource?.PageWillFocus(_currentPage, isNextPage, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform, _itemPositions[_currentPage].topLeftPosition);
                     _pageSource?.PageFocused(_currentPage, isNextPage, _visibleItems[_currentPage].cell);
                     SetCardsZIndices();
                 }
