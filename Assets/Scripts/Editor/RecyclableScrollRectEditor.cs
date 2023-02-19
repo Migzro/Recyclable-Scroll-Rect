@@ -14,8 +14,7 @@ namespace RecyclableSR
         private SerializedProperty _cardZMultiplier;
         private SerializedProperty _useConstantScrollingSpeed;
         private SerializedProperty _constantScrollingSpeed;
-        private SerializedProperty _hiddenCardsOffset;
-        private SerializedProperty _hideOffsetCards;
+        private SerializedProperty _manuallyHandleCardAnimations;
 
         protected override void OnEnable()
         {
@@ -30,8 +29,7 @@ namespace RecyclableSR
             _useConstantScrollingSpeed = serializedObject.FindProperty(nameof(_useConstantScrollingSpeed));
             _constantScrollingSpeed = serializedObject.FindProperty(nameof(_constantScrollingSpeed));
             
-            _hiddenCardsOffset = serializedObject.FindProperty(nameof(_hiddenCardsOffset));
-            _hideOffsetCards = serializedObject.FindProperty(nameof(_hideOffsetCards));
+            _manuallyHandleCardAnimations = serializedObject.FindProperty(nameof(_manuallyHandleCardAnimations));
         }
 
         public override void OnInspectorGUI()
@@ -52,8 +50,7 @@ namespace RecyclableSR
                 {
                     EditorGUILayout.PropertyField(_cardZMultiplier);
                 }
-                EditorGUILayout.PropertyField(_hiddenCardsOffset);
-                EditorGUILayout.PropertyField(_hideOffsetCards);
+                EditorGUILayout.PropertyField(_manuallyHandleCardAnimations);
             }
             
             EditorGUILayout.Space();

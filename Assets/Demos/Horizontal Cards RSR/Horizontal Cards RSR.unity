@@ -176,7 +176,10 @@ MonoBehaviour:
   _paged: 1
   _reverseDirection: 0
   _useCardsAnimation: 1
-  _cardZMultiplier: 64
+  _cardZMultiplier: 48
+  _useConstantScrollingSpeed: 1
+  _constantScrollingSpeed: 3
+  _hideOffsetCards: 0
 --- !u!224 &33793620
 RectTransform:
   m_ObjectHideFlags: 0
@@ -275,6 +278,10 @@ MonoBehaviour:
   - {fileID: 1638117046129563386, guid: 65cc41dbd9459498e925ff519e3573f4, type: 3}
   - {fileID: 1638117046129563386, guid: a4f2df383637342e4acaa0e1abfd76e5, type: 3}
   _extraItemsVisible: 0
+  _animationTime: 0
+  _animationEase: 0
+  _dataSource: []
+  _itemCount: 0
 --- !u!114 &53697654
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -485,7 +492,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 166.569, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1866185030
 MonoBehaviour:
@@ -494,7 +501,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1866185028}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 31a19414c41e5ae4aae2af33fee712f6, type: 3}
   m_Name: 

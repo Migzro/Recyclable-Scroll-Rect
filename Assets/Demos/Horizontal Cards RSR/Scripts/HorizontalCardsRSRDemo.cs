@@ -1,13 +1,16 @@
 using System.Collections.Generic;
+using DG.Tweening;
 using RecyclableSR;
 using UnityEngine;
 
-public class HorizontalCardsRSRDemo : MonoBehaviour, IDataSource
+public class HorizontalCardsRSRDemo : MonoBehaviour, IDataSource, IPageSource
 {
     [SerializeField] private int _itemsCount;
     [SerializeField] private RecyclableScrollRect _scrollRect;
     [SerializeField] private GameObject[] _prototypeCells;
     [SerializeField] private int _extraItemsVisible;
+    [SerializeField] private float _animationTime;
+    [SerializeField] private Ease _animationEase;
         
     private List<string> _dataSource;
     private int _itemCount;
@@ -23,7 +26,7 @@ public class HorizontalCardsRSRDemo : MonoBehaviour, IDataSource
         _dataSource = new List<string>();
         for (var i = 0; i < _itemsCount; i++)
             _dataSource.Add( i.ToString() );
-        _scrollRect.Initialize(this);
+        _scrollRect.Initialize(this, this);
     }
 
     public float GetCellSize(int cellIndex)
@@ -76,5 +79,36 @@ public class HorizontalCardsRSRDemo : MonoBehaviour, IDataSource
 
     public void ReachedScrollEnd()
     {
+    }
+
+    public void PageFocused(int cellIndex, bool isNextPage, ICell cell)
+    {
+        if (!isNextPage)
+            cell.CanvasGroup.DOFade(1, _animationTime).SetEase(_animationEase);
+    }
+
+    public void PageUnFocused(int cellIndex, bool isNextPage, ICell cell)
+    {
+        if (isNextPage)
+            cell.CanvasGroup.DOFade(0, _animationTime).SetEase(_animationEase);
+    }
+
+    public void PageWillFocus(int cellIndex, bool isNextPage, ICell cell, RectTransform rect, Vector2 originalPosition)
+    {
+        if (!isNextPage)
+        {
+            var tempPosition = originalPosition;
+            tempPosition.x -= 1000;
+            rect.localPosition = tempPosition;
+            rect.DOAnchorPosX(originalPosition.x, _animationTime).SetEase(_animationEase);
+        }
+    }
+
+    public void PageWillUnFocus(int cellIndex, bool isNextPage, ICell cell, RectTransform rect)
+    {
+        if (isNextPage)
+        {
+            rect.DOAnchorPosX(rect.anchoredPosition.x - 1000, _animationTime).SetEase(_animationEase);
+        }
     }
 }

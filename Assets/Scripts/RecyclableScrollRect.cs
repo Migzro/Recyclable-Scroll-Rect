@@ -19,8 +19,7 @@ namespace RecyclableSR
         [SerializeField] private float _cardZMultiplier;
         [SerializeField] private bool _useConstantScrollingSpeed;
         [SerializeField] private float _constantScrollingSpeed;
-        [SerializeField] private float _hiddenCardsOffset;
-        [SerializeField] private bool _hideOffsetCards;
+        [SerializeField] private bool _manuallyHandleCardAnimations;
         
         private VerticalLayoutGroup _verticalLayoutGroup;
         private HorizontalLayoutGroup _horizontalLayoutGroup;
@@ -29,6 +28,7 @@ namespace RecyclableSR
         private LayoutElement _layoutElement;
 
         private IDataSource _dataSource;
+        private IPageSource _pageSource;
 
         private List<bool> _staticCells;
         private List<string> _prototypeNames;
@@ -75,20 +75,39 @@ namespace RecyclableSR
 
         public bool IsInitialized => _init;
 
-        /// <summary>
-        /// Initialize the scroll rect with the data source that contains all the details required to build the RecyclableScrollRect
-        /// </summary>
-        /// <param name="dataSource">The data source which is usually the class that implements IDataSource</param>
-        /// <exception cref="ArgumentNullException"></exception>
-        public void Initialize(IDataSource dataSource)
+        public void Initialize(IDataSource dataSource, IPageSource pageSource)
         {
             _dataSource = dataSource;
-
+            _pageSource = pageSource;
+            
             if (_dataSource == null)
             {
                 throw new ArgumentNullException(nameof(dataSource), "RSR, IDataSource is null");
             }
+            
+            if (_pageSource == null)
+            {
+                throw new ArgumentNullException(nameof(pageSource), "RSR, IPageResource is null");
+            }
+            Initialize();
+        }
 
+        public void Initialize(IDataSource dataSource)
+        {
+            _dataSource = dataSource;
+            
+            if (_dataSource == null)
+            {
+                throw new ArgumentNullException(nameof(dataSource), "RSR, IDataSource is null");
+            }
+            Initialize();
+        }
+        
+        /// <summary>
+        /// Initialize the scroll rect with the data source that contains all the details required to build the RecyclableScrollRect
+        /// </summary>
+        private void Initialize()
+        {
             if (_dataSource.PrototypeCells == null || _dataSource.PrototypeCells.Length <= 0)
             {
                 throw new ArgumentNullException(nameof(_dataSource.PrototypeCells), "RSR, No prototype cell defined IDataSource");
@@ -250,6 +269,10 @@ namespace RecyclableSR
             CalculateContentSize();
             CalculateGridLayoutPadding();
             InitializeCells();
+            
+            if (_paged && _useCardsAnimation)
+                SetCardsZIndices();
+            
             _init = true;
         }
 
@@ -1361,7 +1384,7 @@ namespace RecyclableSR
         /// Set cell z index on card when after it finishes scrolling
         /// also set cell canvas group intractability & order in canvas
         /// </summary>
-        private void SetCardsZIndices()
+        private void SetCardsZIndices(int pageToStaggerAnimationFor = -1)
         {
             if (!_paged || !_useCardsAnimation)
                 return;
@@ -1383,17 +1406,19 @@ namespace RecyclableSR
                 if (siblingOrder > 0)
                     siblingOrder = siblingOrder * -1 - _currentPage;
 
-                if (_hideOffsetCards)
-                {
-                    visibleItem.Value.cell.CanvasGroup.alpha = visibleItem.Key >= _currentPage && !_reverseDirection ? 1 : 0;
-                }
-
+                visibleItem.Value.cell.CanvasGroup.alpha = visibleItem.Key >= _currentPage && !_reverseDirection ? 1 : 0;
                 childrenSiblingOrder.Add(siblingOrder, visibleItem.Value.transform);
             }
 
             foreach (var child in childrenSiblingOrder)  
             {
                 child.Value.SetAsLastSibling();
+            }
+
+            if (pageToStaggerAnimationFor != -1)
+            {
+                _visibleItems[pageToStaggerAnimationFor].cell.CanvasGroup.alpha = 1;
+                _visibleItems[pageToStaggerAnimationFor].transform.SetAsLastSibling();
             }
         }
 
@@ -1577,9 +1602,17 @@ namespace RecyclableSR
                 m_ContentStartPosition = currentContentPosition;
                 if (callEvent)
                     _dataSource.ScrolledToCell(_visibleItems[cellIndex].cell, cellIndex);
-                _currentPage = cellIndex;
+
+                if (_currentPage != cellIndex)
+                {
+                    var isNextPage = cellIndex > _currentPage && !_reverseDirection;
+                    _pageSource?.PageUnFocused(_currentPage, isNextPage, _visibleItems[_currentPage].cell);
+                    _currentPage = cellIndex;
+                    _pageSource?.PageFocused(_currentPage, isNextPage, _visibleItems[_currentPage].cell);
+                    SetCardsZIndices();
+                }
+
                 _isAnimating = false;
-                SetCardsZIndices();
             }
             else
             {
@@ -1713,9 +1746,6 @@ namespace RecyclableSR
             content.anchoredPosition = contentTopLeftCorner;
             m_ContentStartPosition = contentTopLeftCorner;
 
-            _currentPage = cellIndex;
-            SetCardsZIndices();
-            
             yield return new WaitForEndOfFrame();
             if (!reachedCell)
                 StartCoroutine(StartScrolling(increment, direction, cellIndex, callEvent, offset));
@@ -1728,6 +1758,21 @@ namespace RecyclableSR
                     else
                         _queuedScrollToCell = cellIndex;
                 }
+
+                if (_currentPage != cellIndex)
+                {
+                    var isNextPage = cellIndex > _currentPage && !_reverseDirection;
+                    var pageToStaggerAnimation = -1;
+                    if (_manuallyHandleCardAnimations && isNextPage)
+                        pageToStaggerAnimation = _currentPage;
+                    
+                    _pageSource?.PageUnFocused(_currentPage, isNextPage, _visibleItems[_currentPage].cell);
+                    _currentPage = cellIndex;
+                    _pageSource?.PageFocused(_currentPage, isNextPage, _visibleItems[_currentPage].cell);
+                    
+                    SetCardsZIndices(pageToStaggerAnimation);
+                }
+
                 _isAnimating = false;
                 _ignoreSetCellDataIndices.Clear();
             }
@@ -1806,15 +1851,9 @@ namespace RecyclableSR
                     newPage++;
                 else if (!isNextPage && _currentPage > 0)
                     newPage--;
-
-                if (!isNextPage)
-                {
-                    _visibleItems[newPage].transform.anchoredPosition = _itemPositions[newPage].topLeftPosition;
-                }
-                else
-                {
-                    currentPageStartingPosition[_axis] += _hiddenCardsOffset * (_reverseDirection ? 1 : -1);
-                }
+                
+                _pageSource?.PageWillFocus(newPage, isNextPage, _visibleItems[newPage].cell, _visibleItems[newPage].transform, _itemPositions[newPage].topLeftPosition);
+                _pageSource?.PageWillUnFocus(_currentPage, isNextPage, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform);
             }
             
             _visibleItems[_currentPage].transform.anchoredPosition = currentPageStartingPosition;
