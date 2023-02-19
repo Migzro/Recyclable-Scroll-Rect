@@ -179,7 +179,7 @@ MonoBehaviour:
   _cardZMultiplier: 48
   _useConstantScrollingSpeed: 1
   _constantScrollingSpeed: 3
-  _hideOffsetCards: 0
+  _manuallyHandleCardAnimations: 1
 --- !u!224 &33793620
 RectTransform:
   m_ObjectHideFlags: 0
@@ -275,13 +275,11 @@ MonoBehaviour:
   _itemsCount: 100
   _scrollRect: {fileID: 33793619}
   _prototypeCells:
-  - {fileID: 1638117046129563386, guid: 65cc41dbd9459498e925ff519e3573f4, type: 3}
   - {fileID: 1638117046129563386, guid: a4f2df383637342e4acaa0e1abfd76e5, type: 3}
+  - {fileID: 1638117046129563386, guid: 65cc41dbd9459498e925ff519e3573f4, type: 3}
   _extraItemsVisible: 0
-  _animationTime: 0
-  _animationEase: 0
-  _dataSource: []
-  _itemCount: 0
+  _animationTime: 0.5
+  _animationEase: 1
 --- !u!114 &53697654
 MonoBehaviour:
   m_ObjectHideFlags: 0
