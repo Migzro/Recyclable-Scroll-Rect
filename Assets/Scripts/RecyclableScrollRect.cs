@@ -1853,9 +1853,12 @@ namespace RecyclableSR
                     newPage++;
                 else if (!isNextPage && _currentPage > 0)
                     newPage--;
-                
-                _pageSource?.PageWillFocus(newPage, isNextPage, _visibleItems[newPage].cell, _visibleItems[newPage].transform, _itemPositions[newPage].topLeftPosition);
-                _pageSource?.PageWillUnFocus(_currentPage, isNextPage, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform);
+
+                if (newPage != _currentPage)
+                {
+                    _pageSource?.PageWillFocus(newPage, isNextPage, _visibleItems[newPage].cell, _visibleItems[newPage].transform, _itemPositions[newPage].topLeftPosition);
+                    _pageSource?.PageWillUnFocus(_currentPage, isNextPage, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform);
+                }
             }
             
             _visibleItems[_currentPage].transform.anchoredPosition = currentPageStartingPosition;

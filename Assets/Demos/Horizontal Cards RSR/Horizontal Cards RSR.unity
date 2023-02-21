@@ -272,7 +272,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd2b91c9fa3b1467582ad9248ce7a5ec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _itemsCount: 100
+  _itemsCount: 5
   _scrollRect: {fileID: 33793619}
   _prototypeCells:
   - {fileID: 1638117046129563386, guid: a4f2df383637342e4acaa0e1abfd76e5, type: 3}
