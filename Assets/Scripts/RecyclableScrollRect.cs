@@ -15,7 +15,7 @@ namespace RecyclableSR
         [SerializeField] private float _swipeThreshold = 200;
         [SerializeField] private bool _paged;
         [SerializeField] private bool _reverseDirection;
-        [SerializeField] private bool _useCardsAnimation;
+        [SerializeField] private bool _cardMode;
         [SerializeField] private float _cardZMultiplier;
         [SerializeField] private bool _useConstantScrollingSpeed;
         [SerializeField] private float _constantScrollingSpeed;
@@ -270,7 +270,7 @@ namespace RecyclableSR
             CalculateGridLayoutPadding();
             InitializeCells();
             
-            if (_paged && _useCardsAnimation)
+            if (_paged && _cardMode)
                 SetCardsZIndices();
             
             _init = true;
@@ -1374,7 +1374,7 @@ namespace RecyclableSR
                 _queuedScrollToCell = -1;
             }
 
-            if (_paged && _useCardsAnimation)
+            if (_paged && _cardMode)
                 SetCardsZIndices();
             else
                 SetChildrenIndices();
@@ -1386,7 +1386,7 @@ namespace RecyclableSR
         /// </summary>
         private void SetCardsZIndices(int pageToStaggerAnimationFor = -1)
         {
-            if (!_paged || !_useCardsAnimation)
+            if (!_paged || !_cardMode)
                 return;
 
             var childrenSiblingOrder = new SortedDictionary<int, Transform>();
@@ -1395,6 +1395,7 @@ namespace RecyclableSR
                 // set card z position
                 var cellZIndex = Mathf.Abs(visibleItem.Key -_currentPage) * _cardZMultiplier;
                 var cellPosition = visibleItem.Value.transform.anchoredPosition3D; 
+                cellPosition.y = 0;
                 cellPosition.z = cellZIndex;
                 visibleItem.Value.transform.anchoredPosition3D = cellPosition;
 
@@ -1549,10 +1550,12 @@ namespace RecyclableSR
         /// </summary>
         public void ScrollToTopRight()
         {
-            // either or, both methods work fine
             StopMovement();
-            StartCoroutine(ScrollToTargetNormalisedPosition((vertical ? 1 : 0) * (_reverseDirection ? 0 : 1)));
-            // ScrollToCell(0);
+            
+            if (_paged)
+                ScrollToCell(0, instant:true);
+            else
+                StartCoroutine(ScrollToTargetNormalisedPosition((vertical ? 1 : 0) * (_reverseDirection ? 0 : 1)));
         }
 
         /// <summary>
@@ -1653,7 +1656,7 @@ namespace RecyclableSR
                 }
 
                 float speedToUse;
-                if (_useConstantScrollingSpeed)
+                if (_useConstantScrollingSpeed && !instant)
                 {
                     speedToUse = _constantScrollingSpeed;
                 }
@@ -1748,6 +1751,9 @@ namespace RecyclableSR
             content.anchoredPosition = contentTopLeftCorner;
             m_ContentStartPosition = contentTopLeftCorner;
 
+            if (reachedCell)
+                StopMovement();
+
             yield return new WaitForEndOfFrame();
             if (!reachedCell)
                 StartCoroutine(StartScrolling(increment, direction, cellIndex, callEvent, offset));
@@ -1796,7 +1802,7 @@ namespace RecyclableSR
         
         public override void OnBeginDrag(PointerEventData eventData)
         {
-            if (!_useCardsAnimation)
+            if (!_cardMode)
                 base.OnBeginDrag(eventData);
 
             if (!_paged)
@@ -1806,12 +1812,16 @@ namespace RecyclableSR
             _dragStartingPosition = content.anchoredPosition * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
         }
         
+        /// <summary>
+        /// only used in cards mode, this overrides the dragging behavior of scroll view and moves the cards by themselves
+        /// </summary>
+        /// <param name="eventData"></param>
         public override void OnDrag(PointerEventData eventData)
         {
-            if (!_useCardsAnimation)
+            if (!_cardMode)
                 base.OnDrag(eventData);
 
-            if (!_isDragging)
+            if (!_isDragging || !_cardMode)
                 return;
 
             var deltaMovement = eventData.delta;
@@ -1821,7 +1831,7 @@ namespace RecyclableSR
 
         public override void OnEndDrag(PointerEventData eventData)
         {
-            if (!_useCardsAnimation)
+            if (!_cardMode)
                 base.OnEndDrag(eventData);
             
             if (!_isDragging || !_paged)
@@ -1830,12 +1840,11 @@ namespace RecyclableSR
             _isDragging = false;
             int newPage;
             
-            if (!_useCardsAnimation)
+            if (!_cardMode)
                 newPage = CalculateDraggingNextPage();
             else
                 newPage = CalculateCardsDraggingNextPage();
             
-            // why is called here, not in the event?
             _dataSource.ScrolledToCell(_visibleItems[newPage].cell, newPage);
             ScrollToCell(newPage, false);
         }
