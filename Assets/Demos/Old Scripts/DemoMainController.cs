@@ -118,6 +118,10 @@ public class DemoMainController : MonoBehaviour, IDataSource
         Debug.Log( "End" );
     }
 
+    public void LastItemInScrollIsVisible()
+    {
+    }
+
     private static System.Random random = new System.Random();
     public static string RandomString(int length)
     {

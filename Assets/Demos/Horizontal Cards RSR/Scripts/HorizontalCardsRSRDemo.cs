@@ -81,6 +81,10 @@ public class HorizontalCardsRSRDemo : MonoBehaviour, IDataSource, IPageSource
     {
     }
 
+    public void LastItemInScrollIsVisible()
+    {
+    }
+
     public void PageFocused(int cellIndex, bool isNextPage, ICell cell)
     {
         if (!isNextPage)

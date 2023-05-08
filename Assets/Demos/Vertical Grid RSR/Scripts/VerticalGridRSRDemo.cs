@@ -75,4 +75,8 @@ public class VerticalGridRSRDemo : MonoBehaviour, IDataSource
     public void ReachedScrollEnd()
     {
     }
+
+    public void LastItemInScrollIsVisible()
+    {
+    }
 }

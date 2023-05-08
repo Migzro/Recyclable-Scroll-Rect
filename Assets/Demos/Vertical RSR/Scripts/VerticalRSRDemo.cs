@@ -77,4 +77,8 @@ public class VerticalRSRDemo : MonoBehaviour, IDataSource
     public void ReachedScrollEnd()
     {
     }
+
+    public void LastItemInScrollIsVisible()
+    {
+    }
 }

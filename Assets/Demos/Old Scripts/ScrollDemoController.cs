@@ -115,6 +115,10 @@ public class ScrollDemoController : MonoBehaviour, IDataSource
         // _scrollRect.ReloadData();
     }
 
+    public void LastItemInScrollIsVisible()
+    {
+    }
+
     private static System.Random random = new System.Random();
     public static string RandomString(int length)
     {
