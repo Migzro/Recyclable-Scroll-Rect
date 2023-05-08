@@ -494,8 +494,8 @@ namespace RecyclableSR
             var contentHasSpace = startIndex == 0 || _itemPositions[startIndex - 1].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
             var extraItemsInitialized = contentHasSpace ? 0 : _maxExtraVisibleItemInViewPort - _maxVisibleItemInViewPort;
             var i = startIndex;
-            var gridHasSpace = _isGridLayout && startIndex % _gridConstraint != 0 && i < _itemsCount;
-            while ((contentHasSpace || gridHasSpace || extraItemsInitialized < _extraItemsVisible) && i < _itemsCount)
+            var gridHasSpace = GridHasSpace(startIndex);
+            while ((contentHasSpace || extraItemsInitialized < _extraItemsVisible) && gridHasSpace && i < _itemsCount)
             {
                 ShowHideCellsAtIndex(i, true, GridLayoutPage.After);
                 if (!contentHasSpace)
@@ -504,10 +504,29 @@ namespace RecyclableSR
                     _maxVisibleItemInViewPort = i;
 
                 contentHasSpace = _itemPositions[i].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
-                gridHasSpace = _isGridLayout && startIndex % _gridConstraint != 0 && i < _itemsCount;
+                gridHasSpace = GridHasSpace(i);
                 i++;
             }
             _maxExtraVisibleItemInViewPort = i - 1;
+        }
+
+        /// <summary>
+        /// check if view RSR is grid, and if it has enough space to initialize grid items in
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        private bool GridHasSpace (int index = 0)
+        {
+            if (!_isGridLayout)
+                return true;
+
+            if (index == 0 || index < _itemsCount)
+                return true;
+
+            if ((index + 1) % _gridConstraint != 0)
+                return true;
+
+            return false;
         }
 
         /// <summary>
@@ -647,9 +666,10 @@ namespace RecyclableSR
             if (reloadCellData)
                 _dataSource.SetCellData(cell.cell, cellIndex);
 
+            // removed, to allow for gridlayout padding changes to reflect new item positions
             // No need to calculate anything for grid since its cell size doesn't change
-            if (_isGridLayout)
-                return;
+            // if (_isGridLayout)
+            //     return;
 
             var oldSize = _itemPositions[cellIndex].cellSize[_axis];
             CalculateCellAxisSize(cell.transform, cellIndex);
@@ -1378,6 +1398,9 @@ namespace RecyclableSR
                 SetCardsZIndices();
             else
                 SetChildrenIndices();
+            
+            if (newIndex == _itemsCount - 1)
+                _dataSource.LastItemInScrollIsVisible();
         }
 
         /// <summary>

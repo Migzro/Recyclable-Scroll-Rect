@@ -20,5 +20,6 @@ namespace RecyclableSR
         void PullToRefresh();
         void ReachedScrollStart();
         void ReachedScrollEnd();
+        void LastItemInScrollIsVisible();
     }
 }
