@@ -68,6 +68,10 @@ public class VerticalGridRSRDemo : MonoBehaviour, IDataSource
     {
     }
 
+    public void PushToClose()
+    {
+    }
+
     public void ReachedScrollStart()
     {
     }

@@ -73,6 +73,10 @@ public class HorizontalCardsRSRDemo : MonoBehaviour, IDataSource, IPageSource
     {
     }
 
+    public void PushToClose()
+    {
+    }
+
     public void ReachedScrollStart()
     {
     }

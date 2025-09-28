@@ -70,6 +70,10 @@ public class HorizontalDynamicRSRDemo : MonoBehaviour, IDataSource
     {
     }
 
+    public void PushToClose()
+    {
+    }
+
     public void ReachedScrollStart()
     {
     }

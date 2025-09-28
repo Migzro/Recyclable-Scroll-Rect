@@ -7,29 +7,32 @@ namespace RecyclableSR
     [CanEditMultipleObjects]
     public class RecyclableScrollRectEditor : ScrollRectEditor
     {
+private SerializedProperty _reverseDirection;
+        private SerializedProperty _pullToRefreshThreshold;
+        private SerializedProperty _pushToCloseThreshold;
         private SerializedProperty _paged;
         private SerializedProperty _swipeThreshold;
-        private SerializedProperty _reverseDirection;
-        private SerializedProperty _useCardsAnimation;
+        private SerializedProperty _cardMode;
         private SerializedProperty _cardZMultiplier;
+        private SerializedProperty _manuallyHandleCardAnimations;
         private SerializedProperty _useConstantScrollingSpeed;
         private SerializedProperty _constantScrollingSpeed;
-        private SerializedProperty _manuallyHandleCardAnimations;
 
         protected override void OnEnable()
         {
             base.OnEnable();
+            _reverseDirection = serializedObject.FindProperty(nameof(_reverseDirection));
+            _pullToRefreshThreshold = serializedObject.FindProperty(nameof(_pullToRefreshThreshold));
+            _pushToCloseThreshold = serializedObject.FindProperty(nameof(_pushToCloseThreshold));
+            
             _paged = serializedObject.FindProperty(nameof(_paged));
             _swipeThreshold = serializedObject.FindProperty(nameof(_swipeThreshold));
-            _reverseDirection = serializedObject.FindProperty(nameof(_reverseDirection));
-            
-            _useCardsAnimation = serializedObject.FindProperty(nameof(_useCardsAnimation));
+            _cardMode = serializedObject.FindProperty(nameof(_cardMode));
             _cardZMultiplier = serializedObject.FindProperty(nameof(_cardZMultiplier));
+            _manuallyHandleCardAnimations = serializedObject.FindProperty(nameof(_manuallyHandleCardAnimations));
             
             _useConstantScrollingSpeed = serializedObject.FindProperty(nameof(_useConstantScrollingSpeed));
             _constantScrollingSpeed = serializedObject.FindProperty(nameof(_constantScrollingSpeed));
-            
-            _manuallyHandleCardAnimations = serializedObject.FindProperty(nameof(_manuallyHandleCardAnimations));
         }
 
         public override void OnInspectorGUI()
@@ -37,6 +40,8 @@ namespace RecyclableSR
             base.OnInspectorGUI();
             EditorGUILayout.Space();
             EditorGUILayout.PropertyField(_reverseDirection);
+            EditorGUILayout.PropertyField(_pullToRefreshThreshold);
+            EditorGUILayout.PropertyField(_pushToCloseThreshold);
             
             EditorGUILayout.Space();
             EditorGUILayout.PropertyField(_paged);
@@ -45,8 +50,8 @@ namespace RecyclableSR
                 EditorGUILayout.PropertyField(_swipeThreshold);
                 
                 EditorGUILayout.Space();
-                EditorGUILayout.PropertyField(_useCardsAnimation);
-                if (_useCardsAnimation.boolValue)
+                EditorGUILayout.PropertyField(_cardMode);
+                if (_cardMode.boolValue)
                 {
                     EditorGUILayout.PropertyField(_cardZMultiplier);
                 }

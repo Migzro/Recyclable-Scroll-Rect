@@ -1,9 +1,7 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using RecyclableSR;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 public class DemoMainController : MonoBehaviour, IDataSource
 {
@@ -107,6 +105,10 @@ public class DemoMainController : MonoBehaviour, IDataSource
     public void PullToRefresh()
     {
         Debug.Log( "Pull to refresh" );
+    }
+
+    public void PushToClose()
+    {
     }
 
     public void ReachedScrollStart()

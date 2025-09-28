@@ -68,6 +68,10 @@ public class HorizontalGridRSRDemo : MonoBehaviour, IDataSource
     {
     }
 
+    public void PushToClose()
+    {
+    }
+
     public void ReachedScrollStart()
     {
     }

@@ -18,6 +18,7 @@ namespace RecyclableSR
         void ScrolledToCell(ICell cell, int cellIndex);
         bool IgnoreContentPadding(int cellIndex);
         void PullToRefresh();
+        void PushToClose();
         void ReachedScrollStart();
         void ReachedScrollEnd();
         void LastItemInScrollIsVisible();

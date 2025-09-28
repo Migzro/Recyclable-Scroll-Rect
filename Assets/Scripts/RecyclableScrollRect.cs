@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+// using Adic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+// using UnityEngine.UI.Extensions;
 
 namespace RecyclableSR
 {
@@ -12,14 +14,18 @@ namespace RecyclableSR
         // TODO: reverse direction for cards
         // TODO: different start axes for grid layout
         // TODO: FixedColumnCount with Vertical Grids & FixedRowCount with Horizontal Grids (remaining _maxExtraVisibleItemInViewPort needs to be / _maxGridsItemsInAxis
-        [SerializeField] private float _swipeThreshold = 200;
-        [SerializeField] private bool _paged;
         [SerializeField] private bool _reverseDirection;
+        [SerializeField] private float _pullToRefreshThreshold = 150;
+        [SerializeField] private float _pushToCloseThreshold = 150;
+        [SerializeField] private bool _paged;
+        [SerializeField] private float _swipeThreshold = 200;
         [SerializeField] private bool _cardMode;
         [SerializeField] private float _cardZMultiplier;
+        [SerializeField] private bool _manuallyHandleCardAnimations;
         [SerializeField] private bool _useConstantScrollingSpeed;
         [SerializeField] private float _constantScrollingSpeed;
-        [SerializeField] private bool _manuallyHandleCardAnimations;
+
+        // [Inject] protected ScreenResolutionDetector _screenResolutionDetector;
         
         private VerticalLayoutGroup _verticalLayoutGroup;
         private HorizontalLayoutGroup _horizontalLayoutGroup;
@@ -50,6 +56,7 @@ namespace RecyclableSR
         private bool _needsClearance;
         private bool _hasLayoutGroup;
         private bool _pullToRefresh;
+        private bool _pushToClose;
         private bool _isGridLayout;
         private bool _isDragging;
         private bool _canCallReachedScrollEnd;
@@ -108,6 +115,8 @@ namespace RecyclableSR
         /// </summary>
         private void Initialize()
         {
+            // this.Inject();
+            
             if (_dataSource.PrototypeCells == null || _dataSource.PrototypeCells.Length <= 0)
             {
                 throw new ArgumentNullException(nameof(_dataSource.PrototypeCells), "RSR, No prototype cell defined IDataSource");
@@ -194,7 +203,6 @@ namespace RecyclableSR
                     _layoutElement = content.gameObject.AddComponent<LayoutElement>();
             }
 
-            _viewPortSize = viewport.rect.size;
             _axis = vertical ? 1 : 0;
             _initialMovementType = movementType;
             
@@ -269,10 +277,8 @@ namespace RecyclableSR
             CalculateContentSize();
             CalculateGridLayoutPadding();
             InitializeCells();
-            
-            if (_paged && _cardMode)
-                SetCardsZIndices();
-            
+            RefreshPagesAfterReload();
+
             _init = true;
         }
 
@@ -341,6 +347,44 @@ namespace RecyclableSR
                     _verticalLayoutGroup.enabled = false;
 
                 _contentSizeFitter.enabled = false;
+
+                // _screenResolutionDetector.OnResolutionChanged -= UpdateContentLayouts;
+                // _screenResolutionDetector.OnResolutionChanged += UpdateContentLayouts;
+            }
+        }
+
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+            // if ( _screenResolutionDetector != null )
+                // _screenResolutionDetector.OnResolutionChanged -= UpdateContentLayouts;
+        }
+
+        private void UpdateContentLayouts()
+        {
+            if (_hasLayoutGroup)
+            {
+                if ( _gridLayout != null )
+                {
+                    _gridLayout.CalculateLayoutInputHorizontal();
+                    _gridLayout.CalculateLayoutInputVertical();
+                    _gridLayout.SetLayoutHorizontal();
+                    _gridLayout.SetLayoutVertical();
+                }
+                if ( _horizontalLayoutGroup != null )
+                {
+                    _horizontalLayoutGroup.CalculateLayoutInputHorizontal();
+                    _horizontalLayoutGroup.CalculateLayoutInputVertical();
+                    _horizontalLayoutGroup.SetLayoutHorizontal();
+                    _horizontalLayoutGroup.SetLayoutVertical();
+                }
+                if ( _verticalLayoutGroup != null )
+                {
+                    _verticalLayoutGroup.CalculateLayoutInputHorizontal();
+                    _verticalLayoutGroup.CalculateLayoutInputVertical();
+                    _verticalLayoutGroup.SetLayoutHorizontal();
+                    _verticalLayoutGroup.SetLayoutVertical();
+                }
             }
         }
 
@@ -427,8 +471,8 @@ namespace RecyclableSR
                 if (_staticCells[i])
                 {
                     RectTransform cellRect;
-                    if (_visibleItems.ContainsKey(i))
-                        cellRect = _visibleItems[i].transform;
+                    if (_visibleItems.TryGetValue( i, out var item ))
+                        cellRect = item.transform;
                     else
                         cellRect = (RectTransform)_dataSource.GetPrototypeCell(i).transform;
                     SetVisibilityInHierarchy(cellRect, false);
@@ -438,6 +482,7 @@ namespace RecyclableSR
                         var cell = cellRect.GetComponent<ICell>() ?? cellRect.gameObject.AddComponent<BaseCell>();
                         cell.CanvasGroup.alpha = 0;
                         cell.CanvasGroup.interactable = false;
+                        cell.CanvasGroup.blocksRaycasts = false;
                     }
                     else
                         cellRect.gameObject.SetActive(false);
@@ -561,6 +606,7 @@ namespace RecyclableSR
                 {
                     cell.CanvasGroup.alpha = 1;
                     cell.CanvasGroup.interactable = true;
+                    cell.CanvasGroup.blocksRaycasts = true;
                 }
             }
 
@@ -598,8 +644,8 @@ namespace RecyclableSR
         {
             // add the reloadTag if it doesn't exist for the cellIndex
             // if reloading data, clear all the reloadTags for the cellIndex
-            if (reloadCellData && _reloadTags.ContainsKey(cellIndex))
-                _reloadTags[cellIndex].Clear();
+            if (reloadCellData && _reloadTags.TryGetValue( cellIndex, out var cellTags ))
+                cellTags.Clear();
 
             if (!string.IsNullOrEmpty(reloadTag))
             {
@@ -661,6 +707,10 @@ namespace RecyclableSR
                 _itemsMarkedForReload.Add(cellIndex);
                 return;
             }
+
+            // item has been deleted, no need to reload
+            if (cellIndex >= _itemsCount)
+                return;
             
             var cell = _visibleItems[cellIndex];
             if (reloadCellData)
@@ -1142,14 +1192,25 @@ namespace RecyclableSR
             
             GetContentBounds();
             
-            if (!_pullToRefresh && Mathf.RoundToInt(_contentTopLeftCorner[_axis]) <= -150)
+            if (!_pullToRefresh && Mathf.RoundToInt(_contentTopLeftCorner[_axis]) <= -_pullToRefreshThreshold)
             {
                 _pullToRefresh = true;
                 _dataSource.PullToRefresh();
             }
-            else if (_pullToRefresh && Mathf.RoundToInt(_contentTopLeftCorner[_axis]) >= -150)
+            else if (_pullToRefresh && Mathf.RoundToInt(_contentTopLeftCorner[_axis]) >= -_pullToRefreshThreshold)
             {
                 _pullToRefresh = false;
+            }
+            
+            if (!_pushToClose && Mathf.RoundToInt(_contentBottomRightCorner[_axis]) >= content.rect.size[_axis] + _pushToCloseThreshold 
+                              && (!_paged || (_paged && _currentPage < _itemsCount)))
+            {
+                _pushToClose = true;
+                _dataSource.PushToClose();
+            }
+            else if (_pushToClose && Mathf.RoundToInt(_contentBottomRightCorner[_axis]) <= content.rect.size[_axis])
+            {
+                _pushToClose = false;
             }
             
             // figure out which items that need to be rendered, bottom right or top left
@@ -1360,6 +1421,7 @@ namespace RecyclableSR
                 {
                     item.cell.CanvasGroup.alpha = 1;
                     item.cell.CanvasGroup.interactable = true;
+                    item.cell.CanvasGroup.blocksRaycasts = true;
                 }
                 else
                     item.transform.gameObject.SetActive(true);
@@ -1424,6 +1486,7 @@ namespace RecyclableSR
 
                 // set card as interactable if is current index
                 visibleItem.Value.cell.CanvasGroup.interactable = (visibleItem.Key == _currentPage);
+                visibleItem.Value.cell.CanvasGroup.blocksRaycasts = (visibleItem.Key == _currentPage);
                 
                 // sort items
                 var siblingOrder = visibleItem.Key - _currentPage;
@@ -1467,6 +1530,7 @@ namespace RecyclableSR
             {
                 _visibleItems[cellIndex].cell.CanvasGroup.alpha = 0;
                 _visibleItems[cellIndex].cell.CanvasGroup.interactable = false;
+                _visibleItems[cellIndex].cell.CanvasGroup.blocksRaycasts = false;
             }
             else
                 _visibleItems[cellIndex].transform.gameObject.SetActive(false);
@@ -1482,6 +1546,7 @@ namespace RecyclableSR
         /// </summary>
         private void GetContentBounds()
         {
+            _viewPortSize = viewport.rect.size;
             _contentTopLeftCorner = content.anchoredPosition * ((vertical ? 1f : -1f) * (_reverseDirection ? -1f : 1f));
             _contentBottomRightCorner[1 - _axis] = _contentTopLeftCorner[1 - _axis];
             _contentBottomRightCorner[_axis] = _contentTopLeftCorner[_axis] + _viewPortSize[_axis];
@@ -1503,7 +1568,7 @@ namespace RecyclableSR
                 for (var i = _itemsCount; i < _itemsCount + itemDiff; i++)
                 {
                     if (_visibleItems.ContainsKey(i))
-                        ShowHideCellsAtIndex(i, false, GridLayoutPage.After);
+                        ShowHideCellsAtIndex(i, false, GridLayoutPage.Single);
                 }
 
                 _itemPositions.RemoveRange(_itemsCount, itemDiff);
@@ -1528,6 +1593,32 @@ namespace RecyclableSR
                     PreReloadCell(item.Key, "", true, true);
             }
             CalculateNewMinMaxItemsAfterReloadCell();
+            RefreshPagesAfterReload();
+        }
+
+        /// <summary>
+        /// Used to refresh needed data if is in paged mode
+        /// Focuses first item if a new item was added
+        /// Scrolls to new page if currentPage page was deleted
+        /// </summary>
+        private void RefreshPagesAfterReload()
+        {
+            if (!_paged)
+                return;
+            
+            if (_currentPage >= _itemsCount)
+            {
+                // scroll cell will handle the focus
+                ScrollToCell(Mathf.Max(0, _currentPage - 1), instant:true);
+            }
+            else  if (_itemsCount > 0 && _visibleItems.ContainsKey(_currentPage))
+            {
+                _pageSource?.PageWillFocus(_currentPage, true, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform, _itemPositions[_currentPage].topLeftPosition);
+                _pageSource?.PageFocused(_currentPage, true, _visibleItems[_currentPage].cell);
+            }
+            
+            if (_cardMode)
+                SetCardsZIndices();
         }
 
         /// <summary>
@@ -1618,6 +1709,7 @@ namespace RecyclableSR
         /// <param name="offset">value to offset target scroll position with</param>
         public void ScrollToCell(int cellIndex, bool callEvent = true, bool instant = false, float maxSpeedMultiplier = 1, float offset = 0)
         {
+            var forceCallWillFocus = false;
             StopMovement();
             var itemVisiblePositionKnown = _itemPositions[cellIndex].positionSet && _visibleItems.ContainsKey(cellIndex);
             if (itemVisiblePositionKnown && instant)
@@ -1632,8 +1724,11 @@ namespace RecyclableSR
                 if (_currentPage != cellIndex)
                 {
                     var isNextPage = cellIndex > _currentPage && !_reverseDirection;
-                    _pageSource?.PageWillUnFocus(_currentPage, isNextPage, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform);
-                    _pageSource?.PageUnFocused(_currentPage, isNextPage, _visibleItems[_currentPage].cell);
+                    if ( _visibleItems.ContainsKey( _currentPage ) )
+                    {
+                        _pageSource?.PageWillUnFocus( _currentPage, isNextPage, _visibleItems[ _currentPage ].cell, _visibleItems[ _currentPage ].transform );
+                        _pageSource?.PageUnFocused( _currentPage, isNextPage, _visibleItems[ _currentPage ].cell );
+                    }
                     _currentPage = cellIndex;
                     _pageSource?.PageWillFocus(_currentPage, isNextPage, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform, _itemPositions[_currentPage].topLeftPosition);
                     _pageSource?.PageFocused(_currentPage, isNextPage, _visibleItems[_currentPage].cell);
@@ -1676,6 +1771,17 @@ namespace RecyclableSR
                             }
                         }
                     }
+                    
+                    var isNextPage = cellIndex > _currentPage && !_reverseDirection;
+
+                     // sometimes the cellIndex isn't visible yet so can't call this function yet
+                     if ( _visibleItems.ContainsKey( cellIndex ) )
+                         _pageSource?.PageWillFocus( cellIndex, isNextPage, _visibleItems[ cellIndex ].cell, _visibleItems[ cellIndex ].transform, _itemPositions[ cellIndex ].topLeftPosition );
+                     else
+                         forceCallWillFocus = true;
+
+                     if ( _visibleItems.ContainsKey( _currentPage ) )
+                         _pageSource?.PageWillUnFocus(_currentPage, isNextPage, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform);
                 }
 
                 float speedToUse;
@@ -1716,7 +1822,7 @@ namespace RecyclableSR
 
                 _isAnimating = true;
                 var increment = speedToUse * direction * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
-                StartCoroutine(StartScrolling(increment, direction, cellIndex, callEvent, offset));
+                StartCoroutine(StartScrolling(increment, direction, cellIndex, callEvent, offset, forceCallWillFocus));
             }
         }
 
@@ -1728,13 +1834,20 @@ namespace RecyclableSR
         /// <param name="cellIndex">cell index which we want to scroll to</param>
         /// <param name="callEvent">call scroll to cell event, usually not needed when calling ScrollToCell from OnEndDrag if RSR is paged</param>
         /// <param name="offset">value to offset target scroll position with</param>
-        private IEnumerator StartScrolling(float increment, int direction, int cellIndex, bool callEvent, float offset)
+        /// <param name="forceCallWillFocus">used to force call will focus when the cell isn't visible when calling ScrollToCell</param>
+        private IEnumerator StartScrolling(float increment, int direction, int cellIndex, bool callEvent, float offset, bool forceCallWillFocus)
         {
-            var reachedCell = false;
+            var reachedCell = false;        
+            
             var contentTopLeftCorner = content.anchoredPosition;
             contentTopLeftCorner[_axis] += increment;
-            var contentBottomRightCorner = contentTopLeftCorner + _viewPortSize * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
 
+            if ( contentTopLeftCorner[ _axis ] >= content.sizeDelta[ _axis ] )
+                contentTopLeftCorner[ _axis ] = content.sizeDelta[ _axis ] - _viewPortSize[_axis];
+            
+            var contentBottomRightCorner = contentTopLeftCorner;
+            contentBottomRightCorner[_axis] += _viewPortSize[_axis] * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
+            
             if (_itemPositions[cellIndex].positionSet)
             {
                 var itemTopLeftCorner = _itemPositions[cellIndex].absTopLeftPosition[_axis] + offset * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
@@ -1779,13 +1892,13 @@ namespace RecyclableSR
 
             yield return new WaitForEndOfFrame();
             if (!reachedCell)
-                StartCoroutine(StartScrolling(increment, direction, cellIndex, callEvent, offset));
+                StartCoroutine(StartScrolling(increment, direction, cellIndex, callEvent, offset, forceCallWillFocus));
             else
             {
                 if (callEvent)
                 {
-                    if (_visibleItems.ContainsKey(cellIndex))
-                        _dataSource.ScrolledToCell(_visibleItems[cellIndex].cell, cellIndex);
+                    if (_visibleItems.TryGetValue( cellIndex, out var item ))
+                        _dataSource.ScrolledToCell(item.cell, cellIndex);
                     else
                         _queuedScrollToCell = cellIndex;
                 }
@@ -1797,8 +1910,13 @@ namespace RecyclableSR
                     if (_manuallyHandleCardAnimations && isNextPage)
                         pageToStaggerAnimation = _currentPage;
                     
-                    _pageSource?.PageUnFocused(_currentPage, isNextPage, _visibleItems[_currentPage].cell);
+                    // check if old page was in visible items, if not this means we don't need to unfocus it
+                    if (_visibleItems.TryGetValue( _currentPage, out var item))
+                        _pageSource?.PageUnFocused(_currentPage, isNextPage, item.cell);
+                    
                     _currentPage = cellIndex;
+                    if (forceCallWillFocus)
+                        _pageSource?.PageWillFocus( _currentPage, isNextPage, _visibleItems[ _currentPage ].cell, _visibleItems[ _currentPage ].transform, _itemPositions[ _currentPage ].topLeftPosition );
                     _pageSource?.PageFocused(_currentPage, isNextPage, _visibleItems[_currentPage].cell);
                     
                     SetCardsZIndices(pageToStaggerAnimation);
@@ -1918,9 +2036,26 @@ namespace RecyclableSR
         {
             if (_visibleItems == null || _visibleItems.Count <= 0)
                 return null;
-            if (_visibleItems.ContainsKey(cellIndex))
-                return _visibleItems[ cellIndex ];
+            if (_visibleItems.TryGetValue( cellIndex, out var item ))
+                return item;
             return null;
         }
+
+#if UNITY_EDITOR
+        private void Update()
+        {
+            if (!_paged)
+                return;
+            
+            if (Input.GetKeyUp(KeyCode.UpArrow))
+            {
+                ScrollToCell(Mathf.Max(_currentPage - 1, 0), false);
+            }
+            else if (Input.GetKeyUp( KeyCode.DownArrow))
+            {
+                ScrollToCell(Mathf.Min(_currentPage + 1, _itemsCount-1), false);
+            }
+        }
+#endif
     }
 }
