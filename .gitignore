@@ -43,6 +43,7 @@ ethumbs.db.meta
 Thumbs.db
 Thumbs.db.meta
 .vs/
+.vscode/
 RegisterIcalls.cpp
 Assets/StreamingAssets/build_info.txt
 Assets/Plugins/Editor/JetBrains/JetBrains.Rider.Unity.Editor.Plugin.Repacked.dll
