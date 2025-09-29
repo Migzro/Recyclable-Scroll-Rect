@@ -1,26 +1,31 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-// using Adic;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
-// using UnityEngine.UI.Extensions;
 
 namespace RecyclableSR
 {
-    public class RecyclableScrollRect : ScrollRect
+    public class RSRBase : ScrollRect
     {
         // TODO: reverse direction for cards
         // TODO: different start axes for grid layout
         // TODO: FixedColumnCount with Vertical Grids & FixedRowCount with Horizontal Grids (remaining _maxExtraVisibleItemInViewPort needs to be / _maxGridsItemsInAxis
-        [SerializeField] private bool _reverseDirection;
+        // TODO: Separate Scrolling animation
+        // TODO: Redo Scrolling animation
+        // TODO: add custom editor properties for horizontal, vertical and grid layouts and remove them
+        // TODO: Remove _paged boolean
+        // TODO: Fix all behaviours for gridLayout and make sure _reverseDirection is working properly
+        // TODO: Rework cards behaviours
+        // TODO: Add ScreenResolutionDetector
+        // TODO: Rewrite some git descriptions
+        // TODO: Add headers, footers, sections
+        
+        [SerializeField] protected bool _reverseDirection;
         [SerializeField] private float _pullToRefreshThreshold = 150;
         [SerializeField] private float _pushToCloseThreshold = 150;
         [SerializeField] private bool _paged;
-        [SerializeField] private float _swipeThreshold = 200;
-        [SerializeField] private bool _cardMode;
-        [SerializeField] private float _cardZMultiplier;
+        [SerializeField] protected float _swipeThreshold = 200;
         [SerializeField] private bool _manuallyHandleCardAnimations;
         [SerializeField] private bool _useConstantScrollingSpeed;
         [SerializeField] private float _constantScrollingSpeed;
@@ -30,18 +35,16 @@ namespace RecyclableSR
         private VerticalLayoutGroup _verticalLayoutGroup;
         private HorizontalLayoutGroup _horizontalLayoutGroup;
         private GridLayoutGroup _gridLayout;
-        private ContentSizeFitter _contentSizeFitter;
         private LayoutElement _layoutElement;
 
-        private IDataSource _dataSource;
-        private IPageSource _pageSource;
+        protected IDataSource _dataSource;
 
         private List<bool> _staticCells;
         private List<string> _prototypeNames;
-        private List<ItemPosition> _itemPositions;
+        protected List<ItemPosition> _itemPositions;
         
-        private int _axis;
-        private int _itemsCount;
+        protected int _axis;
+        protected int _itemsCount;
         private int _extraItemsVisible;
         private int _minVisibleItemInViewPort;
         private int _maxVisibleItemInViewPort;
@@ -49,7 +52,7 @@ namespace RecyclableSR
         private int _maxExtraVisibleItemInViewPort;
         private int _gridConstraint;
         private int _maxGridItemsInAxis;
-        private int _currentPage;
+        protected int _currentPage;
         private int _queuedScrollToCell;
         private bool _init;
         private bool _isAnimating;
@@ -58,7 +61,6 @@ namespace RecyclableSR
         private bool _pullToRefresh;
         private bool _pushToClose;
         private bool _isGridLayout;
-        private bool _isDragging;
         private bool _canCallReachedScrollEnd;
         private bool _canCallReachedScrollStart;
 
@@ -66,14 +68,14 @@ namespace RecyclableSR
         private HashSet<int> _ignoreSetCellDataIndices;
         private Dictionary<string, List<Item>> _pooledItems;
         private Dictionary<int, HashSet<string>> _reloadTags;
-        private SortedDictionary<int, Item> _visibleItems;
+        protected SortedDictionary<int, Item> _visibleItems;
         
         private Vector2 _viewPortSize;
         private Vector2 _lastContentPosition;
         private Vector2 _contentTopLeftCorner;
         private Vector2 _contentBottomRightCorner;
         private Vector2 _spacing;
-        private Vector2 _dragStartingPosition;
+        protected Vector2 _dragStartingPosition;
         private Vector2 _gridLayoutPadding;
         private RectOffset _padding;
         private TextAnchor _alignment;
@@ -81,23 +83,6 @@ namespace RecyclableSR
         private MovementType _initialMovementType;
 
         public bool IsInitialized => _init;
-
-        public void Initialize(IDataSource dataSource, IPageSource pageSource)
-        {
-            _dataSource = dataSource;
-            _pageSource = pageSource;
-            
-            if (_dataSource == null)
-            {
-                throw new ArgumentNullException(nameof(dataSource), "RSR, IDataSource is null");
-            }
-            
-            if (_pageSource == null)
-            {
-                throw new ArgumentNullException(nameof(pageSource), "RSR, IPageResource is null");
-            }
-            Initialize();
-        }
 
         public void Initialize(IDataSource dataSource)
         {
@@ -113,10 +98,8 @@ namespace RecyclableSR
         /// <summary>
         /// Initialize the scroll rect with the data source that contains all the details required to build the RecyclableScrollRect
         /// </summary>
-        private void Initialize()
+        protected virtual void Initialize()
         {
-            // this.Inject();
-            
             if (_dataSource.PrototypeCells == null || _dataSource.PrototypeCells.Length <= 0)
             {
                 throw new ArgumentNullException(nameof(_dataSource.PrototypeCells), "RSR, No prototype cell defined IDataSource");
@@ -197,7 +180,6 @@ namespace RecyclableSR
             // add a LayoutElement if not present to set the content size in case another element is controlling it 
             if (_hasLayoutGroup)
             {
-                _contentSizeFitter = content.gameObject.GetComponent<ContentSizeFitter>();
                 _layoutElement = content.gameObject.GetComponent<LayoutElement>();
                 if (_layoutElement == null)
                     _layoutElement = content.gameObject.AddComponent<LayoutElement>();
@@ -277,7 +259,7 @@ namespace RecyclableSR
             CalculateContentSize();
             CalculateGridLayoutPadding();
             InitializeCells();
-            RefreshPagesAfterReload();
+            RefreshAfterReload();
 
             _init = true;
         }
@@ -346,8 +328,6 @@ namespace RecyclableSR
                 if (_verticalLayoutGroup != null)
                     _verticalLayoutGroup.enabled = false;
 
-                _contentSizeFitter.enabled = false;
-
                 // _screenResolutionDetector.OnResolutionChanged -= UpdateContentLayouts;
                 // _screenResolutionDetector.OnResolutionChanged += UpdateContentLayouts;
             }
@@ -401,7 +381,7 @@ namespace RecyclableSR
 
             if (_isGridLayout)
             {
-                // we considers all cell sizes the same in grid
+                // we consider all cell sizes the same in grid
                 _maxGridItemsInAxis = Mathf.CeilToInt(_itemsCount / (float)_gridConstraint);
                 contentSizeDelta[_axis] = _maxGridItemsInAxis * _gridLayout.cellSize[_axis];
 
@@ -589,7 +569,7 @@ namespace RecyclableSR
             {
                 itemGo = Instantiate(itemPrototypeCell, content, false);
                 cell = itemGo.GetComponent<ICell>();
-                cell.RecyclableScrollRect = this;
+                cell.RSRBase = this;
                 cell.CellIndex = index;
                 itemGo.name = itemPrototypeCell.name + " " + index;
             }
@@ -597,7 +577,7 @@ namespace RecyclableSR
             {
                 itemGo = itemPrototypeCell;
                 cell = itemGo.GetComponent<ICell>() ?? itemGo.AddComponent<BaseCell>();
-                cell.RecyclableScrollRect = this;
+                cell.RSRBase = this;
                 cell.CellIndex = index;
                 
                 SetVisibilityInHierarchy((RectTransform)itemGo.transform, true);
@@ -1456,70 +1436,28 @@ namespace RecyclableSR
                 _queuedScrollToCell = -1;
             }
 
-            if (_paged && _cardMode)
-                SetCardsZIndices();
-            else
-                SetChildrenIndices();
+            SetIndices();
             
             if (newIndex == _itemsCount - 1)
                 _dataSource.LastItemInScrollIsVisible();
         }
 
         /// <summary>
-        /// Set cell z index on card when after it finishes scrolling
-        /// also set cell canvas group intractability & order in canvas
+        /// Sets the indices of the items inside the content of the ScrollRect
         /// </summary>
-        private void SetCardsZIndices(int pageToStaggerAnimationFor = -1)
+        protected virtual void SetIndices()
         {
-            if (!_paged || !_cardMode)
-                return;
-
-            var childrenSiblingOrder = new SortedDictionary<int, Transform>();
-            foreach (var visibleItem in _visibleItems)
-            {
-                // set card z position
-                var cellZIndex = Mathf.Abs(visibleItem.Key -_currentPage) * _cardZMultiplier;
-                var cellPosition = visibleItem.Value.transform.anchoredPosition3D; 
-                cellPosition.y = 0;
-                cellPosition.z = cellZIndex;
-                visibleItem.Value.transform.anchoredPosition3D = cellPosition;
-
-                // set card as interactable if is current index
-                visibleItem.Value.cell.CanvasGroup.interactable = (visibleItem.Key == _currentPage);
-                visibleItem.Value.cell.CanvasGroup.blocksRaycasts = (visibleItem.Key == _currentPage);
-                
-                // sort items
-                var siblingOrder = visibleItem.Key - _currentPage;
-                if (siblingOrder > 0)
-                    siblingOrder = siblingOrder * -1 - _currentPage;
-
-                visibleItem.Value.cell.CanvasGroup.alpha = visibleItem.Key >= _currentPage && !_reverseDirection ? 1 : 0;
-                childrenSiblingOrder.Add(siblingOrder, visibleItem.Value.transform);
-            }
-
-            foreach (var child in childrenSiblingOrder)  
-            {
-                child.Value.SetAsLastSibling();
-            }
-
-            if (pageToStaggerAnimationFor != -1)
-            {
-                _visibleItems[pageToStaggerAnimationFor].cell.CanvasGroup.alpha = 1;
-                _visibleItems[pageToStaggerAnimationFor].transform.SetAsLastSibling();
-            }
         }
 
         /// <summary>
-        /// Sets the indices of the items inside the content of the ScrollRect
+        /// Set cell z index on card when after it finishes scrolling
+        /// also set cell canvas group intractability & order in canvas
         /// </summary>
-        private void SetChildrenIndices()
+        protected virtual void SetCardsZIndices(int pageToStaggerAnimationFor = -1)
         {
-            foreach (var visibleItem in _visibleItems)
-            {
-                visibleItem.Value.transform.SetSiblingIndex(visibleItem.Key);
-            }
+            // TODO : Remove this
         }
-
+        
         /// <summary>
         /// Hide cell at cellIndex and add it to the pool of items that can be used based on its prefab type
         /// </summary>
@@ -1593,32 +1531,11 @@ namespace RecyclableSR
                     PreReloadCell(item.Key, "", true, true);
             }
             CalculateNewMinMaxItemsAfterReloadCell();
-            RefreshPagesAfterReload();
+            RefreshAfterReload();
         }
 
-        /// <summary>
-        /// Used to refresh needed data if is in paged mode
-        /// Focuses first item if a new item was added
-        /// Scrolls to new page if currentPage page was deleted
-        /// </summary>
-        private void RefreshPagesAfterReload()
+        protected virtual void RefreshAfterReload()
         {
-            if (!_paged)
-                return;
-            
-            if (_currentPage >= _itemsCount)
-            {
-                // scroll cell will handle the focus
-                ScrollToCell(Mathf.Max(0, _currentPage - 1), instant:true);
-            }
-            else  if (_itemsCount > 0 && _visibleItems.ContainsKey(_currentPage))
-            {
-                _pageSource?.PageWillFocus(_currentPage, true, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform, _itemPositions[_currentPage].topLeftPosition);
-                _pageSource?.PageFocused(_currentPage, true, _visibleItems[_currentPage].cell);
-            }
-            
-            if (_cardMode)
-                SetCardsZIndices();
         }
 
         /// <summary>
@@ -1726,12 +1643,12 @@ namespace RecyclableSR
                     var isNextPage = cellIndex > _currentPage && !_reverseDirection;
                     if ( _visibleItems.ContainsKey( _currentPage ) )
                     {
-                        _pageSource?.PageWillUnFocus( _currentPage, isNextPage, _visibleItems[ _currentPage ].cell, _visibleItems[ _currentPage ].transform );
-                        _pageSource?.PageUnFocused( _currentPage, isNextPage, _visibleItems[ _currentPage ].cell );
+                        ((IPageSource)_dataSource).PageWillUnFocus( _currentPage, isNextPage, _visibleItems[ _currentPage ].cell, _visibleItems[ _currentPage ].transform );
+                        ((IPageSource)_dataSource).PageUnFocused( _currentPage, isNextPage, _visibleItems[ _currentPage ].cell );
                     }
                     _currentPage = cellIndex;
-                    _pageSource?.PageWillFocus(_currentPage, isNextPage, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform, _itemPositions[_currentPage].topLeftPosition);
-                    _pageSource?.PageFocused(_currentPage, isNextPage, _visibleItems[_currentPage].cell);
+                    ((IPageSource)_dataSource).PageWillFocus(_currentPage, isNextPage, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform, _itemPositions[_currentPage].topLeftPosition);
+                    ((IPageSource)_dataSource).PageFocused(_currentPage, isNextPage, _visibleItems[_currentPage].cell);
                     SetCardsZIndices();
                 }
 
@@ -1776,12 +1693,12 @@ namespace RecyclableSR
 
                      // sometimes the cellIndex isn't visible yet so can't call this function yet
                      if ( _visibleItems.ContainsKey( cellIndex ) )
-                         _pageSource?.PageWillFocus( cellIndex, isNextPage, _visibleItems[ cellIndex ].cell, _visibleItems[ cellIndex ].transform, _itemPositions[ cellIndex ].topLeftPosition );
+                         ((IPageSource)_dataSource).PageWillFocus( cellIndex, isNextPage, _visibleItems[ cellIndex ].cell, _visibleItems[ cellIndex ].transform, _itemPositions[ cellIndex ].topLeftPosition );
                      else
                          forceCallWillFocus = true;
 
                      if ( _visibleItems.ContainsKey( _currentPage ) )
-                         _pageSource?.PageWillUnFocus(_currentPage, isNextPage, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform);
+                         ((IPageSource)_dataSource).PageWillUnFocus(_currentPage, isNextPage, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform);
                 }
 
                 float speedToUse;
@@ -1912,12 +1829,12 @@ namespace RecyclableSR
                     
                     // check if old page was in visible items, if not this means we don't need to unfocus it
                     if (_visibleItems.TryGetValue( _currentPage, out var item))
-                        _pageSource?.PageUnFocused(_currentPage, isNextPage, item.cell);
+                        ((IPageSource)_dataSource).PageUnFocused(_currentPage, isNextPage, item.cell);
                     
                     _currentPage = cellIndex;
                     if (forceCallWillFocus)
-                        _pageSource?.PageWillFocus( _currentPage, isNextPage, _visibleItems[ _currentPage ].cell, _visibleItems[ _currentPage ].transform, _itemPositions[ _currentPage ].topLeftPosition );
-                    _pageSource?.PageFocused(_currentPage, isNextPage, _visibleItems[_currentPage].cell);
+                        ((IPageSource)_dataSource).PageWillFocus( _currentPage, isNextPage, _visibleItems[ _currentPage ].cell, _visibleItems[ _currentPage ].transform, _itemPositions[ _currentPage ].topLeftPosition );
+                    ((IPageSource)_dataSource).PageFocused(_currentPage, isNextPage, _visibleItems[_currentPage].cell);
                     
                     SetCardsZIndices(pageToStaggerAnimation);
                 }
@@ -1941,97 +1858,6 @@ namespace RecyclableSR
 #endif
         }
         
-        public override void OnBeginDrag(PointerEventData eventData)
-        {
-            if (!_cardMode)
-                base.OnBeginDrag(eventData);
-
-            if (!_paged)
-                return;
-            
-            _isDragging = true;
-            _dragStartingPosition = content.anchoredPosition * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
-        }
-        
-        /// <summary>
-        /// only used in cards mode, this overrides the dragging behavior of scroll view and moves the cards by themselves
-        /// </summary>
-        /// <param name="eventData"></param>
-        public override void OnDrag(PointerEventData eventData)
-        {
-            if (!_cardMode)
-                base.OnDrag(eventData);
-
-            if (!_isDragging || !_cardMode)
-                return;
-
-            var deltaMovement = eventData.delta;
-            deltaMovement[1 - _axis] = 0;
-            _visibleItems[_currentPage].transform.anchoredPosition += deltaMovement;
-        }
-
-        public override void OnEndDrag(PointerEventData eventData)
-        {
-            if (!_cardMode)
-                base.OnEndDrag(eventData);
-            
-            if (!_isDragging || !_paged)
-                return;
-            
-            _isDragging = false;
-            int newPage;
-            
-            if (!_cardMode)
-                newPage = CalculateDraggingNextPage();
-            else
-                newPage = CalculateCardsDraggingNextPage();
-            
-            _dataSource.ScrolledToCell(_visibleItems[newPage].cell, newPage);
-            ScrollToCell(newPage, false);
-        }
-
-        private int CalculateCardsDraggingNextPage()
-        {
-            var currentPagePosition = _visibleItems[_currentPage].transform.anchoredPosition;
-            var currentPageStartingPosition = _itemPositions[_currentPage].topLeftPosition;
-            var distance = Vector2.Distance(currentPageStartingPosition, currentPagePosition);
-            var isNextPage = (currentPagePosition[_axis] < currentPageStartingPosition[_axis]) && !_reverseDirection;
-            var newPage = _currentPage;
-            if (distance > _swipeThreshold)
-            {
-                if (isNextPage && _currentPage < _itemsCount - 1)
-                    newPage++;
-                else if (!isNextPage && _currentPage > 0)
-                    newPage--;
-
-                if (newPage != _currentPage)
-                {
-                    _pageSource?.PageWillFocus(newPage, isNextPage, _visibleItems[newPage].cell, _visibleItems[newPage].transform, _itemPositions[newPage].topLeftPosition);
-                    _pageSource?.PageWillUnFocus(_currentPage, isNextPage, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform);
-                }
-            }
-            
-            _visibleItems[_currentPage].transform.anchoredPosition = currentPageStartingPosition;
-            return newPage;
-        }
-        
-        private int CalculateDraggingNextPage()
-        {
-            var currentContentPosition = content.anchoredPosition * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
-            var distance = Vector3.Distance(_dragStartingPosition, currentContentPosition);
-            var isNextPage = currentContentPosition[_axis] > _dragStartingPosition[_axis];
-            var newPage = _currentPage;
-            if (distance > _swipeThreshold)
-            {
-                if (isNextPage && _currentPage < _itemsCount - 1)
-                    newPage++;
-                else if (!isNextPage && _currentPage > 0)
-                    newPage--;
-            }
-            
-            return newPage;
-        }
-
         public Item? GetCellAtIndex(int cellIndex)
         {
             if (_visibleItems == null || _visibleItems.Count <= 0)
@@ -2040,22 +1866,5 @@ namespace RecyclableSR
                 return item;
             return null;
         }
-
-#if UNITY_EDITOR
-        private void Update()
-        {
-            if (!_paged)
-                return;
-            
-            if (Input.GetKeyUp(KeyCode.UpArrow))
-            {
-                ScrollToCell(Mathf.Max(_currentPage - 1, 0), false);
-            }
-            else if (Input.GetKeyUp( KeyCode.DownArrow))
-            {
-                ScrollToCell(Mathf.Min(_currentPage + 1, _itemsCount-1), false);
-            }
-        }
-#endif
     }
 }

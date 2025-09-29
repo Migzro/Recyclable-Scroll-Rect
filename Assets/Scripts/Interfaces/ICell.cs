@@ -5,7 +5,7 @@ namespace RecyclableSR
     public interface ICell
     { 
         int CellIndex { set; }
-        RecyclableScrollRect RecyclableScrollRect { set; }
+        RSRBase RSRBase { set; }
         RectTransform[] CellsNeededForVisualUpdate { get; }
         CanvasGroup CanvasGroup { get; }
     }

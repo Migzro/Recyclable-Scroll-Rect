@@ -7,7 +7,7 @@ public class DemoCellPrototype : MonoBehaviour, ICell
     [SerializeField] private TextMeshProUGUI _text;
     [SerializeField] private CanvasGroup _canvasGroup; 
     public int CellIndex { get; set; }
-    public RecyclableScrollRect RecyclableScrollRect { get; set; }
+    public RSRBase RSRBase { get; set; }
     public RectTransform[] CellsNeededForVisualUpdate => null;
     public CanvasGroup CanvasGroup {
         get

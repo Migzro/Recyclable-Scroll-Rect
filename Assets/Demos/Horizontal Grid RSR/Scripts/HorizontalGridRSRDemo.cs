@@ -5,7 +5,7 @@ using UnityEngine;
 public class HorizontalGridRSRDemo : MonoBehaviour, IDataSource
 {
     [SerializeField] private int _itemsCount;
-    [SerializeField] private RecyclableScrollRect _scrollRect;
+    [SerializeField] private RSRBase _scrollRect;
     [SerializeField] private GameObject[] _prototypeCells;
     [SerializeField] private int _extraItemsVisible;
         

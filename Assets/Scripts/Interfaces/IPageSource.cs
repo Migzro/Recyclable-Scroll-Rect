@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace RecyclableSR
 {
-    public interface IPageSource
+    public interface IPageSource : IDataSource
     {
         void PageFocused(int cellIndex, bool isNextPage, ICell cell);
         void PageUnFocused(int cellIndex, bool isNextPage, ICell cell);

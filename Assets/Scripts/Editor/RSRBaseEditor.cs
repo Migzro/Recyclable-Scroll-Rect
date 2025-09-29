@@ -3,18 +3,16 @@ using UnityEditor.UI;
 
 namespace RecyclableSR
 {
-    [CustomEditor(typeof(RecyclableScrollRect), true)]
+    // TODO: change type to RSR
+    [CustomEditor(typeof(RSRBase), true)]
     [CanEditMultipleObjects]
-    public class RecyclableScrollRectEditor : ScrollRectEditor
+    public class RSRBaseEditor : ScrollRectEditor
     {
-private SerializedProperty _reverseDirection;
+        private SerializedProperty _reverseDirection;
         private SerializedProperty _pullToRefreshThreshold;
         private SerializedProperty _pushToCloseThreshold;
         private SerializedProperty _paged;
         private SerializedProperty _swipeThreshold;
-        private SerializedProperty _cardMode;
-        private SerializedProperty _cardZMultiplier;
-        private SerializedProperty _manuallyHandleCardAnimations;
         private SerializedProperty _useConstantScrollingSpeed;
         private SerializedProperty _constantScrollingSpeed;
 
@@ -27,9 +25,6 @@ private SerializedProperty _reverseDirection;
             
             _paged = serializedObject.FindProperty(nameof(_paged));
             _swipeThreshold = serializedObject.FindProperty(nameof(_swipeThreshold));
-            _cardMode = serializedObject.FindProperty(nameof(_cardMode));
-            _cardZMultiplier = serializedObject.FindProperty(nameof(_cardZMultiplier));
-            _manuallyHandleCardAnimations = serializedObject.FindProperty(nameof(_manuallyHandleCardAnimations));
             
             _useConstantScrollingSpeed = serializedObject.FindProperty(nameof(_useConstantScrollingSpeed));
             _constantScrollingSpeed = serializedObject.FindProperty(nameof(_constantScrollingSpeed));
@@ -48,14 +43,6 @@ private SerializedProperty _reverseDirection;
             if (_paged.boolValue)
             {
                 EditorGUILayout.PropertyField(_swipeThreshold);
-                
-                EditorGUILayout.Space();
-                EditorGUILayout.PropertyField(_cardMode);
-                if (_cardMode.boolValue)
-                {
-                    EditorGUILayout.PropertyField(_cardZMultiplier);
-                }
-                EditorGUILayout.PropertyField(_manuallyHandleCardAnimations);
             }
             
             EditorGUILayout.Space();

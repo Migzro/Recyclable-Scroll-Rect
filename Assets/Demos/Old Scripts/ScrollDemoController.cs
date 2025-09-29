@@ -7,7 +7,7 @@ using Random = UnityEngine.Random;
 
 public class ScrollDemoController : MonoBehaviour, IDataSource
 {
-    [SerializeField] private RecyclableScrollRect _scrollRect;
+    [SerializeField] private RSRBase _scrollRect;
     [SerializeField] private GameObject[] _prototypeCells;
     [SerializeField] private int _extraItemsVisible;
         

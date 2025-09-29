@@ -6,7 +6,7 @@ namespace RecyclableSR
     {
         [SerializeField] private CanvasGroup canvasGroup;
         public int CellIndex { get; set; }
-        public RecyclableScrollRect RecyclableScrollRect { get; set; }
+        public RSRBase RSRBase { get; set; }
         public RectTransform[] CellsNeededForVisualUpdate { get; }
 
         public CanvasGroup CanvasGroup

@@ -3,10 +3,10 @@ using DG.Tweening;
 using RecyclableSR;
 using UnityEngine;
 
-public class HorizontalCardsRSRDemo : MonoBehaviour, IDataSource, IPageSource
+public class HorizontalCardsRSRDemo : MonoBehaviour, IPageSource
 {
     [SerializeField] private int _itemsCount;
-    [SerializeField] private RecyclableScrollRect _scrollRect;
+    [SerializeField] private RSRBase _scrollRect;
     [SerializeField] private GameObject[] _prototypeCells;
     [SerializeField] private int _extraItemsVisible;
     [SerializeField] private float _animationTime;
@@ -26,7 +26,7 @@ public class HorizontalCardsRSRDemo : MonoBehaviour, IDataSource, IPageSource
         _dataSource = new List<string>();
         for (var i = 0; i < _itemsCount; i++)
             _dataSource.Add( i.ToString() );
-        _scrollRect.Initialize(this, this);
+        _scrollRect.Initialize(this);
     }
 
     public float GetCellSize(int cellIndex)
