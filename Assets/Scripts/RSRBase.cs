@@ -17,8 +17,6 @@ namespace RecyclableSR
         // TODO: Remove _paged boolean
         // TODO: Fix all behaviours for gridLayout and make sure _reverseDirection is working properly
         // TODO: Rework cards behaviours
-        // TODO: Add ScreenResolutionDetector
-        // TODO: Rewrite some git descriptions
         // TODO: Add headers, footers, sections
         
         [SerializeField] protected bool _reverseDirection;
@@ -30,12 +28,11 @@ namespace RecyclableSR
         [SerializeField] private bool _useConstantScrollingSpeed;
         [SerializeField] private float _constantScrollingSpeed;
 
-        // [Inject] protected ScreenResolutionDetector _screenResolutionDetector;
-        
         private VerticalLayoutGroup _verticalLayoutGroup;
         private HorizontalLayoutGroup _horizontalLayoutGroup;
         private GridLayoutGroup _gridLayout;
         private LayoutElement _layoutElement;
+        private ScreenResolutionDetector _screenResolutionDetector;
 
         protected IDataSource _dataSource;
 
@@ -45,6 +42,7 @@ namespace RecyclableSR
         
         protected int _axis;
         protected int _itemsCount;
+        protected int _currentPage;
         private int _extraItemsVisible;
         private int _minVisibleItemInViewPort;
         private int _maxVisibleItemInViewPort;
@@ -52,7 +50,6 @@ namespace RecyclableSR
         private int _maxExtraVisibleItemInViewPort;
         private int _gridConstraint;
         private int _maxGridItemsInAxis;
-        protected int _currentPage;
         private int _queuedScrollToCell;
         private bool _init;
         private bool _isAnimating;
@@ -63,6 +60,7 @@ namespace RecyclableSR
         private bool _isGridLayout;
         private bool _canCallReachedScrollEnd;
         private bool _canCallReachedScrollStart;
+        private bool _isApplicationQuitting;
 
         private HashSet<int> _itemsMarkedForReload;
         private HashSet<int> _ignoreSetCellDataIndices;
@@ -328,44 +326,26 @@ namespace RecyclableSR
                 if (_verticalLayoutGroup != null)
                     _verticalLayoutGroup.enabled = false;
 
-                // _screenResolutionDetector.OnResolutionChanged -= UpdateContentLayouts;
-                // _screenResolutionDetector.OnResolutionChanged += UpdateContentLayouts;
+                ScreenResolutionDetector.Instance.OnResolutionChanged -= UpdateContentLayouts;
+                ScreenResolutionDetector.Instance.OnResolutionChanged += UpdateContentLayouts;
             }
         }
 
         protected override void OnDestroy()
         {
             base.OnDestroy();
-            // if ( _screenResolutionDetector != null )
-                // _screenResolutionDetector.OnResolutionChanged -= UpdateContentLayouts;
+            if (Application.isPlaying && !_isApplicationQuitting && ScreenResolutionDetector.Instance != null)
+                ScreenResolutionDetector.Instance.OnResolutionChanged -= UpdateContentLayouts;
+        }
+
+        private void OnApplicationQuit()
+        {
+            _isApplicationQuitting = true;
         }
 
         private void UpdateContentLayouts()
         {
-            if (_hasLayoutGroup)
-            {
-                if ( _gridLayout != null )
-                {
-                    _gridLayout.CalculateLayoutInputHorizontal();
-                    _gridLayout.CalculateLayoutInputVertical();
-                    _gridLayout.SetLayoutHorizontal();
-                    _gridLayout.SetLayoutVertical();
-                }
-                if ( _horizontalLayoutGroup != null )
-                {
-                    _horizontalLayoutGroup.CalculateLayoutInputHorizontal();
-                    _horizontalLayoutGroup.CalculateLayoutInputVertical();
-                    _horizontalLayoutGroup.SetLayoutHorizontal();
-                    _horizontalLayoutGroup.SetLayoutVertical();
-                }
-                if ( _verticalLayoutGroup != null )
-                {
-                    _verticalLayoutGroup.CalculateLayoutInputHorizontal();
-                    _verticalLayoutGroup.CalculateLayoutInputVertical();
-                    _verticalLayoutGroup.SetLayoutHorizontal();
-                    _verticalLayoutGroup.SetLayoutVertical();
-                }
-            }
+            ReloadData(true);
         }
 
         /// <summary>
@@ -613,7 +593,7 @@ namespace RecyclableSR
         }
 
         /// <summary>
-        /// Creates and checks tags for reloading cells, this avoids calling calculating the cell size if its called with same tag more than once and only calls ForceLayoutRebuild
+        /// Creates and checks tags for reloading cells, this avoids calling calculating the cell size if it's called with same tag more than once and only calls ForceLayoutRebuild
         /// </summary>
         /// <param name="cellIndex">cell index to reload</param>
         /// <param name="reloadTag">used to reload cell based on a tag, so if the reload is called more than once with the same tag, we can ignore it</param>
@@ -702,6 +682,7 @@ namespace RecyclableSR
             //     return;
 
             var oldSize = _itemPositions[cellIndex].cellSize[_axis];
+            CalculateNonAxisSizePosition(cell.transform, cellIndex);
             CalculateCellAxisSize(cell.transform, cellIndex);
             SetCellAxisPosition(cell.transform, cellIndex);
             
@@ -886,10 +867,10 @@ namespace RecyclableSR
         }
 
         /// <summary>
-        /// This function call is only needed once when the cell is created as it only sets the vertical size of the cell in a horizontal layout
+        /// This function call is only needed when the cell is created, or when the resolution changes
+        /// it sets the vertical size of the cell in a horizontal layout
         /// or the horizontal size of a cell in a vertical layout based on the settings of said layout
-        /// It also sets the vertical position in horizontal layout or the horizontal position in a vertical layout based on the padding of said layout since these wont usually
-        /// change during the runtime
+        /// It also sets the vertical position in horizontal layout or the horizontal position in a vertical layout based on the padding of said layout
         /// not needed in grid as items will have different positions in non axis position and the non axis size is the same in all of them
         /// </summary>
         /// <param name="rect">The rect of the cell that its size will be adjusted</param>
@@ -905,7 +886,10 @@ namespace RecyclableSR
                     anchorVector = new Vector2(1, 1);
             }
             else
+            {
                 anchorVector = new Vector2(0, 1);
+            }
+
             rect.anchorMin = anchorVector;
             rect.anchorMax = anchorVector;
             rect.pivot = anchorVector;
@@ -917,7 +901,7 @@ namespace RecyclableSR
             // set size
             if (_hasLayoutGroup)
             {
-                // expand item width if its in a vertical layout group and the conditions are satisfied
+                // expand item width if it's in a vertical layout group and the conditions are satisfied
                 if (vertical && _verticalLayoutGroup.childControlWidth && _verticalLayoutGroup.childForceExpandWidth)
                 {
                     var itemSize = rect.sizeDelta;
@@ -929,7 +913,7 @@ namespace RecyclableSR
                     forceSize = true;
                 }
 
-                // expand item height if its in a horizontal layout group and the conditions are satisfied
+                // expand item height if it's in a horizontal layout group and the conditions are satisfied
                 else if (!vertical && _horizontalLayoutGroup.childControlHeight && _horizontalLayoutGroup.childControlHeight)
                 {
                     var itemSize = rect.sizeDelta;
@@ -1005,8 +989,8 @@ namespace RecyclableSR
         }
         
         /// <summary>
-        /// Used to force set cell position, can be used if the cell position is manipulated externally and later would want to restore it
-        /// no need to set the position of an invisible item as it will get set automatically when its in view 
+        /// Used to force set cell position, can be used if the cell position is manipulated externally and later would want to restore it.
+        /// It doesn't need to set the position of an invisible item as it will get set automatically when its in view 
         /// </summary>
         /// <param name="cellIndex">cell index to set position to</param>
         public void SetCellPosition(int cellIndex)
