@@ -13,24 +13,33 @@ namespace RecyclableSR
         // TODO: FixedColumnCount with Vertical Grids & FixedRowCount with Horizontal Grids (remaining _maxExtraVisibleItemInViewPort needs to be / _maxGridsItemsInAxis
         // TODO: Separate Scrolling animation
         // TODO: Redo Scrolling animation
-        // TODO: add custom editor properties for horizontal, vertical and grid layouts and remove them
         // TODO: Remove _paged boolean
         // TODO: Fix all behaviours for gridLayout and make sure _reverseDirection is working properly
         // TODO: Rework cards behaviours
         // TODO: Add headers, footers, sections
+        // TODO: remove _manuallyHandleCardAnimations
+        
+        [SerializeField] private Vector2 _spacing;
+        [SerializeField] private RectOffset _padding;
+        [SerializeField] private TextAnchor _alignment;
         
         [SerializeField] protected bool _reverseDirection;
+        [SerializeField] protected bool _childForceExpand;
         [SerializeField] private float _pullToRefreshThreshold = 150;
         [SerializeField] private float _pushToCloseThreshold = 150;
-        [SerializeField] private bool _paged;
-        [SerializeField] protected float _swipeThreshold = 200;
         [SerializeField] private bool _manuallyHandleCardAnimations;
         [SerializeField] private bool _useConstantScrollingSpeed;
         [SerializeField] private float _constantScrollingSpeed;
+        
+        [SerializeField] private bool _paged;
+        [SerializeField] protected float _swipeThreshold = 200;
 
-        private VerticalLayoutGroup _verticalLayoutGroup;
-        private HorizontalLayoutGroup _horizontalLayoutGroup;
-        private GridLayoutGroup _gridLayout;
+        [SerializeField] private bool _isGridLayout;
+        [SerializeField] private Vector2 _gridCellSize;
+        [SerializeField] private GridLayoutGroup.Axis _gridStartAxis;
+        [SerializeField] private GridLayoutGroup.Constraint _gridConstraint;
+        [SerializeField] private int _gridConstraintCount;
+        
         private LayoutElement _layoutElement;
         private ScreenResolutionDetector _screenResolutionDetector;
 
@@ -48,16 +57,13 @@ namespace RecyclableSR
         private int _maxVisibleItemInViewPort;
         private int _minExtraVisibleItemInViewPort;
         private int _maxExtraVisibleItemInViewPort;
-        private int _gridConstraint;
         private int _maxGridItemsInAxis;
         private int _queuedScrollToCell;
         private bool _init;
         private bool _isAnimating;
         private bool _needsClearance;
-        private bool _hasLayoutGroup;
         private bool _pullToRefresh;
         private bool _pushToClose;
-        private bool _isGridLayout;
         private bool _canCallReachedScrollEnd;
         private bool _canCallReachedScrollStart;
         private bool _isApplicationQuitting;
@@ -68,15 +74,12 @@ namespace RecyclableSR
         private Dictionary<int, HashSet<string>> _reloadTags;
         protected SortedDictionary<int, Item> _visibleItems;
         
+        protected Vector2 _dragStartingPosition;
         private Vector2 _viewPortSize;
         private Vector2 _lastContentPosition;
         private Vector2 _contentTopLeftCorner;
         private Vector2 _contentBottomRightCorner;
-        private Vector2 _spacing;
-        protected Vector2 _dragStartingPosition;
         private Vector2 _gridLayoutPadding;
-        private RectOffset _padding;
-        private TextAnchor _alignment;
         private MovementType _movementType;
         private MovementType _initialMovementType;
 
@@ -102,91 +105,18 @@ namespace RecyclableSR
             {
                 throw new ArgumentNullException(nameof(_dataSource.PrototypeCells), "RSR, No prototype cell defined IDataSource");
             }
-
-            // get the layouts and their settings if present
-            _gridLayout = content.gameObject.GetComponent<GridLayoutGroup>();
-            if (_gridLayout != null)
-            {
-                _hasLayoutGroup = true;
-                _isGridLayout = true;
-                _padding = _gridLayout.padding;
-                _spacing = _gridLayout.spacing;
-                _alignment = _gridLayout.childAlignment;
-
-                if (_gridLayout.constraint == GridLayoutGroup.Constraint.Flexible)
-                {
-                    throw new Exception("RSR, Flexible Constraints not currently supported");
-                    // if (vertical)
-                    // {
-                    //     Debug.LogWarning("RSR, Flexible constraints is currently not supported, defaulting to 1 Fixed Column Count");
-                    //     _gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-                    //     _gridLayout.startAxis = GridLayoutGroup.Axis.Horizontal;
-                    //     _gridConstraint = 1;
-                    //     
-                    // }
-                    // else
-                    // {
-                    //     Debug.LogWarning("RSR, Flexible constraints is currently not supported, defaulting to 1 Fixed Row Count");
-                    //     _gridLayout.constraint = GridLayoutGroup.Constraint.FixedRowCount;
-                    //     _gridLayout.startAxis = GridLayoutGroup.Axis.Vertical;
-                    //     _gridConstraint = 1;
-                    // }
-                }
-                else if (_gridLayout.constraint == GridLayoutGroup.Constraint.FixedColumnCount && _gridLayout.startAxis == GridLayoutGroup.Axis.Vertical)
-                {
-                    throw new Exception("RSR, FixedColumnCount Constraints with Vertical Axis not currently supported");
-                    // Debug.LogWarning("RSR, FixedColumnCount constraints with Vertical start axis is currently not supported, defaulting to Horizontal start axis");
-                    // _gridLayout.startAxis = GridLayoutGroup.Axis.Horizontal;
-                }
-                else if (_gridLayout.constraint == GridLayoutGroup.Constraint.FixedRowCount && _gridLayout.startAxis == GridLayoutGroup.Axis.Horizontal)
-                {
-                    throw new Exception("RSR, FixedRowCount Constraints with Horizontal Axis not currently supported");
-                    // Debug.LogWarning("RSR, FixedRowCount constraints with Horizontal start axis is currently not supported, defaulting to Vertical start axis");
-                    // _gridLayout.startAxis = GridLayoutGroup.Axis.Vertical;
-                }
-                else
-                    _gridConstraint = _gridLayout.constraintCount;
-                
-                if (_gridLayout.startCorner != GridLayoutGroup.Corner.UpperLeft)
-                {
-                    Debug.LogWarning("RSR, Upper Left Corner is the only mode currently supported, defaulting to Upper Left");
-                }
-            }
-            else if (vertical)
-            {
-                _verticalLayoutGroup = content.gameObject.GetComponent<VerticalLayoutGroup>();
-                if (_verticalLayoutGroup != null)
-                {
-                    _hasLayoutGroup = true;
-                    _padding = _verticalLayoutGroup.padding;
-                    _spacing = new Vector2(0, _verticalLayoutGroup.spacing);
-                    _alignment = _verticalLayoutGroup.childAlignment;
-                }
-            }
-            else
-            {
-                _horizontalLayoutGroup = content.gameObject.GetComponent<HorizontalLayoutGroup>();
-                if (_horizontalLayoutGroup != null)
-                {
-                    _hasLayoutGroup = true;
-                    _padding = _horizontalLayoutGroup.padding;
-                    _spacing = new Vector2(_horizontalLayoutGroup.spacing, 0);
-                    _alignment = _horizontalLayoutGroup.childAlignment;
-                }
-            }
+            
+            // Register event delegate for resolution change
+            ScreenResolutionDetector.Instance.OnResolutionChanged += UpdateContentLayouts;
 
             // add a LayoutElement if not present to set the content size in case another element is controlling it 
-            if (_hasLayoutGroup)
-            {
-                _layoutElement = content.gameObject.GetComponent<LayoutElement>();
-                if (_layoutElement == null)
-                    _layoutElement = content.gameObject.AddComponent<LayoutElement>();
-            }
+            _layoutElement = content.gameObject.GetComponent<LayoutElement>();
+            if (_layoutElement == null)
+                _layoutElement = content.gameObject.AddComponent<LayoutElement>();
 
             _axis = vertical ? 1 : 0;
             _initialMovementType = movementType;
             
-            DisableContentLayouts();
             ResetData();
         }
         
@@ -310,27 +240,6 @@ namespace RecyclableSR
             _canCallReachedScrollEnd = true;
         }
 
-        /// <summary>
-        /// Disable all layouts since everything is calculated manually
-        /// </summary>
-        private void DisableContentLayouts()
-        {
-            if (_hasLayoutGroup)
-            {
-                if (_gridLayout != null)
-                    _gridLayout.enabled = false;
-                
-                if (_horizontalLayoutGroup != null)
-                    _horizontalLayoutGroup.enabled = false;
-
-                if (_verticalLayoutGroup != null)
-                    _verticalLayoutGroup.enabled = false;
-
-                ScreenResolutionDetector.Instance.OnResolutionChanged -= UpdateContentLayouts;
-                ScreenResolutionDetector.Instance.OnResolutionChanged += UpdateContentLayouts;
-            }
-        }
-
         protected override void OnDestroy()
         {
             base.OnDestroy();
@@ -358,15 +267,15 @@ namespace RecyclableSR
             var contentSizeDelta = viewport.sizeDelta;
             _maxGridItemsInAxis = 0;
             contentSizeDelta[_axis] = 0;
-
+            
             if (_isGridLayout)
             {
                 // we consider all cell sizes the same in grid
-                _maxGridItemsInAxis = Mathf.CeilToInt(_itemsCount / (float)_gridConstraint);
-                contentSizeDelta[_axis] = _maxGridItemsInAxis * _gridLayout.cellSize[_axis];
+                _maxGridItemsInAxis = Mathf.CeilToInt(_itemsCount / (float)_gridConstraintCount);
+                contentSizeDelta[_axis] = _maxGridItemsInAxis * _gridCellSize[_axis];
 
                 for (var i = 0; i < _itemsCount; i++)
-                    _itemPositions[i].SetSize(_gridLayout.cellSize);
+                    _itemPositions[i].SetSize(_gridCellSize);
             }
             else
             {
@@ -384,23 +293,20 @@ namespace RecyclableSR
                 }
             }
 
-            if (_hasLayoutGroup)
-            {
-                if (_isGridLayout)
-                    contentSizeDelta[_axis] += _spacing[_axis] * (_maxGridItemsInAxis - 1);
-                else
-                    contentSizeDelta[_axis] += _spacing[_axis] * (_itemsCount - 1);
+            if (_isGridLayout)
+                contentSizeDelta[_axis] += _spacing[_axis] * (_maxGridItemsInAxis - 1);
+            else
+                contentSizeDelta[_axis] += _spacing[_axis] * (_itemsCount - 1);
 
-                if (vertical)
-                {
-                    contentSizeDelta.y += _padding.top + _padding.bottom;
-                    _layoutElement.preferredHeight = contentSizeDelta.y;
-                }
-                else
-                {
-                    contentSizeDelta.x += _padding.right + _padding.left;
-                    _layoutElement.preferredWidth = contentSizeDelta.x;
-                }
+            if (vertical)
+            {
+                contentSizeDelta.y += _padding.top + _padding.bottom;
+                _layoutElement.preferredHeight = contentSizeDelta.y;
+            }
+            else
+            {
+                contentSizeDelta.x += _padding.right + _padding.left;
+                _layoutElement.preferredWidth = contentSizeDelta.x;
             }
 
             content.sizeDelta = contentSizeDelta;
@@ -528,7 +434,7 @@ namespace RecyclableSR
             if (index == 0 || index < _itemsCount)
                 return true;
 
-            if ((index + 1) % _gridConstraint != 0)
+            if ((index + 1) % _gridConstraintCount != 0)
                 return true;
 
             return false;
@@ -814,10 +720,6 @@ namespace RecyclableSR
         {
             if (!_isGridLayout)
                 return;
-            
-            _padding = _gridLayout.padding;
-            _spacing = _gridLayout.spacing;
-            _alignment = _gridLayout.childAlignment;
 
             // get content size without padding
             var contentSize = content.rect.size;
@@ -825,7 +727,6 @@ namespace RecyclableSR
             contentSizeWithoutPadding.x -= _padding.right + _padding.left;
             contentSizeWithoutPadding.y -= _padding.top + _padding.bottom;
             
-            var rectSize = _gridLayout.cellSize;
             if (vertical)
             {
                 var rightPadding = _reverseDirection ? _padding.left : _padding.right;
@@ -833,11 +734,11 @@ namespace RecyclableSR
 
                 if (_alignment == TextAnchor.LowerCenter || _alignment == TextAnchor.MiddleCenter || _alignment == TextAnchor.UpperCenter)
                 {
-                    _gridLayoutPadding.x = leftPadding + (contentSize.x - (rectSize.x * _gridConstraint) - (_spacing.x * (_gridConstraint - 1))) / 2 - rightPadding;
+                    _gridLayoutPadding.x = leftPadding + (contentSize.x - (_gridCellSize.x * _gridConstraintCount) - (_spacing.x * (_gridConstraintCount - 1))) / 2 - rightPadding;
                 }
                 else if (_alignment == TextAnchor.LowerRight || _alignment == TextAnchor.MiddleRight || _alignment == TextAnchor.UpperRight)
                 {
-                    _gridLayoutPadding.x = contentSize.x - rectSize.x - rightPadding;
+                    _gridLayoutPadding.x = contentSize.x - _gridCellSize.x - rightPadding;
                 }
                 else
                 {
@@ -852,11 +753,11 @@ namespace RecyclableSR
                 
                 if (_alignment == TextAnchor.MiddleLeft || _alignment == TextAnchor.MiddleCenter || _alignment == TextAnchor.MiddleRight)
                 {
-                    _gridLayoutPadding.y = topPadding + (contentSize.y - (rectSize.y * _gridConstraint) - (_spacing.y * (_gridConstraint - 1))) / 2 - bottomPadding;
+                    _gridLayoutPadding.y = topPadding + (contentSize.y - (_gridCellSize.y * _gridConstraintCount) - (_spacing.y * (_gridConstraintCount - 1))) / 2 - bottomPadding;
                 }
                 else if (_alignment == TextAnchor.LowerLeft || _alignment == TextAnchor.LowerCenter || _alignment == TextAnchor.LowerRight)
                 {
-                    _gridLayoutPadding.y = contentSize.y - rectSize.y - bottomPadding;
+                    _gridLayoutPadding.y = contentSize.y - _gridCellSize.y - bottomPadding;
                 }
                 else
                 {
@@ -898,31 +799,27 @@ namespace RecyclableSR
                 return;
 
             var forceSize = false;
-            // set size
-            if (_hasLayoutGroup)
+            // expand item width if it's in a vertical layout group and the conditions are satisfied
+            if (vertical && _childForceExpand)
             {
-                // expand item width if it's in a vertical layout group and the conditions are satisfied
-                if (vertical && _verticalLayoutGroup.childControlWidth && _verticalLayoutGroup.childForceExpandWidth)
-                {
-                    var itemSize = rect.sizeDelta;
-                    itemSize.x = content.rect.width;
-                    if (!_dataSource.IgnoreContentPadding(cellIndex))
-                        itemSize.x -= _padding.right + _padding.left;
+                var itemSize = rect.sizeDelta;
+                itemSize.x = content.rect.width;
+                if (!_dataSource.IgnoreContentPadding(cellIndex))
+                    itemSize.x -= _padding.right + _padding.left;
 
-                    rect.sizeDelta = itemSize;
-                    forceSize = true;
-                }
+                rect.sizeDelta = itemSize;
+                forceSize = true;
+            }
 
-                // expand item height if it's in a horizontal layout group and the conditions are satisfied
-                else if (!vertical && _horizontalLayoutGroup.childControlHeight && _horizontalLayoutGroup.childControlHeight)
-                {
-                    var itemSize = rect.sizeDelta;
-                    itemSize.y = content.rect.height;
-                    if (!_dataSource.IgnoreContentPadding(cellIndex))
-                        itemSize.y -= _padding.top + _padding.bottom;
-                    rect.sizeDelta = itemSize;
-                    forceSize = true;
-                }
+            // expand item height if it's in a horizontal layout group and the conditions are satisfied
+            else if (!vertical && _childForceExpand)
+            {
+                var itemSize = rect.sizeDelta;
+                itemSize.y = content.rect.height;
+                if (!_dataSource.IgnoreContentPadding(cellIndex))
+                    itemSize.y -= _padding.top + _padding.bottom;
+                rect.sizeDelta = itemSize;
+                forceSize = true;
             }
 
             // get content size without padding
@@ -935,7 +832,7 @@ namespace RecyclableSR
             // we check for multiple conditions together since the content is made to fit the items, so they only move in one axis in each different scroll direction
             var rectSize = rect.rect.size;
             var itemSizeSmallerThanContent = rectSize[_axis] < contentSizeWithoutPadding[_axis];
-            if (_hasLayoutGroup && (itemSizeSmallerThanContent || forceSize))
+            if (itemSizeSmallerThanContent || forceSize)
             {
                 var itemPosition = rect.anchoredPosition;
                 if (vertical)
@@ -1017,12 +914,12 @@ namespace RecyclableSR
                 int xIndexInGrid;
                 int yIndexInGrid;
                 
-                if (_gridLayout.constraint == GridLayoutGroup.Constraint.FixedRowCount)
+                if (_gridConstraint == GridLayoutGroup.Constraint.FixedRowCount)
                 {
-                    if (_gridLayout.startAxis == GridLayoutGroup.Axis.Vertical)
+                    if (_gridStartAxis == GridLayoutGroup.Axis.Vertical)
                     {
-                        xIndexInGrid = Mathf.FloorToInt(newIndex / (float) _gridConstraint);
-                        yIndexInGrid = newIndex % _gridConstraint;
+                        xIndexInGrid = Mathf.FloorToInt(newIndex / (float) _gridConstraintCount);
+                        yIndexInGrid = newIndex % _gridConstraintCount;
                     }
                     else
                     {
@@ -1033,7 +930,7 @@ namespace RecyclableSR
                 }
                 else
                 {
-                    if (_gridLayout.startAxis == GridLayoutGroup.Axis.Vertical)
+                    if (_gridStartAxis == GridLayoutGroup.Axis.Vertical)
                     {
                         // TODO: Reversed Grid Code
                         xIndexInGrid = Mathf.FloorToInt(newIndex / (float) _maxGridItemsInAxis);
@@ -1041,19 +938,19 @@ namespace RecyclableSR
                     }
                     else
                     {
-                        xIndexInGrid = newIndex % _gridConstraint;
-                        yIndexInGrid = Mathf.FloorToInt(newIndex / (float) _gridConstraint);
+                        xIndexInGrid = newIndex % _gridConstraintCount;
+                        yIndexInGrid = Mathf.FloorToInt(newIndex / (float) _gridConstraintCount);
                     }
                 }
 
                 if (_reverseDirection)
                 {
-                    if (_gridLayout.constraint == GridLayoutGroup.Constraint.FixedRowCount && _gridLayout.startAxis == GridLayoutGroup.Axis.Vertical)
+                    if (_gridConstraint == GridLayoutGroup.Constraint.FixedRowCount && _gridStartAxis == GridLayoutGroup.Axis.Vertical)
                     {
                         newItemPosition.x = -_gridLayoutPadding.x - xIndexInGrid * _itemPositions[newIndex].cellSize[0] - _spacing[0] * xIndexInGrid;
                         newItemPosition.y = -_gridLayoutPadding.y - yIndexInGrid * _itemPositions[newIndex].cellSize[1] - _spacing[1] * yIndexInGrid;
                     }
-                    else if (_gridLayout.constraint == GridLayoutGroup.Constraint.FixedColumnCount && _gridLayout.startAxis == GridLayoutGroup.Axis.Horizontal)
+                    else if (_gridConstraint == GridLayoutGroup.Constraint.FixedColumnCount && _gridStartAxis == GridLayoutGroup.Axis.Horizontal)
                     {
                         newItemPosition.x = _gridLayoutPadding.x + xIndexInGrid * _itemPositions[newIndex].cellSize[0] + _spacing[0] * xIndexInGrid;
                         newItemPosition.y = _gridLayoutPadding.y + yIndexInGrid * _itemPositions[newIndex].cellSize[1] + _spacing[1] * yIndexInGrid;
@@ -1108,7 +1005,7 @@ namespace RecyclableSR
         {
             if (_isGridLayout)
             {
-                rect.sizeDelta = _gridLayout.cellSize;
+                rect.sizeDelta = _gridCellSize;
                 return;
             }
 
@@ -1130,13 +1027,12 @@ namespace RecyclableSR
             
             var contentSize = content.sizeDelta;
             contentSize[_axis] += newCellSize[_axis] - oldCellSize;
-            if (_hasLayoutGroup)
-            {
-                if (vertical)
-                    _layoutElement.preferredHeight = contentSize.y;
-                else
-                    _layoutElement.preferredWidth = contentSize.x;
-            }
+            
+            if (vertical)
+                _layoutElement.preferredHeight = contentSize.y;
+            else
+                _layoutElement.preferredWidth = contentSize.x;
+            
             content.sizeDelta = contentSize;
         }
 
@@ -1317,13 +1213,13 @@ namespace RecyclableSR
             else
             {
                 var indices = new List<int>();
-                if (_gridLayout.constraint == GridLayoutGroup.Constraint.FixedRowCount && _gridLayout.startAxis == GridLayoutGroup.Axis.Vertical
-                    || _gridLayout.constraint == GridLayoutGroup.Constraint.FixedColumnCount && _gridLayout.startAxis == GridLayoutGroup.Axis.Horizontal)
+                if (_gridConstraint == GridLayoutGroup.Constraint.FixedRowCount && _gridStartAxis == GridLayoutGroup.Axis.Vertical
+                    || _gridConstraint == GridLayoutGroup.Constraint.FixedColumnCount && _gridStartAxis == GridLayoutGroup.Axis.Horizontal)
                 {
                     if (gridLayoutPage == GridLayoutPage.After)
                     {
-                        // equation to get the highest multiple of newIndex where _gridConstraint is the multiple
-                        var maxItemToShow = _gridConstraint * Mathf.FloorToInt((float) newIndex / _gridConstraint) + _gridConstraint;
+                        // equation to get the highest multiple of newIndex where _gridConstraintCount is the multiple
+                        var maxItemToShow = _gridConstraintCount * Mathf.FloorToInt((float) newIndex / _gridConstraintCount) + _gridConstraintCount;
                         for (var i = newIndex; i < maxItemToShow; i++)
                         {
                             if (i < _itemsCount)
@@ -1332,8 +1228,8 @@ namespace RecyclableSR
                     }
                     else if (gridLayoutPage == GridLayoutPage.Before)
                     {
-                        // equation to get the lowest multiple of newIndex where _gridConstraint is the multiple
-                        var minItemToShow = _gridConstraint * Mathf.FloorToInt((float) newIndex / _gridConstraint);  
+                        // equation to get the lowest multiple of newIndex where _gridConstraintCount is the multiple
+                        var minItemToShow = _gridConstraintCount * Mathf.FloorToInt((float) newIndex / _gridConstraintCount);  
                         for (var i = newIndex; i >= minItemToShow; i--)
                             indices.Add(i);
                     }
@@ -1347,7 +1243,7 @@ namespace RecyclableSR
                         indices.Add(newIndex);
                     else if (newIndex < _maxGridItemsInAxis)
                     {
-                        for (var i = 0; i < _gridConstraint; i++)
+                        for (var i = 0; i < _gridConstraintCount; i++)
                         {
                             var cellIndex = newIndex + i * _maxGridItemsInAxis;
                             if (cellIndex < _itemsCount)
