@@ -27,7 +27,7 @@ namespace RecyclableSR
         [SerializeField] protected bool _childForceExpand;
         [SerializeField] private float _pullToRefreshThreshold = 150;
         [SerializeField] private float _pushToCloseThreshold = 150;
-        [SerializeField] private bool _manuallyHandleCardAnimations;
+        [SerializeField] protected bool _manuallyHandleCardAnimations;
         [SerializeField] private bool _useConstantScrollingSpeed;
         [SerializeField] private float _constantScrollingSpeed;
         
@@ -52,7 +52,7 @@ namespace RecyclableSR
         protected int _axis;
         protected int _itemsCount;
         protected int _currentPage;
-        private int _extraItemsVisible;
+        protected int _extraItemsVisible;
         private int _minVisibleItemInViewPort;
         private int _maxVisibleItemInViewPort;
         private int _minExtraVisibleItemInViewPort;
@@ -69,7 +69,7 @@ namespace RecyclableSR
         private bool _isApplicationQuitting;
 
         private HashSet<int> _itemsMarkedForReload;
-        private HashSet<int> _ignoreSetCellDataIndices;
+        protected HashSet<int> _ignoreSetCellDataIndices;
         private Dictionary<string, List<Item>> _pooledItems;
         private Dictionary<int, HashSet<string>> _reloadTags;
         protected SortedDictionary<int, Item> _visibleItems;
@@ -1459,14 +1459,9 @@ namespace RecyclableSR
         /// <summary>
         /// Scrolls to top of scrollRect
         /// </summary>
-        public void ScrollToTopRight()
+        public virtual void ScrollToTopRight()
         {
             StopMovement();
-            
-            if (_paged)
-                ScrollToCell(0, instant:true);
-            else
-                StartCoroutine(ScrollToTargetNormalisedPosition((vertical ? 1 : 0) * (_reverseDirection ? 0 : 1)));
         }
 
         /// <summary>
@@ -1474,7 +1469,7 @@ namespace RecyclableSR
         /// </summary>
         /// <param name="targetNormalisedPos">required normalisedPosition</param>
         /// <returns></returns>
-        private IEnumerator ScrollToTargetNormalisedPosition(float targetNormalisedPos)
+        protected IEnumerator ScrollToTargetNormalisedPosition(float targetNormalisedPos)
         {
             _isAnimating = true;
             var currentNormalisedPosition = Mathf.Clamp01(normalizedPosition[_axis]);
@@ -1506,8 +1501,10 @@ namespace RecyclableSR
         /// <param name="offset">value to offset target scroll position with</param>
         public void ScrollToCell(int cellIndex, bool callEvent = true, bool instant = false, float maxSpeedMultiplier = 1, float offset = 0)
         {
-            var forceCallWillFocus = false;
             StopMovement();
+            var direction = cellIndex > _currentPage ? 1 : -1;
+            PreformPreScrollingActions(cellIndex, direction);
+            
             var itemVisiblePositionKnown = _itemPositions[cellIndex].positionSet && _visibleItems.ContainsKey(cellIndex);
             if (itemVisiblePositionKnown && instant)
             {
@@ -1517,70 +1514,12 @@ namespace RecyclableSR
                 m_ContentStartPosition = currentContentPosition;
                 if (callEvent)
                     _dataSource.ScrolledToCell(_visibleItems[cellIndex].cell, cellIndex);
-
-                if (_currentPage != cellIndex)
-                {
-                    var isNextPage = cellIndex > _currentPage && !_reverseDirection;
-                    if ( _visibleItems.ContainsKey( _currentPage ) )
-                    {
-                        ((IPageSource)_dataSource).PageWillUnFocus( _currentPage, isNextPage, _visibleItems[ _currentPage ].cell, _visibleItems[ _currentPage ].transform );
-                        ((IPageSource)_dataSource).PageUnFocused( _currentPage, isNextPage, _visibleItems[ _currentPage ].cell );
-                    }
-                    _currentPage = cellIndex;
-                    ((IPageSource)_dataSource).PageWillFocus(_currentPage, isNextPage, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform, _itemPositions[_currentPage].topLeftPosition);
-                    ((IPageSource)_dataSource).PageFocused(_currentPage, isNextPage, _visibleItems[_currentPage].cell);
-                    SetCardsZIndices();
-                }
-
+                
+                PreformPostScrollingActions(cellIndex, true);
                 _isAnimating = false;
             }
             else
             {
-                var direction = cellIndex > _currentPage ? 1 : -1;
-                
-                // create a list that will stop ScrollTo method from calling SetCellData on items that will only be visible in the one frame while scrolling, this assumes
-                // that the paging cell is taking up the entire width or height
-                if (_paged)
-                {
-                    var endingIndex = cellIndex;
-                    _ignoreSetCellDataIndices.Clear();
-                    if (direction > 0)
-                    {
-                        endingIndex -= _extraItemsVisible;
-                        endingIndex = Mathf.Clamp(endingIndex, 0, _itemsCount - 1);
-                        for (var j = _currentPage; j < endingIndex; j++)
-                        {
-                            if (!_visibleItems.ContainsKey(j) && _itemPositions[j].positionSet)
-                            {
-                                _ignoreSetCellDataIndices.Add(j);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        endingIndex += _extraItemsVisible;
-                        endingIndex = Mathf.Clamp(endingIndex, 0, _itemsCount - 1);
-                        for (var j = _currentPage - 1; j > endingIndex; j--)
-                        {
-                            if (!_visibleItems.ContainsKey(j) && _itemPositions[j].positionSet)
-                            {
-                                _ignoreSetCellDataIndices.Add(j);
-                            }
-                        }
-                    }
-                    
-                    var isNextPage = cellIndex > _currentPage && !_reverseDirection;
-
-                     // sometimes the cellIndex isn't visible yet so can't call this function yet
-                     if ( _visibleItems.ContainsKey( cellIndex ) )
-                         ((IPageSource)_dataSource).PageWillFocus( cellIndex, isNextPage, _visibleItems[ cellIndex ].cell, _visibleItems[ cellIndex ].transform, _itemPositions[ cellIndex ].topLeftPosition );
-                     else
-                         forceCallWillFocus = true;
-
-                     if ( _visibleItems.ContainsKey( _currentPage ) )
-                         ((IPageSource)_dataSource).PageWillUnFocus(_currentPage, isNextPage, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform);
-                }
-
                 float speedToUse;
                 if (_useConstantScrollingSpeed && !instant)
                 {
@@ -1619,7 +1558,7 @@ namespace RecyclableSR
 
                 _isAnimating = true;
                 var increment = speedToUse * direction * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
-                StartCoroutine(StartScrolling(increment, direction, cellIndex, callEvent, offset, forceCallWillFocus));
+                StartCoroutine(StartScrolling(increment, direction, cellIndex, callEvent, offset));
             }
         }
 
@@ -1631,8 +1570,7 @@ namespace RecyclableSR
         /// <param name="cellIndex">cell index which we want to scroll to</param>
         /// <param name="callEvent">call scroll to cell event, usually not needed when calling ScrollToCell from OnEndDrag if RSR is paged</param>
         /// <param name="offset">value to offset target scroll position with</param>
-        /// <param name="forceCallWillFocus">used to force call will focus when the cell isn't visible when calling ScrollToCell</param>
-        private IEnumerator StartScrolling(float increment, int direction, int cellIndex, bool callEvent, float offset, bool forceCallWillFocus)
+        private IEnumerator StartScrolling(float increment, int direction, int cellIndex, bool callEvent, float offset)
         {
             var reachedCell = false;        
             
@@ -1689,7 +1627,7 @@ namespace RecyclableSR
 
             yield return new WaitForEndOfFrame();
             if (!reachedCell)
-                StartCoroutine(StartScrolling(increment, direction, cellIndex, callEvent, offset, forceCallWillFocus));
+                StartCoroutine(StartScrolling(increment, direction, cellIndex, callEvent, offset));
             else
             {
                 if (callEvent)
@@ -1700,28 +1638,19 @@ namespace RecyclableSR
                         _queuedScrollToCell = cellIndex;
                 }
 
-                if (_currentPage != cellIndex)
-                {
-                    var isNextPage = cellIndex > _currentPage && !_reverseDirection;
-                    var pageToStaggerAnimation = -1;
-                    if (_manuallyHandleCardAnimations && isNextPage)
-                        pageToStaggerAnimation = _currentPage;
-                    
-                    // check if old page was in visible items, if not this means we don't need to unfocus it
-                    if (_visibleItems.TryGetValue( _currentPage, out var item))
-                        ((IPageSource)_dataSource).PageUnFocused(_currentPage, isNextPage, item.cell);
-                    
-                    _currentPage = cellIndex;
-                    if (forceCallWillFocus)
-                        ((IPageSource)_dataSource).PageWillFocus( _currentPage, isNextPage, _visibleItems[ _currentPage ].cell, _visibleItems[ _currentPage ].transform, _itemPositions[ _currentPage ].topLeftPosition );
-                    ((IPageSource)_dataSource).PageFocused(_currentPage, isNextPage, _visibleItems[_currentPage].cell);
-                    
-                    SetCardsZIndices(pageToStaggerAnimation);
-                }
-
+                PreformPostScrollingActions(cellIndex, false);
                 _isAnimating = false;
                 _ignoreSetCellDataIndices.Clear();
             }
+        }
+
+        protected virtual void PreformPreScrollingActions(int cellIndex, int direction)
+        {
+        }
+        
+
+        protected virtual void PreformPostScrollingActions(int cellIndex, bool instant)
+        {
         }
 
         /// <summary>

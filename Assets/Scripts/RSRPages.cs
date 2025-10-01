@@ -11,6 +11,7 @@ namespace RecyclableSR
 
         private IPageSource _pageSource;
         private bool _isDragging;
+        private bool _forceCallWillFocusAfterAnimation;
 
         protected override void Initialize()
         {
@@ -91,7 +92,86 @@ namespace RecyclableSR
                 _visibleItems[pageToStaggerAnimationFor].transform.SetAsLastSibling();
             }
         }
+
+        public override void ScrollToTopRight()
+        {
+            base.ScrollToTopRight();
+            ScrollToCell(0, instant:true);
+        }
+        
+        protected override void PreformPreScrollingActions(int cellIndex, int direction)
+        {
+            base.PreformPreScrollingActions(cellIndex, direction);
+            
+            // create a list that will stop ScrollTo method from calling SetCellData on items that will only be visible in the one frame while scrolling, this assumes
+            // that the paging cell is taking up the entire width or height
+            var endingIndex = cellIndex;
+            _ignoreSetCellDataIndices.Clear();
+            if (direction > 0)
+            {
+                endingIndex -= _extraItemsVisible;
+                endingIndex = Mathf.Clamp(endingIndex, 0, _itemsCount - 1);
+                for (var j = _currentPage; j < endingIndex; j++)
+                {
+                    if (!_visibleItems.ContainsKey(j) && _itemPositions[j].positionSet)
+                    {
+                        _ignoreSetCellDataIndices.Add(j);
+                    }
+                }
+            }
+            else
+            {
+                endingIndex += _extraItemsVisible;
+                endingIndex = Mathf.Clamp(endingIndex, 0, _itemsCount - 1);
+                for (var j = _currentPage - 1; j > endingIndex; j--)
+                {
+                    if (!_visibleItems.ContainsKey(j) && _itemPositions[j].positionSet)
+                    {
+                        _ignoreSetCellDataIndices.Add(j);
+                    }
+                }
+            }
+            
+            _forceCallWillFocusAfterAnimation = !_visibleItems.ContainsKey(cellIndex);
+            var isNextPage = cellIndex > _currentPage && !_reverseDirection;
+            if (_visibleItems.ContainsKey(cellIndex))
+            {
+                _pageSource?.PageWillFocus(cellIndex, isNextPage, _visibleItems[cellIndex].cell, _visibleItems[cellIndex].transform, _itemPositions[cellIndex].topLeftPosition);
+            }
+
+            if (_visibleItems.ContainsKey(_currentPage))
+            {
+                _pageSource?.PageWillUnFocus(_currentPage, isNextPage, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform);
+            }
+        }
+
+        protected override void PreformPostScrollingActions(int cellIndex, bool instant)
+        {
+            base.PreformPostScrollingActions(cellIndex, instant);
+            
+            if (_currentPage != cellIndex)
+            {
+                var isNextPage = cellIndex > _currentPage && !_reverseDirection;
+
+                var pageToStaggerAnimation = -1;
+                if (!instant)
+                {
+                    if (_manuallyHandleCardAnimations && isNextPage)
+                        pageToStaggerAnimation = _currentPage;
+                }
+
+                if (_visibleItems.TryGetValue(_currentPage, out var visibleItem))
+                    _pageSource?.PageUnFocused(_currentPage, isNextPage, visibleItem.cell);
+
+                _currentPage = cellIndex;
+                if (_forceCallWillFocusAfterAnimation)
+                    _pageSource?.PageWillFocus(_currentPage, isNextPage, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform, _itemPositions[_currentPage].topLeftPosition);
+                _pageSource?.PageFocused(_currentPage, isNextPage, _visibleItems[_currentPage].cell);
                 
+                SetCardsZIndices(pageToStaggerAnimation);
+            }
+        }
+
         public override void OnBeginDrag(PointerEventData eventData)
         {
             if (!_cardMode)

@@ -14,5 +14,11 @@ namespace RecyclableSR
                 visibleItem.Value.transform.SetSiblingIndex(visibleItem.Key);
             }
         }
+
+        public override void ScrollToTopRight()
+        {
+            base.ScrollToTopRight();
+            StartCoroutine(ScrollToTargetNormalisedPosition((vertical ? 1 : 0) * (_reverseDirection ? 0 : 1)));
+        }
     }
 }
