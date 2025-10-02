@@ -6,9 +6,10 @@ namespace RecyclableSR
     {
         protected override int CalculateNextPageAfterDrag()
         {
-            var currentContentPosition = content.anchoredPosition * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
-            var distance = Vector3.Distance(_dragStartingPosition, currentContentPosition);
-            var isNextPage = currentContentPosition[_axis] > _dragStartingPosition[_axis];
+            var currentPagePosition = _visibleItems[_currentPage].transform.anchoredPosition;
+            var currentPageStartingPosition = _itemPositions[_currentPage].topLeftPosition;
+            var distance = Vector2.Distance(currentPageStartingPosition, currentPagePosition);
+            var isNextPage = (currentPagePosition[_axis] < currentPageStartingPosition[_axis]) && !_reverseDirection;
             var newPage = _currentPage;
             if (distance > _swipeThreshold)
             {
@@ -16,8 +17,15 @@ namespace RecyclableSR
                     newPage++;
                 else if (!isNextPage && _currentPage > 0)
                     newPage--;
+
+                if (newPage != _currentPage)
+                {
+                    _pageSource?.PageWillFocus(newPage, isNextPage, _visibleItems[newPage].cell, _visibleItems[newPage].transform, _itemPositions[newPage].topLeftPosition);
+                    _pageSource?.PageWillUnFocus(_currentPage, isNextPage, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform);
+                }
             }
             
+            _visibleItems[_currentPage].transform.anchoredPosition = currentPageStartingPosition;
             return newPage;
         }
     }

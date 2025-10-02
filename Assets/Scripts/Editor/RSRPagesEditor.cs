@@ -6,6 +6,7 @@ namespace RecyclableSR
     [CanEditMultipleObjects]
     public class RSRPagesEditor : RSRBaseEditor
     {
+        private SerializedProperty _swipeThreshold;
         private SerializedProperty _cardMode;
         private SerializedProperty _cardZMultiplier;
         private SerializedProperty _manuallyHandleCardAnimations;
@@ -13,6 +14,7 @@ namespace RecyclableSR
         protected override void OnEnable()
         {
             base.OnEnable();
+            _swipeThreshold = serializedObject.FindProperty(nameof(_swipeThreshold));
             _cardMode = serializedObject.FindProperty(nameof(_cardMode));
             _cardZMultiplier = serializedObject.FindProperty(nameof(_cardZMultiplier));
             _manuallyHandleCardAnimations = serializedObject.FindProperty(nameof(_manuallyHandleCardAnimations));
@@ -22,13 +24,14 @@ namespace RecyclableSR
         {
             base.OnInspectorGUI();
             
-            EditorGUILayout.Space();
+            EditorGUILayout.PropertyField(_swipeThreshold);
             EditorGUILayout.PropertyField(_cardMode);
             if (_cardMode.boolValue)
             {
+                EditorGUILayout.Space();
                 EditorGUILayout.PropertyField(_cardZMultiplier);
+                EditorGUILayout.PropertyField(_manuallyHandleCardAnimations);
             }
-            EditorGUILayout.PropertyField(_manuallyHandleCardAnimations);
             
             serializedObject.ApplyModifiedProperties();
         }

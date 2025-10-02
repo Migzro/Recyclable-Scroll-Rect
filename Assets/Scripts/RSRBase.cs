@@ -13,7 +13,10 @@ namespace RecyclableSR
         // TODO: FixedColumnCount with Vertical Grids & FixedRowCount with Horizontal Grids (remaining _maxExtraVisibleItemInViewPort needs to be / _maxGridsItemsInAxis
         // TODO: Separate Scrolling animation
         // TODO: Redo Scrolling animation
-        // TODO: Remove _paged boolean
+        // TODO: Remove SetCardsZIndices from RSRPages and put it in RSRCards and change it to SetIndices
+        // TODO: Maybe remove ScrolledToCell event call in pages?
+        // TODO: check todos in RSRPages
+        // TODO: check todos in this class
         // TODO: Fix all behaviours for gridLayout and make sure _reverseDirection is working properly
         // TODO: Rework cards behaviours
         // TODO: Add headers, footers, sections
@@ -27,27 +30,23 @@ namespace RecyclableSR
         [SerializeField] protected bool _childForceExpand;
         [SerializeField] private float _pullToRefreshThreshold = 150;
         [SerializeField] private float _pushToCloseThreshold = 150;
-        [SerializeField] protected bool _manuallyHandleCardAnimations;
         [SerializeField] private bool _useConstantScrollingSpeed;
         [SerializeField] private float _constantScrollingSpeed;
         
-        [SerializeField] private bool _paged;
-        [SerializeField] protected float _swipeThreshold = 200;
-
         [SerializeField] private bool _isGridLayout;
         [SerializeField] private Vector2 _gridCellSize;
         [SerializeField] private GridLayoutGroup.Axis _gridStartAxis;
         [SerializeField] private GridLayoutGroup.Constraint _gridConstraint;
         [SerializeField] private int _gridConstraintCount;
         
+        protected IDataSource _dataSource;
+
         private LayoutElement _layoutElement;
         private ScreenResolutionDetector _screenResolutionDetector;
 
-        protected IDataSource _dataSource;
-
+        protected List<ItemPosition> _itemPositions;
         private List<bool> _staticCells;
         private List<string> _prototypeNames;
-        protected List<ItemPosition> _itemPositions;
         
         protected int _axis;
         protected int _itemsCount;
@@ -68,11 +67,11 @@ namespace RecyclableSR
         private bool _canCallReachedScrollStart;
         private bool _isApplicationQuitting;
 
-        private HashSet<int> _itemsMarkedForReload;
+        protected SortedDictionary<int, Item> _visibleItems;
         protected HashSet<int> _ignoreSetCellDataIndices;
+        private HashSet<int> _itemsMarkedForReload;
         private Dictionary<string, List<Item>> _pooledItems;
         private Dictionary<int, HashSet<string>> _reloadTags;
-        protected SortedDictionary<int, Item> _visibleItems;
         
         protected Vector2 _dragStartingPosition;
         private Vector2 _viewPortSize;
@@ -1062,8 +1061,8 @@ namespace RecyclableSR
                 _pullToRefresh = false;
             }
             
-            if (!_pushToClose && Mathf.RoundToInt(_contentBottomRightCorner[_axis]) >= content.rect.size[_axis] + _pushToCloseThreshold 
-                              && (!_paged || (_paged && _currentPage < _itemsCount)))
+            if (!_pushToClose && Mathf.RoundToInt(_contentBottomRightCorner[_axis]) >= content.rect.size[_axis] + _pushToCloseThreshold) 
+                              // && (!_paged || (_paged && _currentPage < _itemsCount))) TODO: why is this needed?
             {
                 _pushToClose = true;
                 _dataSource.PushToClose();
@@ -1327,15 +1326,10 @@ namespace RecyclableSR
         /// </summary>
         protected virtual void SetIndices()
         {
-        }
-
-        /// <summary>
-        /// Set cell z index on card when after it finishes scrolling
-        /// also set cell canvas group intractability & order in canvas
-        /// </summary>
-        protected virtual void SetCardsZIndices(int pageToStaggerAnimationFor = -1)
-        {
-            // TODO : Remove this
+            foreach (var visibleItem in _visibleItems)
+            {
+                visibleItem.Value.transform.SetSiblingIndex(visibleItem.Key);
+            }
         }
         
         /// <summary>

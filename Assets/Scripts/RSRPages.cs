@@ -6,10 +6,12 @@ namespace RecyclableSR
 {
     public class RSRPages : RSRBase
     {
+        [SerializeField] protected float _swipeThreshold = 200;
         [SerializeField] private float _cardZMultiplier;
         [SerializeField] private bool _cardMode;
+        [SerializeField] private bool _manuallyHandleCardAnimations;
 
-        private IPageSource _pageSource;
+        protected IPageSource _pageSource;
         private bool _isDragging;
         private bool _forceCallWillFocusAfterAnimation;
 
@@ -39,24 +41,17 @@ namespace RecyclableSR
                 _pageSource?.PageFocused(_currentPage, true, _visibleItems[_currentPage].cell);
             }
             
-            if (_cardMode)
-                SetCardsZIndices();
-        }
-
-        protected override void SetIndices()
-        {
-            base.SetIndices();
-            
-            // TODO: replace SetCardsZIndices With this
+            SetCardsZIndices();
         }
 
         /// <summary>
         /// Set cell z index on card when after it finishes scrolling
         /// also set cell canvas group intractability & order in canvas
         /// </summary>
-        protected override void SetCardsZIndices(int pageToStaggerAnimationFor = -1)
+        private void SetCardsZIndices(int pageToStaggerAnimationFor = -1)
         {
-            base.SetCardsZIndices(pageToStaggerAnimationFor);
+            if (!_cardMode)
+                return;
             
             var childrenSiblingOrder = new SortedDictionary<int, Transform>();
             foreach (var visibleItem in _visibleItems)
@@ -208,16 +203,16 @@ namespace RecyclableSR
             
             _isDragging = false;
             var newPage = CalculateNextPageAfterDrag();
-            _dataSource.ScrolledToCell(_visibleItems[newPage].cell, newPage);
-            ScrollToCell(newPage, false);
+            // TODO: why was this here?
+            // _dataSource.ScrolledToCell(_visibleItems[newPage].cell, newPage);
+            ScrollToCell(newPage);
         }
 
         protected virtual int CalculateNextPageAfterDrag()
         {
-            var currentPagePosition = _visibleItems[_currentPage].transform.anchoredPosition;
-            var currentPageStartingPosition = _itemPositions[_currentPage].topLeftPosition;
-            var distance = Vector2.Distance(currentPageStartingPosition, currentPagePosition);
-            var isNextPage = (currentPagePosition[_axis] < currentPageStartingPosition[_axis]) && !_reverseDirection;
+            var currentContentPosition = content.anchoredPosition * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
+            var distance = Vector3.Distance(_dragStartingPosition, currentContentPosition);
+            var isNextPage = currentContentPosition[_axis] > _dragStartingPosition[_axis];
             var newPage = _currentPage;
             if (distance > _swipeThreshold)
             {
@@ -225,18 +220,10 @@ namespace RecyclableSR
                     newPage++;
                 else if (!isNextPage && _currentPage > 0)
                     newPage--;
-
-                if (newPage != _currentPage)
-                {
-                    _pageSource?.PageWillFocus(newPage, isNextPage, _visibleItems[newPage].cell, _visibleItems[newPage].transform, _itemPositions[newPage].topLeftPosition);
-                    _pageSource?.PageWillUnFocus(_currentPage, isNextPage, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform);
-                }
             }
             
-            _visibleItems[_currentPage].transform.anchoredPosition = currentPageStartingPosition;
             return newPage;
         }
-        
         
 #if UNITY_EDITOR
         private void Update()

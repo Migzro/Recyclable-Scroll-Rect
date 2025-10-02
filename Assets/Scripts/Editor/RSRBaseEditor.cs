@@ -19,9 +19,6 @@ namespace RecyclableSR
         private SerializedProperty _useConstantScrollingSpeed;
         private SerializedProperty _constantScrollingSpeed;
         
-        private SerializedProperty _paged;
-        private SerializedProperty _swipeThreshold;
-        
         private SerializedProperty _isGridLayout;
         private SerializedProperty _gridCellSize;
         private SerializedProperty _gridStartAxis;
@@ -42,9 +39,6 @@ namespace RecyclableSR
             _useConstantScrollingSpeed = serializedObject.FindProperty(nameof(_useConstantScrollingSpeed));
             _constantScrollingSpeed = serializedObject.FindProperty(nameof(_constantScrollingSpeed));
             
-            _paged = serializedObject.FindProperty(nameof(_paged));
-            _swipeThreshold = serializedObject.FindProperty(nameof(_swipeThreshold));
-
             _isGridLayout = serializedObject.FindProperty(nameof(_isGridLayout));
             _gridCellSize = serializedObject.FindProperty(nameof(_gridCellSize));
             _gridStartAxis = serializedObject.FindProperty(nameof(_gridStartAxis));
@@ -71,13 +65,6 @@ namespace RecyclableSR
             if (_useConstantScrollingSpeed.boolValue)
             {
                 EditorGUILayout.PropertyField(_constantScrollingSpeed);
-                EditorGUILayout.Space();
-            }
-            
-            EditorGUILayout.PropertyField(_paged);
-            if (_paged.boolValue)
-            {
-                EditorGUILayout.PropertyField(_swipeThreshold);
                 EditorGUILayout.Space();
             }
             
