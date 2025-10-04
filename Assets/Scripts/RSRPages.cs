@@ -4,7 +4,7 @@ using UnityEngine.EventSystems;
 
 namespace RecyclableSR
 {
-    public class RSRPages : RSRBase
+    public class RSRPages : RSR
     {
         [SerializeField] protected float _swipeThreshold = 200;
         [SerializeField] private float _cardZMultiplier;

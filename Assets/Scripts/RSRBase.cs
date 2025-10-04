@@ -21,10 +21,8 @@ namespace RecyclableSR
         // TODO: Rework cards behaviours
         // TODO: Add headers, footers, sections
         // TODO: remove _manuallyHandleCardAnimations
-        
-        [SerializeField] private Vector2 _spacing;
-        [SerializeField] private RectOffset _padding;
-        [SerializeField] private TextAnchor _alignment;
+        // TODO: Check TODOs in RSRBaseEditor
+        // TODO: i don't like static cells?
         
         [SerializeField] protected bool _reverseDirection;
         [SerializeField] protected bool _childForceExpand;
@@ -33,15 +31,13 @@ namespace RecyclableSR
         [SerializeField] private bool _useConstantScrollingSpeed;
         [SerializeField] private float _constantScrollingSpeed;
         
-        [SerializeField] private bool _isGridLayout;
-        [SerializeField] private Vector2 _gridCellSize;
-        [SerializeField] private GridLayoutGroup.Axis _gridStartAxis;
-        [SerializeField] private GridLayoutGroup.Constraint _gridConstraint;
-        [SerializeField] private int _gridConstraintCount;
+        [SerializeField] protected Vector2 _spacing;
+        [SerializeField] protected RectOffset _padding;
+        [SerializeField] protected TextAnchor _childAlignment;
         
         protected IDataSource _dataSource;
 
-        private LayoutElement _layoutElement;
+        protected LayoutElement _layoutElement;
         private ScreenResolutionDetector _screenResolutionDetector;
 
         protected List<ItemPosition> _itemPositions;
@@ -56,7 +52,6 @@ namespace RecyclableSR
         private int _maxVisibleItemInViewPort;
         private int _minExtraVisibleItemInViewPort;
         private int _maxExtraVisibleItemInViewPort;
-        private int _maxGridItemsInAxis;
         private int _queuedScrollToCell;
         private bool _init;
         private bool _isAnimating;
@@ -78,7 +73,6 @@ namespace RecyclableSR
         private Vector2 _lastContentPosition;
         private Vector2 _contentTopLeftCorner;
         private Vector2 _contentBottomRightCorner;
-        private Vector2 _gridLayoutPadding;
         private MovementType _movementType;
         private MovementType _initialMovementType;
 
@@ -122,7 +116,7 @@ namespace RecyclableSR
         /// <summary>
         /// Reload the data in case the content of the RecyclableScrollRect has changed
         /// </summary>
-        public void ResetData()
+        public virtual void ResetData()
         {
             _init = false;
             
@@ -137,8 +131,6 @@ namespace RecyclableSR
             }
 
             StopMovement();
-            
-            _gridLayoutPadding = Vector2.zero;
             
             _minVisibleItemInViewPort = 0;
             _minExtraVisibleItemInViewPort = 0;
@@ -184,7 +176,7 @@ namespace RecyclableSR
             SetPrototypeNames();
             InitializeItemPositions();
             CalculateContentSize();
-            CalculateGridLayoutPadding();
+            CalculatePadding();
             InitializeCells();
             RefreshAfterReload();
 
@@ -261,54 +253,15 @@ namespace RecyclableSR
         /// If the cell size is know we simply add all the cell sizes, spacing and padding
         /// If not we set the cell size as -1 as it will be calculated once the cell comes into view
         /// </summary>
-        private void CalculateContentSize()
+        protected virtual void CalculateContentSize()
         {
-            var contentSizeDelta = viewport.sizeDelta;
-            _maxGridItemsInAxis = 0;
-            contentSizeDelta[_axis] = 0;
-            
-            if (_isGridLayout)
-            {
-                // we consider all cell sizes the same in grid
-                _maxGridItemsInAxis = Mathf.CeilToInt(_itemsCount / (float)_gridConstraintCount);
-                contentSizeDelta[_axis] = _maxGridItemsInAxis * _gridCellSize[_axis];
+        }
 
-                for (var i = 0; i < _itemsCount; i++)
-                    _itemPositions[i].SetSize(_gridCellSize);
-            }
-            else
-            {
-                for (var i = 0; i < _itemsCount; i++)
-                {
-                    if (!_dataSource.IsCellSizeKnown)
-                        contentSizeDelta[_axis] += _itemPositions[i].cellSize[_axis];
-                    else
-                    {
-                        var cellSize = _itemPositions[i].cellSize;
-                        cellSize[_axis] = _dataSource.GetCellSize(i);
-                        _itemPositions[i].SetSize(cellSize);
-                        contentSizeDelta[_axis] += _dataSource.GetCellSize(i);
-                    }
-                }
-            }
-
-            if (_isGridLayout)
-                contentSizeDelta[_axis] += _spacing[_axis] * (_maxGridItemsInAxis - 1);
-            else
-                contentSizeDelta[_axis] += _spacing[_axis] * (_itemsCount - 1);
-
-            if (vertical)
-            {
-                contentSizeDelta.y += _padding.top + _padding.bottom;
-                _layoutElement.preferredHeight = contentSizeDelta.y;
-            }
-            else
-            {
-                contentSizeDelta.x += _padding.right + _padding.left;
-                _layoutElement.preferredWidth = contentSizeDelta.x;
-            }
-
-            content.sizeDelta = contentSizeDelta;
+        /// <summary>
+        /// used to calculate the padding in grid layout, it's a separate function because it needs to be called in a certain order when initializing everything
+        /// </summary>
+        protected virtual void CalculatePadding()
+        {
         }
         
         /// <summary>
@@ -404,7 +357,7 @@ namespace RecyclableSR
             var contentHasSpace = startIndex == 0 || _itemPositions[startIndex - 1].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
             var extraItemsInitialized = contentHasSpace ? 0 : _maxExtraVisibleItemInViewPort - _maxVisibleItemInViewPort;
             var i = startIndex;
-            var gridHasSpace = GridHasSpace(startIndex);
+            var gridHasSpace = CheckInitializeCellsExtraConditions(startIndex);
             while ((contentHasSpace || extraItemsInitialized < _extraItemsVisible) && gridHasSpace && i < _itemsCount)
             {
                 ShowHideCellsAtIndex(i, true, GridLayoutPage.After);
@@ -414,31 +367,22 @@ namespace RecyclableSR
                     _maxVisibleItemInViewPort = i;
 
                 contentHasSpace = _itemPositions[i].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
-                gridHasSpace = GridHasSpace(i);
+                gridHasSpace = CheckInitializeCellsExtraConditions(i);
                 i++;
             }
             _maxExtraVisibleItemInViewPort = i - 1;
         }
 
         /// <summary>
-        /// check if view RSR is grid, and if it has enough space to initialize grid items in
+        /// Check for extra conditions if needed in child classes when initializing cells
         /// </summary>
-        /// <param name="index"></param>
+        /// <param name="cellIndex">cell index</param>
         /// <returns></returns>
-        private bool GridHasSpace (int index = 0)
+        protected virtual bool CheckInitializeCellsExtraConditions(int cellIndex)
         {
-            if (!_isGridLayout)
-                return true;
-
-            if (index == 0 || index < _itemsCount)
-                return true;
-
-            if ((index + 1) % _gridConstraintCount != 0)
-                return true;
-
-            return false;
+            return true;
         }
-
+        
         /// <summary>
         /// Initialize the cells
         /// Its only called when there are no pooled items available and the RecyclableScrollRect needs to show a cell
@@ -538,7 +482,7 @@ namespace RecyclableSR
         /// </summary>
         /// <param name="cellIndex"></param>
         /// <returns></returns>
-        private void ForceLayoutRebuild(int cellIndex)
+        protected void ForceLayoutRebuild(int cellIndex)
         {
             if (_visibleItems.ContainsKey(cellIndex))
             {
@@ -565,7 +509,7 @@ namespace RecyclableSR
         private void ReloadCellInternal (int cellIndex, bool reloadCellData = false, bool isReloadingAllData = false)
         {
             // No need to reload cell at index {cellIndex} as its currently not visible and everything will be automatically handled when it appears
-            // its ok to return here after setting the tag, as if a cell gets marked for reload with multiple tags, it only needs to reload once its visible
+            // it's ok to return here after setting the tag, as if a cell gets marked for reload with multiple tags, it only needs to reload once its visible
             // reloading the cell multiple times with different tags is needed when multiple changes happen to a cell over the course of some frames when its visible
             if (!_visibleItems.ContainsKey(cellIndex))
             {
@@ -580,11 +524,6 @@ namespace RecyclableSR
             var cell = _visibleItems[cellIndex];
             if (reloadCellData)
                 _dataSource.SetCellData(cell.cell, cellIndex);
-
-            // removed, to allow for gridlayout padding changes to reflect new item positions
-            // No need to calculate anything for grid since its cell size doesn't change
-            // if (_isGridLayout)
-            //     return;
 
             var oldSize = _itemPositions[cellIndex].cellSize[_axis];
             CalculateNonAxisSizePosition(cell.transform, cellIndex);
@@ -713,60 +652,6 @@ namespace RecyclableSR
         }
 
         /// <summary>
-        /// Calculates the grid layout padding which offsets each element in the grid based on the padding and anchors set in GridLayout
-        /// </summary>
-        private void CalculateGridLayoutPadding()
-        {
-            if (!_isGridLayout)
-                return;
-
-            // get content size without padding
-            var contentSize = content.rect.size;
-            var contentSizeWithoutPadding = contentSize;
-            contentSizeWithoutPadding.x -= _padding.right + _padding.left;
-            contentSizeWithoutPadding.y -= _padding.top + _padding.bottom;
-            
-            if (vertical)
-            {
-                var rightPadding = _reverseDirection ? _padding.left : _padding.right;
-                var leftPadding = _reverseDirection ? _padding.right : _padding.left;
-
-                if (_alignment == TextAnchor.LowerCenter || _alignment == TextAnchor.MiddleCenter || _alignment == TextAnchor.UpperCenter)
-                {
-                    _gridLayoutPadding.x = leftPadding + (contentSize.x - (_gridCellSize.x * _gridConstraintCount) - (_spacing.x * (_gridConstraintCount - 1))) / 2 - rightPadding;
-                }
-                else if (_alignment == TextAnchor.LowerRight || _alignment == TextAnchor.MiddleRight || _alignment == TextAnchor.UpperRight)
-                {
-                    _gridLayoutPadding.x = contentSize.x - _gridCellSize.x - rightPadding;
-                }
-                else
-                {
-                    _gridLayoutPadding.x = leftPadding;
-                }
-                _gridLayoutPadding.y = _reverseDirection ? _padding.bottom : _padding.top;
-            }
-            else
-            {
-                var topPadding = _reverseDirection ? _padding.bottom : _padding.top;
-                var bottomPadding = _reverseDirection ? _padding.top : _padding.bottom;
-                
-                if (_alignment == TextAnchor.MiddleLeft || _alignment == TextAnchor.MiddleCenter || _alignment == TextAnchor.MiddleRight)
-                {
-                    _gridLayoutPadding.y = topPadding + (contentSize.y - (_gridCellSize.y * _gridConstraintCount) - (_spacing.y * (_gridConstraintCount - 1))) / 2 - bottomPadding;
-                }
-                else if (_alignment == TextAnchor.LowerLeft || _alignment == TextAnchor.LowerCenter || _alignment == TextAnchor.LowerRight)
-                {
-                    _gridLayoutPadding.y = contentSize.y - _gridCellSize.y - bottomPadding;
-                }
-                else
-                {
-                    _gridLayoutPadding.y = topPadding;
-                }
-                _gridLayoutPadding.x = _reverseDirection ? _padding.right : _padding.left;
-            }
-        }
-
-        /// <summary>
         /// This function call is only needed when the cell is created, or when the resolution changes
         /// it sets the vertical size of the cell in a horizontal layout
         /// or the horizontal size of a cell in a vertical layout based on the settings of said layout
@@ -775,7 +660,7 @@ namespace RecyclableSR
         /// </summary>
         /// <param name="rect">The rect of the cell that its size will be adjusted</param>
         /// <param name="cellIndex">The index of the cell that its size will be adjusted</param>
-        private void CalculateNonAxisSizePosition(RectTransform rect, int cellIndex)
+        protected virtual void CalculateNonAxisSizePosition(RectTransform rect, int cellIndex)
         {
             Vector2 anchorVector;
             if (_reverseDirection)
@@ -793,95 +678,6 @@ namespace RecyclableSR
             rect.anchorMin = anchorVector;
             rect.anchorMax = anchorVector;
             rect.pivot = anchorVector;
-
-            if (_isGridLayout)
-                return;
-
-            var forceSize = false;
-            // expand item width if it's in a vertical layout group and the conditions are satisfied
-            if (vertical && _childForceExpand)
-            {
-                var itemSize = rect.sizeDelta;
-                itemSize.x = content.rect.width;
-                if (!_dataSource.IgnoreContentPadding(cellIndex))
-                    itemSize.x -= _padding.right + _padding.left;
-
-                rect.sizeDelta = itemSize;
-                forceSize = true;
-            }
-
-            // expand item height if it's in a horizontal layout group and the conditions are satisfied
-            else if (!vertical && _childForceExpand)
-            {
-                var itemSize = rect.sizeDelta;
-                itemSize.y = content.rect.height;
-                if (!_dataSource.IgnoreContentPadding(cellIndex))
-                    itemSize.y -= _padding.top + _padding.bottom;
-                rect.sizeDelta = itemSize;
-                forceSize = true;
-            }
-
-            // get content size without padding
-            var contentSize = content.rect.size;
-            var contentSizeWithoutPadding = contentSize;
-            contentSizeWithoutPadding.x -= _padding.right + _padding.left;
-            contentSizeWithoutPadding.y -= _padding.top + _padding.bottom;
-
-            // set position of cell based on layout alignment
-            // we check for multiple conditions together since the content is made to fit the items, so they only move in one axis in each different scroll direction
-            var rectSize = rect.rect.size;
-            var itemSizeSmallerThanContent = rectSize[_axis] < contentSizeWithoutPadding[_axis];
-            if (itemSizeSmallerThanContent || forceSize)
-            {
-                var itemPosition = rect.anchoredPosition;
-                if (vertical)
-                {
-                    var rightPadding = _reverseDirection ? _padding.left : _padding.right;
-                    var leftPadding = _reverseDirection ? _padding.right : _padding.left;
-                    if (_dataSource.IgnoreContentPadding(cellIndex))
-                    {
-                        rightPadding = 0;
-                        leftPadding = 0;
-                    }
-
-                    if (_alignment == TextAnchor.LowerCenter || _alignment == TextAnchor.MiddleCenter || _alignment == TextAnchor.UpperCenter)
-                    {
-                        itemPosition.x = (leftPadding + (contentSize.x - rectSize.x) - rightPadding) / 2f;
-                    }
-                    else if (_alignment == TextAnchor.LowerRight || _alignment == TextAnchor.MiddleRight || _alignment == TextAnchor.UpperRight)
-                    {
-                        itemPosition.x = contentSize.x - rectSize.x - rightPadding;
-                    }
-                    else
-                    {
-                        itemPosition.x = leftPadding;
-                    }
-                }
-                else
-                {
-                    var topPadding = _reverseDirection ? _padding.bottom : _padding.top;
-                    var bottomPadding = _reverseDirection ? _padding.top : _padding.bottom;
-                    if (_dataSource.IgnoreContentPadding(cellIndex))
-                    {
-                        topPadding = 0;
-                        bottomPadding = 0;
-                    }
-                    
-                    if (_alignment == TextAnchor.MiddleLeft || _alignment == TextAnchor.MiddleCenter || _alignment == TextAnchor.MiddleRight)
-                    {
-                        itemPosition.y = -(topPadding + (contentSize.y - rectSize.y) - bottomPadding) / 2f;
-                    }
-                    else if (_alignment == TextAnchor.LowerLeft || _alignment == TextAnchor.LowerCenter || _alignment == TextAnchor.LowerRight)
-                    {
-                        itemPosition.y = -(contentSize.y - rectSize.y - bottomPadding);
-                    }
-                    else
-                    {
-                        itemPosition.y = -topPadding;
-                    }
-                }
-                rect.anchoredPosition = itemPosition;
-            }
         }
         
         /// <summary>
@@ -891,11 +687,10 @@ namespace RecyclableSR
         /// <param name="cellIndex">cell index to set position to</param>
         public void SetCellPosition(int cellIndex)
         {
-            if (!_visibleItems.ContainsKey(cellIndex))
+            if (!_visibleItems.TryGetValue(cellIndex, out var visibleItem))
                 return;
-            
-            var cell = _visibleItems[cellIndex];
-            SetCellAxisPosition(cell.transform, cellIndex);
+
+            SetCellAxisPosition(visibleItem.transform, cellIndex);
         }
 
         /// <summary>
@@ -905,91 +700,8 @@ namespace RecyclableSR
         /// </summary>
         /// <param name="rect">rect of the item which position will be set</param>
         /// <param name="newIndex">index of the item that needs its position set</param>
-        private void SetCellAxisPosition(RectTransform rect, int newIndex)
+        protected virtual void SetCellAxisPosition(RectTransform rect, int newIndex)
         {
-            var newItemPosition = rect.anchoredPosition;
-            if (_isGridLayout)
-            {
-                int xIndexInGrid;
-                int yIndexInGrid;
-                
-                if (_gridConstraint == GridLayoutGroup.Constraint.FixedRowCount)
-                {
-                    if (_gridStartAxis == GridLayoutGroup.Axis.Vertical)
-                    {
-                        xIndexInGrid = Mathf.FloorToInt(newIndex / (float) _gridConstraintCount);
-                        yIndexInGrid = newIndex % _gridConstraintCount;
-                    }
-                    else
-                    {
-                        // TODO: Reversed Grid Code
-                        xIndexInGrid = newIndex % _maxGridItemsInAxis;
-                        yIndexInGrid = Mathf.FloorToInt(newIndex / (float) _maxGridItemsInAxis);
-                    }
-                }
-                else
-                {
-                    if (_gridStartAxis == GridLayoutGroup.Axis.Vertical)
-                    {
-                        // TODO: Reversed Grid Code
-                        xIndexInGrid = Mathf.FloorToInt(newIndex / (float) _maxGridItemsInAxis);
-                        yIndexInGrid = newIndex % _maxGridItemsInAxis;
-                    }
-                    else
-                    {
-                        xIndexInGrid = newIndex % _gridConstraintCount;
-                        yIndexInGrid = Mathf.FloorToInt(newIndex / (float) _gridConstraintCount);
-                    }
-                }
-
-                if (_reverseDirection)
-                {
-                    if (_gridConstraint == GridLayoutGroup.Constraint.FixedRowCount && _gridStartAxis == GridLayoutGroup.Axis.Vertical)
-                    {
-                        newItemPosition.x = -_gridLayoutPadding.x - xIndexInGrid * _itemPositions[newIndex].cellSize[0] - _spacing[0] * xIndexInGrid;
-                        newItemPosition.y = -_gridLayoutPadding.y - yIndexInGrid * _itemPositions[newIndex].cellSize[1] - _spacing[1] * yIndexInGrid;
-                    }
-                    else if (_gridConstraint == GridLayoutGroup.Constraint.FixedColumnCount && _gridStartAxis == GridLayoutGroup.Axis.Horizontal)
-                    {
-                        newItemPosition.x = _gridLayoutPadding.x + xIndexInGrid * _itemPositions[newIndex].cellSize[0] + _spacing[0] * xIndexInGrid;
-                        newItemPosition.y = _gridLayoutPadding.y + yIndexInGrid * _itemPositions[newIndex].cellSize[1] + _spacing[1] * yIndexInGrid;
-                    }
-                }
-                else
-                {
-                    newItemPosition.x = _gridLayoutPadding.x + xIndexInGrid * _itemPositions[newIndex].cellSize[0] + _spacing[0] * xIndexInGrid;
-                    newItemPosition.y = -_gridLayoutPadding.y - yIndexInGrid * _itemPositions[newIndex].cellSize[1] - _spacing[1] * yIndexInGrid;
-                }
-            }
-            else
-            {
-                // figure out where the prev cell position was
-                if (newIndex == 0)
-                {
-                    if (vertical)
-                    {
-                        if (_reverseDirection)
-                            newItemPosition.y = _padding.bottom;
-                        else
-                            newItemPosition.y = -_padding.top;
-                    }
-                    else
-                    {
-                        if (_reverseDirection)
-                            newItemPosition.x = -_padding.right;
-                        else
-                            newItemPosition.x = _padding.left;
-                    }
-                }
-                else
-                {
-                    var verticalSign = (vertical ? -1 : 1) * (_reverseDirection ? -1 : 1);
-                    newItemPosition[_axis] = verticalSign * _itemPositions[newIndex - 1].absBottomRightPosition[_axis] + verticalSign * _spacing[_axis];
-                }
-            }
-
-            rect.anchoredPosition = newItemPosition;
-            _itemPositions[newIndex].SetPosition(newItemPosition);
         }
 
         /// <summary>
@@ -1000,39 +712,8 @@ namespace RecyclableSR
         /// </summary>
         /// <param name="rect">rect of the cell which the size will be calculated for</param>
         /// <param name="index">cell index which the size will be calculated for</param>
-        private void CalculateCellAxisSize(RectTransform rect, int index)
+        protected virtual void CalculateCellAxisSize(RectTransform rect, int index)
         {
-            if (_isGridLayout)
-            {
-                rect.sizeDelta = _gridCellSize;
-                return;
-            }
-
-            var newCellSize = _itemPositions[index].cellSize;
-            var oldCellSize = newCellSize[_axis];
-
-            if (!_dataSource.IsCellSizeKnown)
-            {
-                ForceLayoutRebuild(index);
-                newCellSize[_axis] = rect.rect.size[_axis];
-            }
-            else
-            {
-                newCellSize[_axis] = _dataSource.GetCellSize(index);
-            }
-
-            // get difference in cell size if its size has changed
-            _itemPositions[index].SetSize(newCellSize);
-            
-            var contentSize = content.sizeDelta;
-            contentSize[_axis] += newCellSize[_axis] - oldCellSize;
-            
-            if (vertical)
-                _layoutElement.preferredHeight = contentSize.y;
-            else
-                _layoutElement.preferredWidth = contentSize.x;
-            
-            content.sizeDelta = contentSize;
         }
 
         /// <summary>
@@ -1195,79 +876,22 @@ namespace RecyclableSR
         
         /// <summary>
         /// Used to determine which cells will be shown or hidden in case its a grid layout since we need to show more than one cell depending on the grid configuration
-        /// if its not a grid layout, just call the Show, Hide functions
+        /// if it's not a grid layout, just call the Show, Hide functions
         /// </summary>
         /// <param name="newIndex">current index of item we need to show</param>
         /// <param name="show">show or hide current cell</param>
         /// <param name="gridLayoutPage">used to determine if we are showing/hiding a cell in after the most visible/hidden one or before the least visible/hidden one</param>
-        private void ShowHideCellsAtIndex(int newIndex, bool show, GridLayoutPage gridLayoutPage)
+        internal virtual void ShowHideCellsAtIndex(int newIndex, bool show, GridLayoutPage gridLayoutPage)
         {
-            if (!_isGridLayout)
-            {
-                if (show)
-                    ShowCellAtIndex(newIndex);
-                else
-                    HideCellAtIndex(newIndex);
-            }
-            else
-            {
-                var indices = new List<int>();
-                if (_gridConstraint == GridLayoutGroup.Constraint.FixedRowCount && _gridStartAxis == GridLayoutGroup.Axis.Vertical
-                    || _gridConstraint == GridLayoutGroup.Constraint.FixedColumnCount && _gridStartAxis == GridLayoutGroup.Axis.Horizontal)
-                {
-                    if (gridLayoutPage == GridLayoutPage.After)
-                    {
-                        // equation to get the highest multiple of newIndex where _gridConstraintCount is the multiple
-                        var maxItemToShow = _gridConstraintCount * Mathf.FloorToInt((float) newIndex / _gridConstraintCount) + _gridConstraintCount;
-                        for (var i = newIndex; i < maxItemToShow; i++)
-                        {
-                            if (i < _itemsCount)
-                                indices.Add(i);
-                        }
-                    }
-                    else if (gridLayoutPage == GridLayoutPage.Before)
-                    {
-                        // equation to get the lowest multiple of newIndex where _gridConstraintCount is the multiple
-                        var minItemToShow = _gridConstraintCount * Mathf.FloorToInt((float) newIndex / _gridConstraintCount);  
-                        for (var i = newIndex; i >= minItemToShow; i--)
-                            indices.Add(i);
-                    }
-                    else if (gridLayoutPage == GridLayoutPage.Single)
-                        indices.Add(newIndex);
-                }
-                else
-                {
-                    // TODO: Reversed Grid Code
-                    if (gridLayoutPage == GridLayoutPage.Single)
-                        indices.Add(newIndex);
-                    else if (newIndex < _maxGridItemsInAxis)
-                    {
-                        for (var i = 0; i < _gridConstraintCount; i++)
-                        {
-                            var cellIndex = newIndex + i * _maxGridItemsInAxis;
-                            if (cellIndex < _itemsCount)
-                                indices.Add(cellIndex);
-                        }
-                    }
-                }
-
-                for (var i = 0; i < indices.Count; i++)
-                {
-                    if (show && !_visibleItems.ContainsKey(indices[i]))
-                        ShowCellAtIndex(indices[i]);
-                    else if (!show && _visibleItems.ContainsKey(indices[i]))
-                        HideCellAtIndex(indices[i]);
-                }
-            }
         }
 
         /// <summary>
-        /// User has scrolled and we need to show an item
+        /// User has scrolled, and we need to show an item
         /// If there is a pooled item available, we get it and set its position, sibling index, and remove it from the pool
         /// If there is no pooled item available, we create a new one
         /// </summary>
         /// <param name="newIndex">current index of item we need to show</param>
-        private void ShowCellAtIndex(int newIndex)
+        protected void ShowCellAtIndex(int newIndex)
         {
             // Get empty cell and adjust its position and size, else just create a new a cell
             var cellPrototypeName = _prototypeNames[newIndex];
@@ -1336,7 +960,7 @@ namespace RecyclableSR
         /// Hide cell at cellIndex and add it to the pool of items that can be used based on its prefab type
         /// </summary>
         /// <param name="cellIndex">cellIndex which will be hidden</param>
-        private void HideCellAtIndex(int cellIndex)
+        protected void HideCellAtIndex(int cellIndex)
         {
             if (_dataSource.IsSetVisibleUsingCanvasGroupAlpha)
             {
@@ -1397,7 +1021,7 @@ namespace RecyclableSR
             SetStaticCells();
             InitializeItemPositions();
             CalculateContentSize();
-            CalculateGridLayoutPadding();
+            CalculatePadding();
 
             if (reloadAllItems)
             {

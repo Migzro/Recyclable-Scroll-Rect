@@ -5,7 +5,7 @@ using UnityEngine;
 public class VerticalGridRSRDemo : MonoBehaviour, IDataSource
 {
     [SerializeField] private int _itemsCount;
-    [SerializeField] private RSRBase _scrollRect;
+    [SerializeField] private RSRGrid _scrollRect;
     [SerializeField] private GameObject[] _prototypeCells;
     [SerializeField] private int _extraItemsVisible;
         

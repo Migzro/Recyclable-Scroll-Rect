@@ -1,7 +1,236 @@
+using UnityEngine;
+
 namespace RecyclableSR
 {
     public class RSR : RSRBase
     {
+        /// <summary>
+        /// Calculate the content size in their respective direction based on the scrolling direction
+        /// If the cell size is know we simply add all the cell sizes, spacing and padding
+        /// If not we set the cell size as -1 as it will be calculated once the cell comes into view
+        /// </summary>
+        protected override void CalculateContentSize()
+        {
+            base.CalculateContentSize();
+            
+            var contentSizeDelta = viewport.sizeDelta;
+            contentSizeDelta[_axis] = 0;
+
+            for (var i = 0; i < _itemsCount; i++)
+            {
+                if (!_dataSource.IsCellSizeKnown)
+                    contentSizeDelta[_axis] += _itemPositions[i].cellSize[_axis];
+                else
+                {
+                    var cellSize = _itemPositions[i].cellSize;
+                    cellSize[_axis] = _dataSource.GetCellSize(i);
+                    _itemPositions[i].SetSize(cellSize);
+                    contentSizeDelta[_axis] += _dataSource.GetCellSize(i);
+                }
+            }
+
+            contentSizeDelta[_axis] += _spacing[_axis] * (_itemsCount - 1);
+
+            if (vertical)
+            {
+                contentSizeDelta.y += _padding.top + _padding.bottom;
+                _layoutElement.preferredHeight = contentSizeDelta.y;
+            }
+            else
+            {
+                contentSizeDelta.x += _padding.right + _padding.left;
+                _layoutElement.preferredWidth = contentSizeDelta.x;
+            }
+
+            content.sizeDelta = contentSizeDelta;
+        }
+        
+        /// <summary>
+        /// This function sets the position of the item whether its new or retrieved from pool based on its index and the previous item index
+        /// The current index position is the previous item position + previous item height
+        /// or the previous item position - current item height
+        /// </summary>
+        /// <param name="rect">rect of the item which position will be set</param>
+        /// <param name="newIndex">index of the item that needs its position set</param>
+        protected override void SetCellAxisPosition(RectTransform rect, int newIndex)
+        {
+            base.SetCellAxisPosition(rect, newIndex);
+            
+            var newItemPosition = rect.anchoredPosition;
+            // figure out where the prev cell position was
+            if (newIndex == 0)
+            {
+                if (vertical)
+                {
+                    if (_reverseDirection)
+                        newItemPosition.y = _padding.bottom;
+                    else
+                        newItemPosition.y = -_padding.top;
+                }
+                else
+                {
+                    if (_reverseDirection)
+                        newItemPosition.x = -_padding.right;
+                    else
+                        newItemPosition.x = _padding.left;
+                }
+            }
+            else
+            {
+                var verticalSign = (vertical ? -1 : 1) * (_reverseDirection ? -1 : 1);
+                newItemPosition[_axis] = verticalSign * _itemPositions[newIndex - 1].absBottomRightPosition[_axis] + verticalSign * _spacing[_axis];
+            }
+
+            rect.anchoredPosition = newItemPosition;
+            _itemPositions[newIndex].SetPosition(newItemPosition);
+        }
+        
+        /// <summary>
+        /// This function calculates the cell size if its unknown by forcing a Layout rebuild
+        /// if it is known we just get the cell size
+        /// then calculating the new content size based on the old cell size if it was set previously
+        /// </summary>
+        /// <param name="rect">rect of the cell which the size will be calculated for</param>
+        /// <param name="index">cell index which the size will be calculated for</param>
+        protected override void CalculateCellAxisSize(RectTransform rect, int index)
+        {
+            base.CalculateCellAxisSize(rect, index);
+            
+            var newCellSize = _itemPositions[index].cellSize;
+            var oldCellSize = newCellSize[_axis];
+
+            if (!_dataSource.IsCellSizeKnown)
+            {
+                ForceLayoutRebuild(index);
+                newCellSize[_axis] = rect.rect.size[_axis];
+            }
+            else
+            {
+                newCellSize[_axis] = _dataSource.GetCellSize(index);
+            }
+
+            // get difference in cell size if its size has changed
+            _itemPositions[index].SetSize(newCellSize);
+            
+            var contentSize = content.sizeDelta;
+            contentSize[_axis] += newCellSize[_axis] - oldCellSize;
+            
+            if (vertical)
+                _layoutElement.preferredHeight = contentSize.y;
+            else
+                _layoutElement.preferredWidth = contentSize.x;
+            
+            content.sizeDelta = contentSize;
+        }
+
+        protected override void CalculateNonAxisSizePosition(RectTransform rect, int cellIndex)
+        {
+            base.CalculateNonAxisSizePosition(rect, cellIndex);
+            
+            var forceSize = false;
+            // expand item width if it's in a vertical layout group and the conditions are satisfied
+            if (vertical && _childForceExpand)
+            {
+                var itemSize = rect.sizeDelta;
+                itemSize.x = content.rect.width;
+                if (!_dataSource.IgnoreContentPadding(cellIndex))
+                    itemSize.x -= _padding.right + _padding.left;
+
+                rect.sizeDelta = itemSize;
+                forceSize = true;
+            }
+
+            // expand item height if it's in a horizontal layout group and the conditions are satisfied
+            else if (!vertical && _childForceExpand)
+            {
+                var itemSize = rect.sizeDelta;
+                itemSize.y = content.rect.height;
+                if (!_dataSource.IgnoreContentPadding(cellIndex))
+                    itemSize.y -= _padding.top + _padding.bottom;
+                rect.sizeDelta = itemSize;
+                forceSize = true;
+            }
+
+            // get content size without padding
+            var contentSize = content.rect.size;
+            var contentSizeWithoutPadding = contentSize;
+            contentSizeWithoutPadding.x -= _padding.right + _padding.left;
+            contentSizeWithoutPadding.y -= _padding.top + _padding.bottom;
+
+            // set position of cell based on layout alignment
+            // we check for multiple conditions together since the content is made to fit the items, so they only move in one axis in each different scroll direction
+            var rectSize = rect.rect.size;
+            var itemSizeSmallerThanContent = rectSize[_axis] < contentSizeWithoutPadding[_axis];
+            if (itemSizeSmallerThanContent || forceSize)
+            {
+                var itemPosition = rect.anchoredPosition;
+                if (vertical)
+                {
+                    var rightPadding = _reverseDirection ? _padding.left : _padding.right;
+                    var leftPadding = _reverseDirection ? _padding.right : _padding.left;
+                    if (_dataSource.IgnoreContentPadding(cellIndex))
+                    {
+                        rightPadding = 0;
+                        leftPadding = 0;
+                    }
+
+                    if (_childAlignment == TextAnchor.LowerCenter || _childAlignment == TextAnchor.MiddleCenter || _childAlignment == TextAnchor.UpperCenter)
+                    {
+                        itemPosition.x = (leftPadding + (contentSize.x - rectSize.x) - rightPadding) / 2f;
+                    }
+                    else if (_childAlignment == TextAnchor.LowerRight || _childAlignment == TextAnchor.MiddleRight || _childAlignment == TextAnchor.UpperRight)
+                    {
+                        itemPosition.x = contentSize.x - rectSize.x - rightPadding;
+                    }
+                    else
+                    {
+                        itemPosition.x = leftPadding;
+                    }
+                }
+                else
+                {
+                    var topPadding = _reverseDirection ? _padding.bottom : _padding.top;
+                    var bottomPadding = _reverseDirection ? _padding.top : _padding.bottom;
+                    if (_dataSource.IgnoreContentPadding(cellIndex))
+                    {
+                        topPadding = 0;
+                        bottomPadding = 0;
+                    }
+                    
+                    if (_childAlignment == TextAnchor.MiddleLeft || _childAlignment == TextAnchor.MiddleCenter || _childAlignment == TextAnchor.MiddleRight)
+                    {
+                        itemPosition.y = -(topPadding + (contentSize.y - rectSize.y) - bottomPadding) / 2f;
+                    }
+                    else if (_childAlignment == TextAnchor.LowerLeft || _childAlignment == TextAnchor.LowerCenter || _childAlignment == TextAnchor.LowerRight)
+                    {
+                        itemPosition.y = -(contentSize.y - rectSize.y - bottomPadding);
+                    }
+                    else
+                    {
+                        itemPosition.y = -topPadding;
+                    }
+                }
+                rect.anchoredPosition = itemPosition;
+            }
+        }
+
+        /// <summary>
+        /// Used to determine which cells will be shown or hidden in case its a grid layout since we need to show more than one cell depending on the grid configuration
+        /// if it's not a grid layout, just call the Show, Hide functions
+        /// </summary>
+        /// <param name="newIndex">current index of item we need to show</param>
+        /// <param name="show">show or hide current cell</param>
+        /// <param name="gridLayoutPage">used to determine if we are showing/hiding a cell in after the most visible/hidden one or before the least visible/hidden one</param>
+        internal override void ShowHideCellsAtIndex(int newIndex, bool show, GridLayoutPage gridLayoutPage)
+        {
+            base.ShowHideCellsAtIndex(newIndex, show, gridLayoutPage);
+            
+            if (show)
+                ShowCellAtIndex(newIndex);
+            else
+                HideCellAtIndex(newIndex);
+        }
+
         public override void ScrollToTopRight()
         {
             base.ScrollToTopRight();
