@@ -15,18 +15,18 @@ public class PrefabInitializer : MonoBehaviour
         {
             delete = false;
 
-            foreach (Transform go in content)
+            for (int i = content.childCount - 1; i >= 0; i--)
             {
-                DestroyImmediate(go.gameObject);
+                DestroyImmediate(content.GetChild(i).gameObject);
             }
         }
         if (update)
         {
             update = false;
 
-            foreach (Transform go in content)
+            for (int i = content.childCount - 1; i >= 0; i--)
             {
-                DestroyImmediate(go.gameObject);
+                DestroyImmediate(content.GetChild(i).gameObject);
             }
 
             for (var i = 0; i < count; i++)
