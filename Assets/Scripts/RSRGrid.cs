@@ -374,37 +374,6 @@ namespace RecyclableSR
             base.ShowHideCellsAtIndex(newIndex, show, gridLayoutPage);
             
             var indices = new List<int>();
-            // if (gridLayoutPage == GridLayoutPage.After)
-            // {
-            //     if (_gridStartAxis == GridLayoutGroup.Axis.Horizontal)
-            //     {
-            //         // equation to get the highest multiple of newIndex where _gridConstraintCount is the multiple
-            //         var maxItemToShow = _gridConstraintCount * Mathf.FloorToInt((float)newIndex / _gridConstraintCount) + _gridConstraintCount;
-            //         for (var i = newIndex; i < maxItemToShow; i++)
-            //         {
-            //             if (i < _itemsCount)
-            //             {
-            //                 indices.Add(i);
-            //             }
-            //         }
-            //     }
-            // }
-            // else if (gridLayoutPage == GridLayoutPage.Before)
-            // {
-            //     if (_gridStartAxis == GridLayoutGroup.Axis.Horizontal)
-            //     {
-            //         // equation to get the lowest multiple of newIndex where _gridConstraintCount is the multiple
-            //         var minItemToShow = _gridConstraintCount * Mathf.FloorToInt((float)newIndex / _gridConstraintCount);
-            //         for (var i = newIndex; i >= minItemToShow; i--)
-            //         {
-            //             indices.Add(i);
-            //         }
-            //     }
-            // }
-            // else if (gridLayoutPage == GridLayoutPage.Single)
-            // {
-            //     indices.Add(newIndex);
-            // }
             var itemIndex = _gridIndicesLookup[newIndex];
             if (vertical)
             {
@@ -426,35 +395,6 @@ namespace RecyclableSR
                         indices.Add(indexValue);
                 }
             }
-
-            // if (_gridStartAxis == GridLayoutGroup.Axis.Horizontal)
-            // {
-            //     // equation to get the highest multiple of newIndex where _gridConstraintCount is the multiple
-            //     var maxItemToShow = _gridConstraintCount * Mathf.FloorToInt((float)newIndex / _gridConstraintCount) + _gridConstraintCount;
-            //     for (var i = newIndex; i < maxItemToShow; i++)
-            //     {
-            //         if (i < _itemsCount)
-            //         {
-            //             indices.Add(i);
-            //         }
-            //     }
-            // }
-            // else if (_gridStartAxis == GridLayoutGroup.Axis.Vertical)
-            // {
-            //     // get the x index of the item in the grid
-            //     var xIndexInGrid = Mathf.FloorToInt(newIndex / (float) _maxGridItemsInAxis);
-            //         
-            //     // need to get multiples of _maxItemsInGrid for the items needed to be added
-            //     // for example if we show item 0 and _maxItemsInGrid is 15, then we need to add 0, 15, 30, 45, and so on till we either reach _maxGridItemsInAxis or _gridConstraintCount
-            //     for (var i = 0; i < _gridConstraintCount - xIndexInGrid; i++)
-            //     {
-            //         var indexToAdd = newIndex + (i * _maxGridItemsInAxis);
-            //         if (indexToAdd < _itemsCount)
-            //         {
-            //             indices.Add(indexToAdd);
-            //         }
-            //     }
-            // }
 
             for (var i = 0; i < indices.Count; i++)
             {

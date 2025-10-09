@@ -23,7 +23,7 @@ namespace RecyclableSR
         // TODO: remove GridLayoutPage, figure out what to do with GridLayoutPage.Single
         // TODO: make _extraRowsColumns in the GridSource?
         // TODO: remove all cell recalculating functions to RSR, since it doesnt apply to grids. the grid cell size always remains the same, if something happens the entire grid needs to be reloaded
-        // TODO make this class abstract
+        // TODO: make this class abstract
         
         // TODO: Separate Scrolling animation
         // TODO: Redo Scrolling animation

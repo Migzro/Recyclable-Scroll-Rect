@@ -283,23 +283,13 @@ namespace RecyclableSR
             
             if (_maxVisibleItemInViewPort < _itemsCount - 1 && _contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleItemInViewPort].absBottomRightPosition[_axis] + _spacing[_axis])
             {
-                var newMaxItemToCheck = _maxVisibleItemInViewPort + 1;
-                var itemToShow = newMaxItemToCheck + _extraItemsVisible;
-                _maxVisibleItemInViewPort = newMaxItemToCheck;
+                _maxVisibleItemInViewPort++;
+                var itemToShow = _maxVisibleItemInViewPort + _extraItemsVisible;
                 if (itemToShow < _itemsCount)
                 {
                     _maxExtraVisibleItemInViewPort = itemToShow;
                     ShowHideCellsAtIndex(itemToShow, true, GridLayoutPage.After);
                 }
-                
-                // TODO: use this simplifed code
-                // _maxVisibleItemInViewPort++;
-                // var itemToShow = _maxVisibleItemInViewPort + _extraItemsVisible;
-                // if (itemToShow < _itemsCount)
-                // {
-                //     _maxExtraVisibleItemInViewPort = itemToShow;
-                //     ShowHideCellsAtIndex(itemToShow, true, GridLayoutPage.After);
-                // }
             }
         }
 
@@ -325,23 +315,13 @@ namespace RecyclableSR
             
             if (_minVisibleItemInViewPort > 0 && _contentTopLeftCorner[_axis] < _itemPositions[_minVisibleItemInViewPort].absTopLeftPosition[_axis] - _spacing[_axis])
             {
-                var newMinItemToCheck = _minVisibleItemInViewPort - 1;
-                var itemToShow = newMinItemToCheck - _extraItemsVisible;
-                _minVisibleItemInViewPort = newMinItemToCheck;
+                _minVisibleItemInViewPort--;
+                var itemToShow = _minVisibleItemInViewPort - _extraItemsVisible;
                 if (itemToShow > -1)
                 {
                     _minExtraVisibleItemInViewPort = itemToShow;
                     ShowHideCellsAtIndex(itemToShow, true, GridLayoutPage.Before);
                 }
-                
-                // TODO: use this simplifed code
-                // _minVisibleItemInViewPort--;
-                // var itemToShow = _minVisibleItemInViewPort - _extraItemsVisible;
-                // if (itemToShow > -1)
-                // {
-                //     _minExtraVisibleItemInViewPort = itemToShow;
-                //     ShowHideCellsAtIndex(itemToShow, true, GridLayoutPage.Before);
-                // }
             }
         }
 
