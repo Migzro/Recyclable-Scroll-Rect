@@ -272,7 +272,9 @@ namespace RecyclableSR
             for (var i = _itemsCount; i < _itemsCount + itemDiff; i++)
             {
                 if (_visibleItems.ContainsKey(i))
+                {
                     HideCellAtIndex(i);
+                }
             }
             _maxVisibleItemInViewPort = Mathf.Max(0, _maxVisibleItemInViewPort - itemDiff);
             _maxExtraVisibleItemInViewPort = Mathf.Min(_itemsCount - 1, _maxVisibleItemInViewPort + _extraItemsVisible);

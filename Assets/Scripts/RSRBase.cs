@@ -301,7 +301,7 @@ namespace RecyclableSR
                 if (_staticCells[i])
                 {
                     RectTransform cellRect;
-                    if (_visibleItems.TryGetValue( i, out var item ))
+                    if (_visibleItems.TryGetValue(i, out var item))
                         cellRect = item.transform;
                     else
                         cellRect = (RectTransform)_dataSource.GetPrototypeCell(i).transform;
