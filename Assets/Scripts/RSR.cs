@@ -20,7 +20,7 @@ namespace RecyclableSR
             var i = startIndex;
             while ((contentHasSpace || extraItemsInitialized < _extraItemsVisible) && i < _itemsCount)
             {
-                ShowHideCellsAtIndex(i, true, GridLayoutPage.After);
+                ShowHideCellsAtIndex(i, true);
                 if (!contentHasSpace)
                     extraItemsInitialized++;
                 else
@@ -260,6 +260,42 @@ namespace RecyclableSR
                 rect.anchoredPosition = itemPosition;
             }
         }
+
+        /// <summary>
+        /// this removes all items that are not needed after item reload if _itemsCount has been reduced
+        /// </summary>
+        /// <param name="itemDiff">the amount of items that have been deleted</param>
+        protected override void RemoveExtraItems(int itemDiff)
+        {
+            base.RemoveExtraItems(itemDiff);
+            
+            for (var i = _itemsCount; i < _itemsCount + itemDiff; i++)
+            {
+                if (_visibleItems.ContainsKey(i))
+                    HideCellAtIndex(i);
+            }
+            _maxVisibleItemInViewPort = Mathf.Max(0, _maxVisibleItemInViewPort - itemDiff);
+            _maxExtraVisibleItemInViewPort = Mathf.Min(_itemsCount - 1, _maxVisibleItemInViewPort + _extraItemsVisible);
+        }
+
+        /// <summary>
+        /// Call the Show, Hide functions
+        /// </summary>
+        /// <param name="newIndex">current index of item we need to show</param>
+        /// <param name="show">show or hide current cell</param>
+        internal override void ShowHideCellsAtIndex(int newIndex, bool show)
+        {
+            base.ShowHideCellsAtIndex(newIndex, show);
+
+            if (show)
+            {
+                ShowCellAtIndex(newIndex);
+            }
+            else
+            {
+                HideCellAtIndex(newIndex);
+            }
+        }
         
         protected override void HideItemsAtTopLeft()
         {
@@ -272,7 +308,7 @@ namespace RecyclableSR
                 if (itemToHide > -1)
                 {
                     _minExtraVisibleItemInViewPort++;
-                    ShowHideCellsAtIndex(itemToHide, false, GridLayoutPage.Before);
+                    ShowHideCellsAtIndex(itemToHide, false);
                 }
             }
         }
@@ -288,7 +324,7 @@ namespace RecyclableSR
                 if (itemToShow < _itemsCount)
                 {
                     _maxExtraVisibleItemInViewPort = itemToShow;
-                    ShowHideCellsAtIndex(itemToShow, true, GridLayoutPage.After);
+                    ShowHideCellsAtIndex(itemToShow, true);
                 }
             }
         }
@@ -304,7 +340,7 @@ namespace RecyclableSR
                 if (itemToHide < _itemsCount)
                 {
                     _maxExtraVisibleItemInViewPort--;
-                    ShowHideCellsAtIndex(itemToHide, false, GridLayoutPage.After);
+                    ShowHideCellsAtIndex(itemToHide, false);
                 }
             }
         }
@@ -320,29 +356,8 @@ namespace RecyclableSR
                 if (itemToShow > -1)
                 {
                     _minExtraVisibleItemInViewPort = itemToShow;
-                    ShowHideCellsAtIndex(itemToShow, true, GridLayoutPage.Before);
+                    ShowHideCellsAtIndex(itemToShow, true);
                 }
-            }
-        }
-
-        /// <summary>
-        /// Used to determine which cells will be shown or hidden in case its a grid layout since we need to show more than one cell depending on the grid configuration
-        /// if it's not a grid layout, just call the Show, Hide functions
-        /// </summary>
-        /// <param name="newIndex">current index of item we need to show</param>
-        /// <param name="show">show or hide current cell</param>
-        /// <param name="gridLayoutPage">used to determine if we are showing/hiding a cell in after the most visible/hidden one or before the least visible/hidden one</param>
-        internal override void ShowHideCellsAtIndex(int newIndex, bool show, GridLayoutPage gridLayoutPage)
-        {
-            base.ShowHideCellsAtIndex(newIndex, show, gridLayoutPage);
-
-            if (show)
-            {
-                ShowCellAtIndex(newIndex);
-            }
-            else
-            {
-                HideCellAtIndex(newIndex);
             }
         }
 

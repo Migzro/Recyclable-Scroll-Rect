@@ -2,13 +2,6 @@ using UnityEngine;
 
 namespace RecyclableSR
 {
-    internal enum GridLayoutPage
-    {
-        Single = 0,
-        After,
-        Before
-    }
-    
     public readonly struct Item
     {
         public ICell cell { get; }

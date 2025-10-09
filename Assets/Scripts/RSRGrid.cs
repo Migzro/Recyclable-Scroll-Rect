@@ -276,7 +276,7 @@ namespace RecyclableSR
 
             while ((contentHasSpace || extraRowsColumnsInitialized < _extraVisibleRowsColumns))
             {
-                ShowHideCellsAtIndex(currentStartItemInRowColumn, true, GridLayoutPage.After);
+                ShowHideCellsAtIndex(currentStartItemInRowColumn, true);
                 
                 if (!contentHasSpace)
                     extraRowsColumnsInitialized++;
@@ -310,7 +310,7 @@ namespace RecyclableSR
                 if (itemToHide > -1)
                 {
                     _minExtraVisibleItemInViewPort += _gridConstraintCount;
-                    ShowHideCellsAtIndex(itemToHide, false, GridLayoutPage.Before);
+                    ShowHideCellsAtIndex(itemToHide, false);
                 }
             }
         }
@@ -326,7 +326,7 @@ namespace RecyclableSR
                 if (itemToShow < _itemsCount)
                 {
                     _maxExtraVisibleItemInViewPort = itemToShow;
-                    ShowHideCellsAtIndex(itemToShow, true, GridLayoutPage.After);
+                    ShowHideCellsAtIndex(itemToShow, true);
                 }
             }
         }
@@ -342,7 +342,7 @@ namespace RecyclableSR
                 if (itemToHide < _itemsCount)
                 {
                     _maxExtraVisibleItemInViewPort -= _gridConstraintCount;
-                    ShowHideCellsAtIndex(itemToHide, false, GridLayoutPage.After);
+                    ShowHideCellsAtIndex(itemToHide, false);
                 }
             }
         }
@@ -358,7 +358,7 @@ namespace RecyclableSR
                 if (itemToShow > -1)
                 {
                     _minExtraVisibleItemInViewPort = itemToShow;
-                    ShowHideCellsAtIndex(itemToShow, true, GridLayoutPage.Before);
+                    ShowHideCellsAtIndex(itemToShow, true);
                 }
             }
         }
@@ -368,10 +368,9 @@ namespace RecyclableSR
         /// </summary>
         /// <param name="newIndex">current index of item we need to show</param>
         /// <param name="show">show or hide current cell</param>
-        /// <param name="gridLayoutPage">used to determine if we are showing/hiding a cell in after the most visible/hidden one or before the least visible/hidden one</param>
-        internal override void ShowHideCellsAtIndex(int newIndex, bool show, GridLayoutPage gridLayoutPage)
+        internal override void ShowHideCellsAtIndex(int newIndex, bool show)
         {
-            base.ShowHideCellsAtIndex(newIndex, show, gridLayoutPage);
+            base.ShowHideCellsAtIndex(newIndex, show);
             
             var indices = new List<int>();
             var itemIndex = _gridIndicesLookup[newIndex];
@@ -407,6 +406,40 @@ namespace RecyclableSR
                     HideCellAtIndex(indices[i]);
                 }
             }
+        }
+        
+        /// <summary>
+        /// this removes all items that are not needed after item reload if _itemsCount has been reduced
+        /// </summary>
+        /// <param name="itemDiff">the amount of items that have been deleted</param>
+        protected override void RemoveExtraItems(int itemDiff)
+        {
+            base.RemoveExtraItems(itemDiff);
+            
+            var startX = _itemsCount % _gridIndices.GetLength(0);
+            var startY = _itemsCount / _gridIndices.GetLength(0);
+            
+            for (var y = startY; y < _gridIndices.GetLength(1); y++)
+            {
+                for (var x = (y == startY ? startX : 0); x < _gridIndices.GetLength(0); x++)
+                {
+                    var itemIndex = _gridIndices[x, y];
+                    if (itemIndex != -1 && _visibleItems.ContainsKey(itemIndex))
+                    {
+                        HideCellAtIndex(itemIndex);
+                    }
+                }
+            }
+
+            if (vertical)
+            {
+                _maxVisibleItemInViewPort = Mathf.Max(0, _gridIndices[0, startY]);
+            }
+            else
+            {
+                _maxVisibleItemInViewPort = Mathf.Max(0, _gridIndices[startX, 0]);
+            }
+            _maxExtraVisibleItemInViewPort = Mathf.Min(_itemsCount - 1, _maxVisibleItemInViewPort + (_extraVisibleRowsColumns * _gridConstraintCount));
         }
     }
 }

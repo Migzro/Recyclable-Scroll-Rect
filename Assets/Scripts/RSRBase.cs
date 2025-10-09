@@ -20,10 +20,11 @@ namespace RecyclableSR
         // TODO: Fix all behaviours for gridLayout and make sure _reverseDirection is working properly
         // TODO: Add support for start corners
         // TODO: convert extra items visible to extra row/columns visible in grid, make extra items visible only in RSR
-        // TODO: remove GridLayoutPage, figure out what to do with GridLayoutPage.Single
         // TODO: make _extraRowsColumns in the GridSource?
-        // TODO: remove all cell recalculating functions to RSR, since it doesnt apply to grids. the grid cell size always remains the same, if something happens the entire grid needs to be reloaded
         // TODO: make this class abstract
+        // TODO: remove all cell recalculating functions to RSR, since it doesnt apply to grids. the grid cell size always remains the same, if something happens the entire grid needs to be reloaded
+        // TODO: Do LateUpdate Function
+        // TODO: check CalculateNewMinMaxItemsAfterReloadCell() && RefreshAfterReload()
         
         // TODO: Separate Scrolling animation
         // TODO: Redo Scrolling animation
@@ -609,7 +610,7 @@ namespace RecyclableSR
             {
                 for (var i = newMaxExtraVisibleItemInViewPort + 1; i <= _maxExtraVisibleItemInViewPort; i++)
                 {
-                    ShowHideCellsAtIndex(i, false, GridLayoutPage.After);
+                    ShowHideCellsAtIndex(i, false);
                 }
 
                 _maxVisibleItemInViewPort = newMaxVisibleItemInViewPort;
@@ -625,14 +626,14 @@ namespace RecyclableSR
             {
                 for (var i = _minExtraVisibleItemInViewPort; i < newMinExtraVisibleItemInViewPort; i++)
                 {
-                    ShowHideCellsAtIndex(i, false, GridLayoutPage.Before);
+                    ShowHideCellsAtIndex(i, false);
                 }
             }
             else
             {
                 for (var i = _minExtraVisibleItemInViewPort - 1; i >= newMinExtraVisibleItemInViewPort; i--)
                 {
-                    ShowHideCellsAtIndex(i, true, GridLayoutPage.Before);
+                    ShowHideCellsAtIndex(i, true);
                 }
             }
 
@@ -852,8 +853,7 @@ namespace RecyclableSR
         /// </summary>
         /// <param name="newIndex">current index of item we need to show</param>
         /// <param name="show">show or hide current cell</param>
-        /// <param name="gridLayoutPage">used to determine if we are showing/hiding a cell in after the most visible/hidden one or before the least visible/hidden one</param>
-        internal virtual void ShowHideCellsAtIndex(int newIndex, bool show, GridLayoutPage gridLayoutPage)
+        internal virtual void ShowHideCellsAtIndex(int newIndex, bool show)
         {
         }
 
@@ -973,18 +973,10 @@ namespace RecyclableSR
             if (oldItemsCount > _itemsCount && _visibleItems.Count > _itemsCount)
             {
                 var itemDiff = oldItemsCount - _itemsCount;
-                for (var i = _itemsCount; i < _itemsCount + itemDiff; i++)
-                {
-                    if (_visibleItems.ContainsKey(i))
-                        ShowHideCellsAtIndex(i, false, GridLayoutPage.Single);
-                }
-
+                RemoveExtraItems(itemDiff);
                 _itemPositions.RemoveRange(_itemsCount, itemDiff);
                 _prototypeNames.RemoveRange(_itemsCount, itemDiff);
                 _staticCells.RemoveRange(_itemsCount, itemDiff);
-                
-                _maxVisibleItemInViewPort = Math.Max(0, _maxVisibleItemInViewPort - itemDiff);
-                _maxExtraVisibleItemInViewPort = Mathf.Min(_itemsCount - 1, _maxVisibleItemInViewPort + _extraItemsVisible);
             }
             
             ResetVariables();
@@ -1002,6 +994,15 @@ namespace RecyclableSR
             }
             CalculateNewMinMaxItemsAfterReloadCell();
             RefreshAfterReload();
+        }
+
+        /// <summary>
+        /// this removes all items that are not needed after item reload if _itemsCount has been reduced
+        /// </summary>
+        /// <param name="itemDiff">the amount of items that have been deleted</param>
+        protected virtual void RemoveExtraItems(int itemDiff)
+        {
+            
         }
 
         protected virtual void RefreshAfterReload()
@@ -1022,7 +1023,7 @@ namespace RecyclableSR
                 if (_visibleItems.ContainsKey(cellIndices[i]))
                 {
                     wasVisible.Add(cellIndices[i]);
-                    ShowHideCellsAtIndex(cellIndices[i], false, GridLayoutPage.Single);
+                    ShowHideCellsAtIndex(cellIndices[i], false);
                 }
             }
             
@@ -1032,7 +1033,7 @@ namespace RecyclableSR
                 _staticCells[cellIndices[i]] = _dataSource.IsCellStatic(cellIndices[i]);
                 
                 if (wasVisible.Contains(cellIndices[i]))
-                    ShowHideCellsAtIndex(cellIndices[i], true, GridLayoutPage.Single);
+                    ShowHideCellsAtIndex(cellIndices[i], true);
             }
         }
 
