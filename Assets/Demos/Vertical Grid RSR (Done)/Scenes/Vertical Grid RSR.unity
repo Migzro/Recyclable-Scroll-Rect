@@ -261,6 +261,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1362537420}
+  - component: {fileID: 1362537422}
+  - component: {fileID: 1362537421}
   m_Layer: 5
   m_Name: Content
   m_TagString: Untagged
@@ -287,6 +289,47 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 1334}
   m_Pivot: {x: 0, y: 1}
+--- !u!114 &1362537421
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1362537419}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a8695521f0d02e499659fee002a26c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GridLayoutGroup
+  m_Padding:
+    m_Left: 0
+    m_Right: 0
+    m_Top: 0
+    m_Bottom: 0
+  m_ChildAlignment: 0
+  m_StartCorner: 0
+  m_StartAxis: 0
+  m_CellSize: {x: 100, y: 100}
+  m_Spacing: {x: 0, y: 0}
+  m_Constraint: 0
+  m_ConstraintCount: 7
+--- !u!114 &1362537422
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1362537419}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4741d17c4bb48434cbaab7b061ba530a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PrefabInitializer
+  count: 100
+  content: {fileID: 1362537420}
+  prefab: {fileID: 1638117046129563386, guid: 7d07dc272788b4bc9a294d5f0345009a, type: 3}
+  update: 0
+  delete: 0
 --- !u!1 &1413815494
 GameObject:
   m_ObjectHideFlags: 0
@@ -558,17 +601,18 @@ MonoBehaviour:
   _pushToCloseThreshold: 150
   _useConstantScrollingSpeed: 0
   _constantScrollingSpeed: 0
-  _spacing: {x: 50, y: 40}
+  _spacing: {x: 10, y: 0}
   _padding:
-    m_Left: 50
-    m_Right: 50
-    m_Top: 50
-    m_Bottom: 50
+    m_Left: 0
+    m_Right: 0
+    m_Top: 0
+    m_Bottom: 0
   _childAlignment: 0
-  _gridCellSize: {x: 300, y: 400}
-  _gridStartAxis: 0
-  _gridConstraint: 1
+  _gridCellSize: {x: 100, y: 100}
+  _gridStartAxis: 1
+  _gridConstraint: 0
   _gridConstraintCount: 2
+  _extraVisibleRowsColumns: 4
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
