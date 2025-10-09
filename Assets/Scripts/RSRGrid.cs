@@ -10,19 +10,16 @@ namespace RecyclableSR
         [SerializeField] private GridLayoutGroup.Axis _gridStartAxis;
         [SerializeField] private GridLayoutGroup.Constraint _gridConstraint;
         [SerializeField] private int _gridConstraintCount;
+        [SerializeField] private int _extraVisibleRowsColumns;
         
         private int _maxGridItemsInAxis;
+        private int[,] _gridIndices;
+        private Dictionary<int, Vector2Int> _gridIndicesLookup;
         private Vector2 _gridLayoutPadding;
-        
-        public override void ResetData()
-        {
-            _gridLayoutPadding = Vector2.zero;
-            base.ResetData();
-        }
         
         /// <summary>
         /// Calculate the content size in their respective direction based on the scrolling direction
-        /// If the cell size is know we simply add all the cell sizes, spacing and padding
+        /// If the cell size is known, we simply add all the cell sizes, spacing and padding
         /// If not we set the cell size as -1 as it will be calculated once the cell comes into view
         /// </summary>
         protected override void CalculateContentSize()
@@ -32,15 +29,32 @@ namespace RecyclableSR
             var contentSizeDelta = viewport.sizeDelta;
             _maxGridItemsInAxis = 0;
             contentSizeDelta[_axis] = 0;
-            
-            // we consider all cell sizes the same in grid
+
+            if (_gridConstraint == GridLayoutGroup.Constraint.Flexible)
+            {
+                // Calculate how many items can fit in the current scroll view opposite axis, this is our _gridConstraintCount
+                var contentSizeWithoutPadding = viewport.rect.size;
+                contentSizeWithoutPadding.x -= _padding.right + _padding.left;
+                contentSizeWithoutPadding.y -= _padding.top + _padding.bottom;
+
+                if (vertical)
+                {
+                    _gridConstraintCount = Mathf.FloorToInt(contentSizeWithoutPadding.x / (_gridCellSize.x + _spacing.x));
+                }
+                else
+                {
+                    _gridConstraintCount = Mathf.FloorToInt(contentSizeWithoutPadding.y / (_gridCellSize.y + _spacing.y));
+                }
+            }
             _maxGridItemsInAxis = Mathf.CeilToInt(_itemsCount / (float)_gridConstraintCount);
             contentSizeDelta[_axis] = _maxGridItemsInAxis * _gridCellSize[_axis];
 
             for (var i = 0; i < _itemsCount; i++)
+            {
                 _itemPositions[i].SetSize(_gridCellSize);
+            }
             contentSizeDelta[_axis] += _spacing[_axis] * (_maxGridItemsInAxis - 1);
-
+            
             if (vertical)
             {
                 contentSizeDelta.y += _padding.top + _padding.bottom;
@@ -53,6 +67,102 @@ namespace RecyclableSR
             }
 
             content.sizeDelta = contentSizeDelta;
+            BuildItems2DIndices();
+        }
+        
+        /// <summary>
+        /// Sets every item position in the grid based on the grid configuration
+        /// </summary>
+        private void BuildItems2DIndices()
+        {
+            var itemsCountInOppositeAxis = Mathf.CeilToInt(_itemsCount / (float)_gridConstraintCount);
+            if (vertical)
+            {
+                _gridIndices = new int[_gridConstraintCount, itemsCountInOppositeAxis];
+            }
+            else
+            {
+                _gridIndices = new int[itemsCountInOppositeAxis, _gridConstraintCount];
+            }
+            
+            for (var i = 0; i < _gridIndices.GetLength(0); i++)
+            {
+                for (var j = 0; j < _gridIndices.GetLength(1); j++)
+                {
+                    _gridIndices[i, j] = -1;
+                }
+            }
+            _gridIndicesLookup = new Dictionary<int, Vector2Int>();
+
+            for (var i = 0; i < _itemsCount; i++)
+            {
+                int xIndexInGrid;
+                int yIndexInGrid;
+                if (horizontal)
+                {
+                    if (_gridStartAxis == GridLayoutGroup.Axis.Vertical)
+                    {
+                        xIndexInGrid = Mathf.FloorToInt(i / (float)_gridConstraintCount);
+                        yIndexInGrid = i % _gridConstraintCount;
+                    }
+                    else
+                    {
+                        // TODO: Reversed Grid Code
+                        xIndexInGrid = i % _maxGridItemsInAxis;
+                        yIndexInGrid = Mathf.FloorToInt(i / (float)_maxGridItemsInAxis);
+                    }
+                }
+                else
+                {
+                    if (_gridStartAxis == GridLayoutGroup.Axis.Vertical)
+                    {
+                        // TODO: Reversed Grid Code
+                        xIndexInGrid = Mathf.FloorToInt(i / (float)_maxGridItemsInAxis);
+                        yIndexInGrid = i % _maxGridItemsInAxis;
+                    }
+                    else
+                    {
+                        xIndexInGrid = i % _gridConstraintCount;
+                        yIndexInGrid = Mathf.FloorToInt(i / (float)_gridConstraintCount);
+                    }
+                }
+                
+                // if (_reverseDirection)
+                // {
+                //     // TODO: this should be horizontal
+                //     if (_gridConstraint == GridLayoutGroup.Constraint.FixedRowCount && _gridStartAxis == GridLayoutGroup.Axis.Vertical)
+                //     {
+                //         newItemPosition.x = -_gridLayoutPadding.x - xIndexInGrid * _itemPositions[newIndex].cellSize[0] - _spacing[0] * xIndexInGrid;
+                //         newItemPosition.y = -_gridLayoutPadding.y - yIndexInGrid * _itemPositions[newIndex].cellSize[1] - _spacing[1] * yIndexInGrid;
+                //     }
+                //     // TODO: this should be vertical
+                //     else if (_gridConstraint == GridLayoutGroup.Constraint.FixedColumnCount && _gridStartAxis == GridLayoutGroup.Axis.Horizontal)
+                //     {
+                //         newItemPosition.x = _gridLayoutPadding.x + xIndexInGrid * _itemPositions[newIndex].cellSize[0] + _spacing[0] * xIndexInGrid;
+                //         newItemPosition.y = _gridLayoutPadding.y + yIndexInGrid * _itemPositions[newIndex].cellSize[1] + _spacing[1] * yIndexInGrid;
+                //     }
+                // }
+                // else
+                // {
+                //     newItemPosition.x = _gridLayoutPadding.x + xIndexInGrid * _itemPositions[newIndex].cellSize[0] + _spacing[0] * xIndexInGrid;
+                //     newItemPosition.y = -_gridLayoutPadding.y - yIndexInGrid * _itemPositions[newIndex].cellSize[1] - _spacing[1] * yIndexInGrid;
+                // }
+
+                _gridIndicesLookup[i] = new Vector2Int(xIndexInGrid, yIndexInGrid);
+                // Debug.LogError(xIndexInGrid + " " + yIndexInGrid + " " + i);
+                _gridIndices[xIndexInGrid, yIndexInGrid] = i;
+            }
+
+            // Debugging code
+            // for (var j = 0; j < _gridIndices.GetLength(1); j++)
+            // {
+            //     var stringToShow = "";
+            //     for (var i = 0; i < _gridIndices.GetLength(0); i++)
+            //     {
+            //         stringToShow += _gridIndices[i, j] + " ";
+            //     }
+            //     Debug.LogError(stringToShow);
+            // }
         }
         
         /// <summary>
@@ -61,6 +171,8 @@ namespace RecyclableSR
         protected override void CalculatePadding()
         {
             base.CalculatePadding();
+            
+            _gridLayoutPadding = Vector2.zero;
             
             // get content size without padding
             var contentSize = content.rect.size;
@@ -120,57 +232,9 @@ namespace RecyclableSR
             base.SetCellAxisPosition(rect, newIndex);
             
             var newItemPosition = rect.anchoredPosition;
-            int xIndexInGrid;
-            int yIndexInGrid;
-            
-            if (_gridConstraint == GridLayoutGroup.Constraint.FixedRowCount)
-            {
-                if (_gridStartAxis == GridLayoutGroup.Axis.Vertical)
-                {
-                    xIndexInGrid = Mathf.FloorToInt(newIndex / (float) _gridConstraintCount);
-                    yIndexInGrid = newIndex % _gridConstraintCount;
-                }
-                else
-                {
-                    // TODO: Reversed Grid Code
-                    xIndexInGrid = newIndex % _maxGridItemsInAxis;
-                    yIndexInGrid = Mathf.FloorToInt(newIndex / (float) _maxGridItemsInAxis);
-                }
-            }
-            else
-            {
-                if (_gridStartAxis == GridLayoutGroup.Axis.Vertical)
-                {
-                    // TODO: Reversed Grid Code
-                    xIndexInGrid = Mathf.FloorToInt(newIndex / (float) _maxGridItemsInAxis);
-                    yIndexInGrid = newIndex % _maxGridItemsInAxis;
-                }
-                else
-                {
-                    xIndexInGrid = newIndex % _gridConstraintCount;
-                    yIndexInGrid = Mathf.FloorToInt(newIndex / (float) _gridConstraintCount);
-                }
-            }
-
-            if (_reverseDirection)
-            {
-                if (_gridConstraint == GridLayoutGroup.Constraint.FixedRowCount && _gridStartAxis == GridLayoutGroup.Axis.Vertical)
-                {
-                    newItemPosition.x = -_gridLayoutPadding.x - xIndexInGrid * _itemPositions[newIndex].cellSize[0] - _spacing[0] * xIndexInGrid;
-                    newItemPosition.y = -_gridLayoutPadding.y - yIndexInGrid * _itemPositions[newIndex].cellSize[1] - _spacing[1] * yIndexInGrid;
-                }
-                else if (_gridConstraint == GridLayoutGroup.Constraint.FixedColumnCount && _gridStartAxis == GridLayoutGroup.Axis.Horizontal)
-                {
-                    newItemPosition.x = _gridLayoutPadding.x + xIndexInGrid * _itemPositions[newIndex].cellSize[0] + _spacing[0] * xIndexInGrid;
-                    newItemPosition.y = _gridLayoutPadding.y + yIndexInGrid * _itemPositions[newIndex].cellSize[1] + _spacing[1] * yIndexInGrid;
-                }
-            }
-            else
-            {
-                newItemPosition.x = _gridLayoutPadding.x + xIndexInGrid * _itemPositions[newIndex].cellSize[0] + _spacing[0] * xIndexInGrid;
-                newItemPosition.y = -_gridLayoutPadding.y - yIndexInGrid * _itemPositions[newIndex].cellSize[1] - _spacing[1] * yIndexInGrid;
-            }
-
+            var gridIndex = _gridIndicesLookup[newIndex];
+            newItemPosition.x = _gridLayoutPadding.x + gridIndex.x * _itemPositions[newIndex].cellSize[0] + _spacing[0] * gridIndex.x;
+            newItemPosition.y = -_gridLayoutPadding.y - gridIndex.y * _itemPositions[newIndex].cellSize[1] - _spacing[1] * gridIndex.y;
             rect.anchoredPosition = newItemPosition;
             _itemPositions[newIndex].SetPosition(newItemPosition);
         }
@@ -189,26 +253,118 @@ namespace RecyclableSR
         }
         
         /// <summary>
-        /// check if grid has enough space to initialize items in
+        /// We consider each starting item in the row/column the only one that needs to be initialized.
+        /// this is because we do not care about the following cells, they are initialized by ShowHideCellsAtIndex, which just completes the row/column.
+        /// this is to simplify the calculations required for the different configurations of the grid.
+        /// The grid indices remain constant, what changes is the cellIndex that the gridIndex holds
         /// </summary>
-        /// <param name="cellIndex">cell index</param>
-        /// <returns></returns>
-        protected override bool CheckInitializeCellsExtraConditions (int cellIndex)
+        /// <param name="startIndex">the starting cell index on which we want initialized</param>
+        protected override void InitializeCells(int startIndex = 0)
         {
-            base.CheckInitializeCellsExtraConditions(cellIndex);
+            base.InitializeCells(startIndex);
+
+            // get the starting grid index of the startIndex in that specific row/column. It's always the opposite of the current axis
+            var current2DIndex = _gridIndicesLookup[startIndex];
+            current2DIndex[1 - _axis] = 0;
             
-            if (cellIndex == 0 || cellIndex < _itemsCount)
-                return true;
+            // use the current starting row or column index since we base all our calculations on the top or left indices
+            var currentStartItemInRowColumn = _gridIndices[current2DIndex.x, current2DIndex.y];
+            
+            GetContentBounds();
+            var contentHasSpace = currentStartItemInRowColumn == 0 || _itemPositions[currentStartItemInRowColumn].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
+            var extraRowsColumnsInitialized = contentHasSpace ? 0 : (_maxExtraVisibleItemInViewPort - _maxVisibleItemInViewPort) / _gridConstraintCount;
 
-            if ((cellIndex + 1) % _gridConstraintCount != 0)
-                return true;
+            while ((contentHasSpace || extraRowsColumnsInitialized < _extraVisibleRowsColumns))
+            {
+                ShowHideCellsAtIndex(currentStartItemInRowColumn, true, GridLayoutPage.After);
+                
+                if (!contentHasSpace)
+                    extraRowsColumnsInitialized++;
+                else
+                    _maxVisibleItemInViewPort = currentStartItemInRowColumn;
+            
+                contentHasSpace = _itemPositions[currentStartItemInRowColumn].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
+                _maxExtraVisibleItemInViewPort = currentStartItemInRowColumn;
+                
+                // get the first item in the next row or column that needs to be initialized
+                if (vertical)
+                    current2DIndex.y++;
+                else
+                    current2DIndex.x++;
 
-            return false;
+                if (current2DIndex.x >= _gridIndices.GetLength(0) || current2DIndex.y >= _gridIndices.GetLength(1))
+                    break;
+                
+                currentStartItemInRowColumn = _gridIndices[current2DIndex.x, current2DIndex.y];
+            }
+        }
+        
+        protected override void HideItemsAtTopLeft()
+        {
+            base.HideItemsAtTopLeft();
+            
+            if (_minVisibleItemInViewPort < _itemsCount - _gridConstraintCount - 1 && _contentTopLeftCorner[_axis] >= _itemPositions[_minVisibleItemInViewPort].absBottomRightPosition[_axis])
+            {
+                var itemToHide = _minVisibleItemInViewPort - (_extraVisibleRowsColumns * _gridConstraintCount);
+                _minVisibleItemInViewPort += _gridConstraintCount;
+                if (itemToHide > -1)
+                {
+                    _minExtraVisibleItemInViewPort += _gridConstraintCount;
+                    ShowHideCellsAtIndex(itemToHide, false, GridLayoutPage.Before);
+                }
+            }
+        }
+        
+        protected override void ShowItemsAtBottomRight()
+        {
+            base.ShowItemsAtBottomRight();
+            
+            if (_maxVisibleItemInViewPort < _itemsCount - _gridConstraintCount - 1 && _contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleItemInViewPort].absBottomRightPosition[_axis] + _spacing[_axis])
+            {
+                _maxVisibleItemInViewPort += _gridConstraintCount;
+                var itemToShow = _maxVisibleItemInViewPort + (_extraVisibleRowsColumns * _gridConstraintCount);
+                if (itemToShow < _itemsCount)
+                {
+                    _maxExtraVisibleItemInViewPort = itemToShow;
+                    ShowHideCellsAtIndex(itemToShow, true, GridLayoutPage.After);
+                }
+            }
+        }
+
+        protected override void HideItemsAtBottomRight()
+        {
+            base.HideItemsAtBottomRight();
+            
+            if (_maxVisibleItemInViewPort > 0 && _contentBottomRightCorner[_axis] <= _itemPositions[_maxVisibleItemInViewPort].absTopLeftPosition[_axis])
+            {
+                var itemToHide = _maxVisibleItemInViewPort + (_extraVisibleRowsColumns * _gridConstraintCount);
+                _maxVisibleItemInViewPort -= _gridConstraintCount;
+                if (itemToHide < _itemsCount)
+                {
+                    _maxExtraVisibleItemInViewPort -= _gridConstraintCount;
+                    ShowHideCellsAtIndex(itemToHide, false, GridLayoutPage.After);
+                }
+            }
+        }
+        
+        protected override void ShowItemsAtTopLeft()
+        {
+            base.ShowItemsAtTopLeft();
+            
+            if (_minVisibleItemInViewPort > 0 && _contentTopLeftCorner[_axis] < _itemPositions[_minVisibleItemInViewPort].absTopLeftPosition[_axis] - _spacing[_axis])
+            {
+                _minVisibleItemInViewPort -= _gridConstraintCount;
+                var itemToShow = _minVisibleItemInViewPort - (_extraVisibleRowsColumns * _gridConstraintCount);
+                if (itemToShow > -1)
+                {
+                    _minExtraVisibleItemInViewPort = itemToShow;
+                    ShowHideCellsAtIndex(itemToShow, true, GridLayoutPage.Before);
+                }
+            }
         }
         
         /// <summary>
-        /// Used to determine which cells will be shown or hidden in case its a grid layout since we need to show more than one cell depending on the grid configuration
-        /// if it's not a grid layout, just call the Show, Hide functions
+        /// Used to determine which cells will be shown or hidden in case it's a grid layout since we need to show more than one cell depending on the grid configuration
         /// </summary>
         /// <param name="newIndex">current index of item we need to show</param>
         /// <param name="show">show or hide current cell</param>
@@ -218,51 +374,98 @@ namespace RecyclableSR
             base.ShowHideCellsAtIndex(newIndex, show, gridLayoutPage);
             
             var indices = new List<int>();
-            if (_gridConstraint == GridLayoutGroup.Constraint.FixedRowCount && _gridStartAxis == GridLayoutGroup.Axis.Vertical
-                || _gridConstraint == GridLayoutGroup.Constraint.FixedColumnCount && _gridStartAxis == GridLayoutGroup.Axis.Horizontal)
+            // if (gridLayoutPage == GridLayoutPage.After)
+            // {
+            //     if (_gridStartAxis == GridLayoutGroup.Axis.Horizontal)
+            //     {
+            //         // equation to get the highest multiple of newIndex where _gridConstraintCount is the multiple
+            //         var maxItemToShow = _gridConstraintCount * Mathf.FloorToInt((float)newIndex / _gridConstraintCount) + _gridConstraintCount;
+            //         for (var i = newIndex; i < maxItemToShow; i++)
+            //         {
+            //             if (i < _itemsCount)
+            //             {
+            //                 indices.Add(i);
+            //             }
+            //         }
+            //     }
+            // }
+            // else if (gridLayoutPage == GridLayoutPage.Before)
+            // {
+            //     if (_gridStartAxis == GridLayoutGroup.Axis.Horizontal)
+            //     {
+            //         // equation to get the lowest multiple of newIndex where _gridConstraintCount is the multiple
+            //         var minItemToShow = _gridConstraintCount * Mathf.FloorToInt((float)newIndex / _gridConstraintCount);
+            //         for (var i = newIndex; i >= minItemToShow; i--)
+            //         {
+            //             indices.Add(i);
+            //         }
+            //     }
+            // }
+            // else if (gridLayoutPage == GridLayoutPage.Single)
+            // {
+            //     indices.Add(newIndex);
+            // }
+            var itemIndex = _gridIndicesLookup[newIndex];
+            if (vertical)
             {
-                if (gridLayoutPage == GridLayoutPage.After)
+                // show or hide all items in a single row
+                for (var i = 0; i < _gridConstraintCount; i++)
                 {
-                    // equation to get the highest multiple of newIndex where _gridConstraintCount is the multiple
-                    var maxItemToShow = _gridConstraintCount * Mathf.FloorToInt((float) newIndex / _gridConstraintCount) + _gridConstraintCount;
-                    for (var i = newIndex; i < maxItemToShow; i++)
-                    {
-                        if (i < _itemsCount)
-                            indices.Add(i);
-                    }
+                    var indexValue = _gridIndices[i, itemIndex.y]; 
+                    if (indexValue != -1)
+                        indices.Add(indexValue);
                 }
-                else if (gridLayoutPage == GridLayoutPage.Before)
-                {
-                    // equation to get the lowest multiple of newIndex where _gridConstraintCount is the multiple
-                    var minItemToShow = _gridConstraintCount * Mathf.FloorToInt((float) newIndex / _gridConstraintCount);  
-                    for (var i = newIndex; i >= minItemToShow; i--)
-                        indices.Add(i);
-                }
-                else if (gridLayoutPage == GridLayoutPage.Single)
-                    indices.Add(newIndex);
             }
             else
             {
-                // TODO: Reversed Grid Code
-                if (gridLayoutPage == GridLayoutPage.Single)
-                    indices.Add(newIndex);
-                else if (newIndex < _maxGridItemsInAxis)
+                // show or hide all items in a single column
+                for (var i = 0; i < _gridConstraintCount; i++)
                 {
-                    for (var i = 0; i < _gridConstraintCount; i++)
-                    {
-                        var cellIndex = newIndex + i * _maxGridItemsInAxis;
-                        if (cellIndex < _itemsCount)
-                            indices.Add(cellIndex);
-                    }
+                    var indexValue = _gridIndices[itemIndex.x, i]; 
+                    if (indexValue != -1)
+                        indices.Add(indexValue);
                 }
             }
+
+            // if (_gridStartAxis == GridLayoutGroup.Axis.Horizontal)
+            // {
+            //     // equation to get the highest multiple of newIndex where _gridConstraintCount is the multiple
+            //     var maxItemToShow = _gridConstraintCount * Mathf.FloorToInt((float)newIndex / _gridConstraintCount) + _gridConstraintCount;
+            //     for (var i = newIndex; i < maxItemToShow; i++)
+            //     {
+            //         if (i < _itemsCount)
+            //         {
+            //             indices.Add(i);
+            //         }
+            //     }
+            // }
+            // else if (_gridStartAxis == GridLayoutGroup.Axis.Vertical)
+            // {
+            //     // get the x index of the item in the grid
+            //     var xIndexInGrid = Mathf.FloorToInt(newIndex / (float) _maxGridItemsInAxis);
+            //         
+            //     // need to get multiples of _maxItemsInGrid for the items needed to be added
+            //     // for example if we show item 0 and _maxItemsInGrid is 15, then we need to add 0, 15, 30, 45, and so on till we either reach _maxGridItemsInAxis or _gridConstraintCount
+            //     for (var i = 0; i < _gridConstraintCount - xIndexInGrid; i++)
+            //     {
+            //         var indexToAdd = newIndex + (i * _maxGridItemsInAxis);
+            //         if (indexToAdd < _itemsCount)
+            //         {
+            //             indices.Add(indexToAdd);
+            //         }
+            //     }
+            // }
 
             for (var i = 0; i < indices.Count; i++)
             {
                 if (show && !_visibleItems.ContainsKey(indices[i]))
+                {
                     ShowCellAtIndex(indices[i]);
+                }
                 else if (!show && _visibleItems.ContainsKey(indices[i]))
+                {
                     HideCellAtIndex(indices[i]);
+                }
             }
         }
     }

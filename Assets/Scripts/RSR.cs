@@ -5,6 +5,34 @@ namespace RecyclableSR
     public class RSR : RSRBase
     {
         /// <summary>
+        /// Initialize all cells needed until the view port is filled
+        /// extra visible items is an additional amount of cells that can be shown to prevent showing an empty view port if the scrolling is too fast and the update function didn't show all the items
+        /// that need to be shown
+        /// </summary>
+        /// <param name="startIndex">the starting cell index on which we want initialized</param>
+        protected override void InitializeCells(int startIndex = 0)
+        {
+            base.InitializeCells(startIndex);
+            
+            GetContentBounds();
+            var contentHasSpace = startIndex == 0 || _itemPositions[startIndex - 1].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
+            var extraItemsInitialized = contentHasSpace ? 0 : _maxExtraVisibleItemInViewPort - _maxVisibleItemInViewPort;
+            var i = startIndex;
+            while ((contentHasSpace || extraItemsInitialized < _extraItemsVisible) && i < _itemsCount)
+            {
+                ShowHideCellsAtIndex(i, true, GridLayoutPage.After);
+                if (!contentHasSpace)
+                    extraItemsInitialized++;
+                else
+                    _maxVisibleItemInViewPort = i;
+
+                contentHasSpace = _itemPositions[i].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
+                i++;
+            }
+            _maxExtraVisibleItemInViewPort = i - 1;
+        }
+        
+        /// <summary>
         /// Calculate the content size in their respective direction based on the scrolling direction
         /// If the cell size is know we simply add all the cell sizes, spacing and padding
         /// If not we set the cell size as -1 as it will be calculated once the cell comes into view
@@ -19,7 +47,9 @@ namespace RecyclableSR
             for (var i = 0; i < _itemsCount; i++)
             {
                 if (!_dataSource.IsCellSizeKnown)
+                {
                     contentSizeDelta[_axis] += _itemPositions[i].cellSize[_axis];
+                }
                 else
                 {
                     var cellSize = _itemPositions[i].cellSize;
@@ -63,16 +93,24 @@ namespace RecyclableSR
                 if (vertical)
                 {
                     if (_reverseDirection)
+                    {
                         newItemPosition.y = _padding.bottom;
+                    }
                     else
+                    {
                         newItemPosition.y = -_padding.top;
+                    }
                 }
                 else
                 {
                     if (_reverseDirection)
+                    {
                         newItemPosition.x = -_padding.right;
+                    }
                     else
+                    {
                         newItemPosition.x = _padding.left;
+                    }
                 }
             }
             else
@@ -114,12 +152,16 @@ namespace RecyclableSR
             
             var contentSize = content.sizeDelta;
             contentSize[_axis] += newCellSize[_axis] - oldCellSize;
-            
+
             if (vertical)
+            {
                 _layoutElement.preferredHeight = contentSize.y;
+            }
             else
+            {
                 _layoutElement.preferredWidth = contentSize.x;
-            
+            }
+
             content.sizeDelta = contentSize;
         }
 
@@ -134,7 +176,9 @@ namespace RecyclableSR
                 var itemSize = rect.sizeDelta;
                 itemSize.x = content.rect.width;
                 if (!_dataSource.IgnoreContentPadding(cellIndex))
+                {
                     itemSize.x -= _padding.right + _padding.left;
+                }
 
                 rect.sizeDelta = itemSize;
                 forceSize = true;
@@ -146,7 +190,10 @@ namespace RecyclableSR
                 var itemSize = rect.sizeDelta;
                 itemSize.y = content.rect.height;
                 if (!_dataSource.IgnoreContentPadding(cellIndex))
+                {
                     itemSize.y -= _padding.top + _padding.bottom;
+                }
+
                 rect.sizeDelta = itemSize;
                 forceSize = true;
             }
@@ -213,6 +260,90 @@ namespace RecyclableSR
                 rect.anchoredPosition = itemPosition;
             }
         }
+        
+        protected override void HideItemsAtTopLeft()
+        {
+            base.HideItemsAtTopLeft();
+            
+            if (_minVisibleItemInViewPort < _itemsCount - 1 && _contentTopLeftCorner[_axis] >= _itemPositions[_minVisibleItemInViewPort].absBottomRightPosition[_axis])
+            {
+                var itemToHide = _minVisibleItemInViewPort - _extraItemsVisible;
+                _minVisibleItemInViewPort++;
+                if (itemToHide > -1)
+                {
+                    _minExtraVisibleItemInViewPort++;
+                    ShowHideCellsAtIndex(itemToHide, false, GridLayoutPage.Before);
+                }
+            }
+        }
+        
+        protected override void ShowItemsAtBottomRight()
+        {
+            base.ShowItemsAtBottomRight();
+            
+            if (_maxVisibleItemInViewPort < _itemsCount - 1 && _contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleItemInViewPort].absBottomRightPosition[_axis] + _spacing[_axis])
+            {
+                var newMaxItemToCheck = _maxVisibleItemInViewPort + 1;
+                var itemToShow = newMaxItemToCheck + _extraItemsVisible;
+                _maxVisibleItemInViewPort = newMaxItemToCheck;
+                if (itemToShow < _itemsCount)
+                {
+                    _maxExtraVisibleItemInViewPort = itemToShow;
+                    ShowHideCellsAtIndex(itemToShow, true, GridLayoutPage.After);
+                }
+                
+                // TODO: use this simplifed code
+                // _maxVisibleItemInViewPort++;
+                // var itemToShow = _maxVisibleItemInViewPort + _extraItemsVisible;
+                // if (itemToShow < _itemsCount)
+                // {
+                //     _maxExtraVisibleItemInViewPort = itemToShow;
+                //     ShowHideCellsAtIndex(itemToShow, true, GridLayoutPage.After);
+                // }
+            }
+        }
+
+        protected override void HideItemsAtBottomRight()
+        {
+            base.HideItemsAtBottomRight();
+            
+            if (_maxVisibleItemInViewPort > 0 && _contentBottomRightCorner[_axis] <= _itemPositions[_maxVisibleItemInViewPort].absTopLeftPosition[_axis])
+            {
+                var itemToHide = _maxVisibleItemInViewPort + _extraItemsVisible;
+                _maxVisibleItemInViewPort--;
+                if (itemToHide < _itemsCount)
+                {
+                    _maxExtraVisibleItemInViewPort--;
+                    ShowHideCellsAtIndex(itemToHide, false, GridLayoutPage.After);
+                }
+            }
+        }
+        
+        protected override void ShowItemsAtTopLeft()
+        {
+            base.ShowItemsAtTopLeft();
+            
+            if (_minVisibleItemInViewPort > 0 && _contentTopLeftCorner[_axis] < _itemPositions[_minVisibleItemInViewPort].absTopLeftPosition[_axis] - _spacing[_axis])
+            {
+                var newMinItemToCheck = _minVisibleItemInViewPort - 1;
+                var itemToShow = newMinItemToCheck - _extraItemsVisible;
+                _minVisibleItemInViewPort = newMinItemToCheck;
+                if (itemToShow > -1)
+                {
+                    _minExtraVisibleItemInViewPort = itemToShow;
+                    ShowHideCellsAtIndex(itemToShow, true, GridLayoutPage.Before);
+                }
+                
+                // TODO: use this simplifed code
+                // _minVisibleItemInViewPort--;
+                // var itemToShow = _minVisibleItemInViewPort - _extraItemsVisible;
+                // if (itemToShow > -1)
+                // {
+                //     _minExtraVisibleItemInViewPort = itemToShow;
+                //     ShowHideCellsAtIndex(itemToShow, true, GridLayoutPage.Before);
+                // }
+            }
+        }
 
         /// <summary>
         /// Used to determine which cells will be shown or hidden in case its a grid layout since we need to show more than one cell depending on the grid configuration
@@ -224,11 +355,15 @@ namespace RecyclableSR
         internal override void ShowHideCellsAtIndex(int newIndex, bool show, GridLayoutPage gridLayoutPage)
         {
             base.ShowHideCellsAtIndex(newIndex, show, gridLayoutPage);
-            
+
             if (show)
+            {
                 ShowCellAtIndex(newIndex);
+            }
             else
+            {
                 HideCellAtIndex(newIndex);
+            }
         }
 
         public override void ScrollToTopRight()

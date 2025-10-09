@@ -9,18 +9,29 @@ namespace RecyclableSR
     public class RSRBase : ScrollRect
     {
         // TODO: reverse direction for cards
+        // TODO: Remove SetCardsZIndices from RSRPages and put it in RSRCards and change it to SetIndices
+        // TODO: Rework cards behaviours
+        // TODO: remove _manuallyHandleCardAnimations
+        
+        // TODO: Check Horizontal Grid
+        // TODO: Check what triggers Hide & Show Cell in grids
         // TODO: different start axes for grid layout
         // TODO: FixedColumnCount with Vertical Grids & FixedRowCount with Horizontal Grids (remaining _maxExtraVisibleItemInViewPort needs to be / _maxGridsItemsInAxis
+        // TODO: Fix all behaviours for gridLayout and make sure _reverseDirection is working properly
+        // TODO: Add support for start corners
+        // TODO: convert extra items visible to extra row/columns visible in grid, make extra items visible only in RSR
+        // TODO: remove GridLayoutPage, figure out what to do with GridLayoutPage.Single
+        // TODO: make _extraRowsColumns in the GridSource?
+        // TODO: remove all cell recalculating functions to RSR, since it doesnt apply to grids. the grid cell size always remains the same, if something happens the entire grid needs to be reloaded
+        // TODO make this class abstract
+        
         // TODO: Separate Scrolling animation
         // TODO: Redo Scrolling animation
-        // TODO: Remove SetCardsZIndices from RSRPages and put it in RSRCards and change it to SetIndices
+        
         // TODO: Maybe remove ScrolledToCell event call in pages?
         // TODO: check todos in RSRPages
         // TODO: check todos in this class
-        // TODO: Fix all behaviours for gridLayout and make sure _reverseDirection is working properly
-        // TODO: Rework cards behaviours
         // TODO: Add headers, footers, sections
-        // TODO: remove _manuallyHandleCardAnimations
         // TODO: Check TODOs in RSRBaseEditor
         // TODO: i don't like static cells?
         
@@ -48,10 +59,10 @@ namespace RecyclableSR
         protected int _itemsCount;
         protected int _currentPage;
         protected int _extraItemsVisible;
-        private int _minVisibleItemInViewPort;
-        private int _maxVisibleItemInViewPort;
-        private int _minExtraVisibleItemInViewPort;
-        private int _maxExtraVisibleItemInViewPort;
+        protected int _minVisibleItemInViewPort;
+        protected int _maxVisibleItemInViewPort;
+        protected int _minExtraVisibleItemInViewPort;
+        protected int _maxExtraVisibleItemInViewPort;
         private int _queuedScrollToCell;
         private bool _init;
         private bool _isAnimating;
@@ -69,10 +80,10 @@ namespace RecyclableSR
         private Dictionary<int, HashSet<string>> _reloadTags;
         
         protected Vector2 _dragStartingPosition;
+        protected Vector2 _contentTopLeftCorner;
+        protected Vector2 _contentBottomRightCorner;
         private Vector2 _viewPortSize;
         private Vector2 _lastContentPosition;
-        private Vector2 _contentTopLeftCorner;
-        private Vector2 _contentBottomRightCorner;
         private MovementType _movementType;
         private MovementType _initialMovementType;
 
@@ -116,7 +127,7 @@ namespace RecyclableSR
         /// <summary>
         /// Reload the data in case the content of the RecyclableScrollRect has changed
         /// </summary>
-        public virtual void ResetData()
+        public void ResetData()
         {
             _init = false;
             
@@ -184,7 +195,7 @@ namespace RecyclableSR
         }
 
         /// <summary>
-        /// Sets the content anchors and pivot based on the direction of the scroll and if its reversed or not
+        /// Sets the content anchors and pivot based on the direction of the scroll and if it's reversed or not
         /// </summary>
         private void SetContentAnchorsPivot()
         {
@@ -347,42 +358,14 @@ namespace RecyclableSR
 
         /// <summary>
         /// Initialize all cells needed until the view port is filled
-        /// extra visible items is an additional amount of cells that can be shown to prevent showing an empty view port if the scrolling is too fast and the update function didnt show all the items
+        /// extra visible items is an additional amount of cells that can be shown to prevent showing an empty view port if the scrolling is too fast and the update function didn't show all the items
         /// that need to be shown
         /// </summary>
         /// <param name="startIndex">the starting cell index on which we want initialized</param>
-        private void InitializeCells(int startIndex = 0)
+        protected virtual void InitializeCells(int startIndex = 0)
         {
-            GetContentBounds();
-            var contentHasSpace = startIndex == 0 || _itemPositions[startIndex - 1].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
-            var extraItemsInitialized = contentHasSpace ? 0 : _maxExtraVisibleItemInViewPort - _maxVisibleItemInViewPort;
-            var i = startIndex;
-            var gridHasSpace = CheckInitializeCellsExtraConditions(startIndex);
-            while ((contentHasSpace || extraItemsInitialized < _extraItemsVisible) && gridHasSpace && i < _itemsCount)
-            {
-                ShowHideCellsAtIndex(i, true, GridLayoutPage.After);
-                if (!contentHasSpace)
-                    extraItemsInitialized++;
-                else
-                    _maxVisibleItemInViewPort = i;
-
-                contentHasSpace = _itemPositions[i].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
-                gridHasSpace = CheckInitializeCellsExtraConditions(i);
-                i++;
-            }
-            _maxExtraVisibleItemInViewPort = i - 1;
         }
 
-        /// <summary>
-        /// Check for extra conditions if needed in child classes when initializing cells
-        /// </summary>
-        /// <param name="cellIndex">cell index</param>
-        /// <returns></returns>
-        protected virtual bool CheckInitializeCellsExtraConditions(int cellIndex)
-        {
-            return true;
-        }
-        
         /// <summary>
         /// Initialize the cells
         /// Its only called when there are no pooled items available and the RecyclableScrollRect needs to show a cell
@@ -587,7 +570,7 @@ namespace RecyclableSR
             if (contentMoved)
             {
                 content.anchoredPosition = contentPosition;
-                // this is important since the scroll rect will likely be dragging and it will cause a jump
+                // this is important since the scroll rect will likely be dragging, and it will cause a jump
                 // this only took me 6 hours to figure out :(
                 m_ContentStartPosition = contentPosition;
             }
@@ -611,7 +594,7 @@ namespace RecyclableSR
                 if (itemPosition.absBottomRightPosition[_axis] >= _contentTopLeftCorner[_axis] && !newMinVisibleItemInViewPortSet)
                 {
                     newMinVisibleItemInViewPort = item.Key;
-                    newMinVisibleItemInViewPortSet = true; // this boolean is needed as all items in the view port will satisfy the above condition and we only need the first one
+                    newMinVisibleItemInViewPortSet = true; // this boolean is needed as all items in the view port will satisfy the above condition, and we only need the first one
                 }
 
                 if (itemPosition.absTopLeftPosition[_axis] <= _contentBottomRightCorner[_axis])
@@ -625,8 +608,10 @@ namespace RecyclableSR
             if (newMaxExtraVisibleItemInViewPort < _maxExtraVisibleItemInViewPort)
             {
                 for (var i = newMaxExtraVisibleItemInViewPort + 1; i <= _maxExtraVisibleItemInViewPort; i++)
+                {
                     ShowHideCellsAtIndex(i, false, GridLayoutPage.After);
-                
+                }
+
                 _maxVisibleItemInViewPort = newMaxVisibleItemInViewPort;
                 _maxExtraVisibleItemInViewPort = newMaxExtraVisibleItemInViewPort;
             }
@@ -639,12 +624,16 @@ namespace RecyclableSR
             if (newMinExtraVisibleItemInViewPort > _minExtraVisibleItemInViewPort)
             {
                 for (var i = _minExtraVisibleItemInViewPort; i < newMinExtraVisibleItemInViewPort; i++)
+                {
                     ShowHideCellsAtIndex(i, false, GridLayoutPage.Before);
+                }
             }
             else
             {
                 for (var i = _minExtraVisibleItemInViewPort - 1; i >= newMinExtraVisibleItemInViewPort; i--)
+                {
                     ShowHideCellsAtIndex(i, true, GridLayoutPage.Before);
+                }
             }
 
             _minVisibleItemInViewPort = newMinVisibleItemInViewPort;
@@ -755,8 +744,7 @@ namespace RecyclableSR
             
             // figure out which items that need to be rendered, bottom right or top left
             // generally if the content position is smaller than the position of _minVisibleItemInViewPort, this means we need to show items in tops left
-            // if content position is bigger than the the position of _maxVisibleItemInViewPort, this means we need to show items in bottom right
-            // TODO: if writing code for reversed grids _maxExtraVisibleItemInViewPort needs to be _maxGridItemsInAxis - 1
+            // if content position is bigger than the position of _maxVisibleItemInViewPort, this means we need to show items in bottom right
             var reachedLimits = false;
             var atStart = _contentTopLeftCorner[_axis] <= 0;
             var atEnd = _contentBottomRightCorner[_axis] >= content.rect.size[_axis] && _maxExtraVisibleItemInViewPort == _itemsCount - 1;
@@ -820,62 +808,46 @@ namespace RecyclableSR
             
             if (showBottomRight)
             {
-                // item at top or left is not in viewport
-                if (_minVisibleItemInViewPort < _itemsCount - 1 && _contentTopLeftCorner[_axis] >= _itemPositions[_minVisibleItemInViewPort].absBottomRightPosition[_axis])
-                {
-                    var itemToHide = _minVisibleItemInViewPort - _extraItemsVisible;
-                    _minVisibleItemInViewPort++;
-                    if (itemToHide > -1)
-                    {
-                        _minExtraVisibleItemInViewPort++;
-                        ShowHideCellsAtIndex(itemToHide, false, GridLayoutPage.Before);
-                    }
-                }
-
-                // item at bottom or right needs to appear
-                if (_maxVisibleItemInViewPort < _itemsCount - 1 && _contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleItemInViewPort].absBottomRightPosition[_axis] + _spacing[_axis])
-                {
-                    var newMaxItemToCheck = _maxVisibleItemInViewPort + 1;
-                    var itemToShow = newMaxItemToCheck + _extraItemsVisible;
-                    _maxVisibleItemInViewPort = newMaxItemToCheck;
-                    if (itemToShow < _itemsCount)
-                    {
-                        _maxExtraVisibleItemInViewPort = itemToShow;
-                        ShowHideCellsAtIndex(itemToShow, true, GridLayoutPage.After);
-                    }
-                }
+                HideItemsAtTopLeft();
+                ShowItemsAtBottomRight();
             }
             else
             {
-                // item at bottom or right not in viewport
-                if (_maxVisibleItemInViewPort > 0 && _contentBottomRightCorner[_axis] <= _itemPositions[_maxVisibleItemInViewPort].absTopLeftPosition[_axis])
-                {
-                    var itemToHide = _maxVisibleItemInViewPort + _extraItemsVisible;
-                    _maxVisibleItemInViewPort--;
-                    if (itemToHide < _itemsCount)
-                    {
-                        _maxExtraVisibleItemInViewPort--;
-                        ShowHideCellsAtIndex(itemToHide, false, GridLayoutPage.After);
-                    }
-                }
-
-                // item at top or left needs to appear
-                if (_minVisibleItemInViewPort > 0 && _contentTopLeftCorner[_axis] < _itemPositions[_minVisibleItemInViewPort].absTopLeftPosition[_axis] - _spacing[_axis])
-                {
-                    var newMinItemToCheck = _minVisibleItemInViewPort - 1;
-                    var itemToShow = newMinItemToCheck - _extraItemsVisible;
-                    _minVisibleItemInViewPort = newMinItemToCheck;
-                    if (itemToShow > -1)
-                    {
-                        _minExtraVisibleItemInViewPort = itemToShow;
-                        ShowHideCellsAtIndex(itemToShow, true, GridLayoutPage.Before);
-                    }
-                }
+                HideItemsAtBottomRight();
+                ShowItemsAtTopLeft();
             }
         }
         
         /// <summary>
-        /// Used to determine which cells will be shown or hidden in case its a grid layout since we need to show more than one cell depending on the grid configuration
+        /// hide items at top left 
+        /// </summary>
+        protected virtual void HideItemsAtTopLeft()
+        {
+        }
+        
+        /// <summary>
+        ///  show items at bottom right
+        /// </summary>
+        protected virtual void ShowItemsAtBottomRight()
+        {
+        }
+
+        /// <summary>
+        /// hide items at bottom right
+        /// </summary>
+        protected virtual void HideItemsAtBottomRight()
+        {
+        }
+        
+        /// <summary>
+        /// show items at top left
+        /// </summary>
+        protected virtual void ShowItemsAtTopLeft()
+        {
+        }
+
+        /// <summary>
+        /// Used to determine which cells will be shown or hidden in case it is a grid layout since we need to show more than one cell depending on the grid configuration
         /// if it's not a grid layout, just call the Show, Hide functions
         /// </summary>
         /// <param name="newIndex">current index of item we need to show</param>
@@ -980,7 +952,7 @@ namespace RecyclableSR
         /// <summary>
         /// Updates content bounds for different uses
         /// </summary>
-        private void GetContentBounds()
+        protected void GetContentBounds()
         {
             _viewPortSize = viewport.rect.size;
             _contentTopLeftCorner = content.anchoredPosition * ((vertical ? 1f : -1f) * (_reverseDirection ? -1f : 1f));

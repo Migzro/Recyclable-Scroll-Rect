@@ -11,6 +11,7 @@ namespace RecyclableSR
         private SerializedProperty _gridStartAxis;
         private SerializedProperty _gridConstraint;
         private SerializedProperty _gridConstraintCount;
+        private SerializedProperty _extraVisibleRowsColumns;
         
         protected override void OnEnable()
         {
@@ -19,6 +20,7 @@ namespace RecyclableSR
             _gridStartAxis = serializedObject.FindProperty(nameof(_gridStartAxis));
             _gridConstraint = serializedObject.FindProperty(nameof(_gridConstraint));
             _gridConstraintCount = serializedObject.FindProperty(nameof(_gridConstraintCount));
+            _extraVisibleRowsColumns = serializedObject.FindProperty(nameof(_extraVisibleRowsColumns));
         }
         
         public override void OnInspectorGUI()
@@ -28,10 +30,13 @@ namespace RecyclableSR
             EditorGUILayout.PropertyField(_gridCellSize);
             EditorGUILayout.PropertyField(_gridStartAxis);
             EditorGUILayout.PropertyField(_gridConstraint);
-            
-            if (_gridConstraint.intValue != (int)GridLayoutGroup.Constraint.Flexible) 
+
+            if (_gridConstraint.intValue != (int)GridLayoutGroup.Constraint.Flexible)
+            {
                 EditorGUILayout.PropertyField(_gridConstraintCount);
-            EditorGUILayout.Space();
+            }
+
+            EditorGUILayout.PropertyField(_extraVisibleRowsColumns);
 
             serializedObject.ApplyModifiedProperties();
         }
