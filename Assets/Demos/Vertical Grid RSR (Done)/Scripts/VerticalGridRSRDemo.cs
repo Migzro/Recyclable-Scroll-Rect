@@ -26,6 +26,13 @@ public class VerticalGridRSRDemo : MonoBehaviour, IDataSource
         _scrollRect.Initialize(this);
     }
 
+    [ContextMenu(nameof(ReloadData))]
+    public void ReloadData()
+    {
+        _itemsCount = 15;
+        _scrollRect.ReloadData();
+    }
+
     public float GetCellSize(int cellIndex)
     {
         return 500f;
@@ -42,7 +49,9 @@ public class VerticalGridRSRDemo : MonoBehaviour, IDataSource
 
     public GameObject GetPrototypeCell(int cellIndex)
     {
-        return _prototypeCells[0];
+        if (cellIndex % 2 == 0)
+            return _prototypeCells[0];
+        return _prototypeCells[1];
     }
 
     public void CellCreated(int cellIndex, ICell cell, GameObject cellGo)
