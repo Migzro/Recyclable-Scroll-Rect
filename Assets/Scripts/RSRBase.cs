@@ -25,6 +25,7 @@ namespace RecyclableSR
         // TODO: remove all cell recalculating functions to RSR, since it doesnt apply to grids. the grid cell size always remains the same, if something happens the entire grid needs to be reloaded
         // TODO: Do LateUpdate Function
         // TODO: check CalculateNewMinMaxItemsAfterReloadCell() && RefreshAfterReload()
+        // TODO: check reload with fewer items in grid
         
         // TODO: Separate Scrolling animation
         // TODO: Redo Scrolling animation
@@ -166,7 +167,7 @@ namespace RecyclableSR
             _ignoreSetCellDataIndices = new HashSet<int>();
             _extraItemsVisible = _dataSource.ExtraItemsVisible;
             _lastContentPosition = _contentTopLeftCorner;
-            SetMovementType( _initialMovementType );
+            SetMovementType(_initialMovementType);
 
             _visibleItems = new SortedDictionary<int, Item>();
             
@@ -183,12 +184,12 @@ namespace RecyclableSR
 
             ResetVariables();
             SetContentAnchorsPivot();
-            SetStaticCells();
-            HideStaticCells();
-            SetPrototypeNames();
             InitializeItemPositions();
             CalculateContentSize();
             CalculatePadding();
+            SetStaticCells();
+            HideStaticCells();
+            SetPrototypeNames();
             InitializeCells();
             RefreshAfterReload();
 
@@ -235,7 +236,7 @@ namespace RecyclableSR
         /// <summary>
         /// A common function to reset variables when calling ResetData or ReloadData
         /// </summary>
-        private void ResetVariables()
+        protected virtual void ResetVariables()
         {
             _isAnimating = false;
             _queuedScrollToCell = -1;
@@ -261,6 +262,15 @@ namespace RecyclableSR
         }
 
         /// <summary>
+        /// get the index of the item
+        /// </summary>
+        /// <returns></returns>
+        protected virtual int GetActualItemIndex(int cellIndex)
+        {
+            return cellIndex;
+        }
+
+        /// <summary>
         /// Calculate the content size in their respective direction based on the scrolling direction
         /// If the cell size is know we simply add all the cell sizes, spacing and padding
         /// If not we set the cell size as -1 as it will be calculated once the cell comes into view
@@ -283,10 +293,11 @@ namespace RecyclableSR
         {
             for (var i = 0; i < _itemsCount; i++)
             {
+                var actualItemIndex = GetActualItemIndex(i);
                 if (i < _staticCells.Count)
-                    _staticCells[i] = _dataSource.IsCellStatic(i);
+                    _staticCells[i] = _dataSource.IsCellStatic(actualItemIndex);
                 else
-                    _staticCells.Add(_dataSource.IsCellStatic(i));
+                    _staticCells.Add(_dataSource.IsCellStatic(actualItemIndex));
             }
         }
         
@@ -302,9 +313,14 @@ namespace RecyclableSR
                 {
                     RectTransform cellRect;
                     if (_visibleItems.TryGetValue(i, out var item))
+                    {
                         cellRect = item.transform;
+                    }
                     else
-                        cellRect = (RectTransform)_dataSource.GetPrototypeCell(i).transform;
+                    {
+                        var actualItemIndex = GetActualItemIndex(i);
+                        cellRect = (RectTransform)_dataSource.GetPrototypeCell(actualItemIndex).transform;
+                    }
                     SetVisibilityInHierarchy(cellRect, false);
 
                     if (_dataSource.IsSetVisibleUsingCanvasGroupAlpha)
@@ -331,16 +347,17 @@ namespace RecyclableSR
             // set an array of prototype names to be used when getting the correct prefab for the cell index it exists in its respective pool
             for (var i = 0; i < _itemsCount; i++)
             {
+                var actualItemIndex = GetActualItemIndex(i);
                 if (i < _prototypeNames.Count)
                 {
-                    var newPrototype = _dataSource.GetPrototypeCell(i).name;
+                    var newPrototype = _dataSource.GetPrototypeCell(actualItemIndex).name;
                     var oldPrototype = _prototypeNames[i];
                     if (newPrototype != oldPrototype)
                         changeCellPrototypeCellList.Add(i);
                 }
                 else
                 {
-                    _prototypeNames.Add(_dataSource.GetPrototypeCell(i).name);
+                    _prototypeNames.Add(_dataSource.GetPrototypeCell(actualItemIndex).name);
                 }
             }
             
@@ -374,7 +391,8 @@ namespace RecyclableSR
         /// <param name="index"></param>
         private void InitializeCell(int index)
         {
-            var itemPrototypeCell = _dataSource.GetPrototypeCell(index);
+            var actualItemIndex = GetActualItemIndex(index);
+            var itemPrototypeCell = _dataSource.GetPrototypeCell(actualItemIndex);
 
             GameObject itemGo;
             ICell cell;
@@ -406,11 +424,11 @@ namespace RecyclableSR
             var rect = itemGo.transform as RectTransform;
             var item = new Item(cell, rect);
             _visibleItems.Add(index, item);
-            _dataSource.CellCreated(index, cell, itemGo);
+            _dataSource.CellCreated(actualItemIndex, cell, itemGo);
             
             CalculateNonAxisSizePosition(rect, index);
             SetCellAxisPosition(rect, index);
-            _dataSource.SetCellData(cell, index);
+            _dataSource.SetCellData(cell, actualItemIndex);
             CalculateCellAxisSize(rect, index);
         }
         
@@ -507,7 +525,10 @@ namespace RecyclableSR
             
             var cell = _visibleItems[cellIndex];
             if (reloadCellData)
-                _dataSource.SetCellData(cell.cell, cellIndex);
+            {
+                var actualItemIndex = GetActualItemIndex(cellIndex);
+                _dataSource.SetCellData(cell.cell, actualItemIndex);
+            }
 
             var oldSize = _itemPositions[cellIndex].cellSize[_axis];
             CalculateNonAxisSizePosition(cell.transform, cellIndex);
@@ -879,7 +900,10 @@ namespace RecyclableSR
                     item.cell.CanvasGroup.blocksRaycasts = true;
                 }
                 else
+                {
                     item.transform.gameObject.SetActive(true);
+                }
+
                 SetVisibilityInHierarchy(item.transform, true);
 
                 _visibleItems.Add(newIndex, item);
@@ -887,7 +911,11 @@ namespace RecyclableSR
                 
                 SetCellAxisPosition(item.transform, newIndex);
                 if (_ignoreSetCellDataIndices.Count <= 0 || _ignoreSetCellDataIndices.Count > 0 && !_ignoreSetCellDataIndices.Contains(newIndex))
-                    _dataSource.SetCellData(item.cell, newIndex);
+                {
+                    var actualItemIndex = GetActualItemIndex(newIndex);
+                    _dataSource.SetCellData(item.cell, actualItemIndex);
+                }
+
                 CalculateCellAxisSize(item.transform, newIndex);
                 
                 if (_itemsMarkedForReload.Contains(newIndex))
@@ -907,11 +935,12 @@ namespace RecyclableSR
 
             if (_queuedScrollToCell != -1 && _queuedScrollToCell == newIndex)
             {
-                _dataSource.ScrolledToCell(_visibleItems[newIndex].cell, newIndex);
+                var actualItemIndex = GetActualItemIndex(newIndex);
+                _dataSource.ScrolledToCell(_visibleItems[newIndex].cell, actualItemIndex);
                 _queuedScrollToCell = -1;
             }
 
-            SetIndices();
+            SetSiblingIndices();
             
             if (newIndex == _itemsCount - 1)
                 _dataSource.LastItemInScrollIsVisible();
@@ -920,7 +949,7 @@ namespace RecyclableSR
         /// <summary>
         /// Sets the indices of the items inside the content of the ScrollRect
         /// </summary>
-        protected virtual void SetIndices()
+        protected virtual void SetSiblingIndices()
         {
             foreach (var visibleItem in _visibleItems)
             {
@@ -943,8 +972,9 @@ namespace RecyclableSR
             else
                 _visibleItems[cellIndex].transform.gameObject.SetActive(false);
             
+            var actualItemIndex = GetActualItemIndex(cellIndex);
             SetVisibilityInHierarchy(_visibleItems[cellIndex].transform, false);
-            _dataSource.CellHidden(_visibleItems[cellIndex].cell, cellIndex);
+            _dataSource.CellHidden(_visibleItems[cellIndex].cell, actualItemIndex);
             _pooledItems[_prototypeNames[cellIndex]].Add(_visibleItems[cellIndex]);
             _visibleItems.Remove(cellIndex);
         }
@@ -1029,8 +1059,9 @@ namespace RecyclableSR
             
             for (var i = 0; i < cellIndices.Count; i++)
             {
-                _prototypeNames[cellIndices[i]] = _dataSource.GetPrototypeCell(cellIndices[i]).name;
-                _staticCells[cellIndices[i]] = _dataSource.IsCellStatic(cellIndices[i]);
+                var actualItemIndex = GetActualItemIndex(cellIndices[i]);
+                _prototypeNames[cellIndices[i]] = _dataSource.GetPrototypeCell(actualItemIndex).name;
+                _staticCells[cellIndices[i]] = _dataSource.IsCellStatic(actualItemIndex);
                 
                 if (wasVisible.Contains(cellIndices[i]))
                     ShowHideCellsAtIndex(cellIndices[i], true);
@@ -1104,8 +1135,11 @@ namespace RecyclableSR
                 content.anchoredPosition = currentContentPosition;
                 m_ContentStartPosition = currentContentPosition;
                 if (callEvent)
-                    _dataSource.ScrolledToCell(_visibleItems[cellIndex].cell, cellIndex);
-                
+                {
+                    var actualItemIndex = GetActualItemIndex(cellIndex);
+                    _dataSource.ScrolledToCell(_visibleItems[cellIndex].cell, actualItemIndex);
+                }
+
                 PreformPostScrollingActions(cellIndex, true);
                 _isAnimating = false;
             }
@@ -1123,11 +1157,18 @@ namespace RecyclableSR
                     for (i = 0; i < _itemsCount; i++)
                     {
                         if (!_dataSource.IsCellSizeKnown && _itemPositions[i].sizeSet)
+                        {
                             cellSizeAverage += _itemPositions[i].cellSize[_axis];
+                        }
                         else if (_dataSource.IsCellSizeKnown)
-                            cellSizeAverage += _dataSource.GetCellSize(i);
+                        {
+                            var actualItemIndex = GetActualItemIndex(i);
+                            cellSizeAverage += _dataSource.GetCellSize(actualItemIndex);
+                        }
                         else
+                        {
                             break;
+                        }
                     }
 
                     cellSizeAverage /= i;
@@ -1218,15 +1259,22 @@ namespace RecyclableSR
 
             yield return new WaitForEndOfFrame();
             if (!reachedCell)
+            {
                 StartCoroutine(StartScrolling(increment, direction, cellIndex, callEvent, offset));
+            }
             else
             {
                 if (callEvent)
                 {
-                    if (_visibleItems.TryGetValue( cellIndex, out var item ))
-                        _dataSource.ScrolledToCell(item.cell, cellIndex);
+                    if (_visibleItems.TryGetValue(cellIndex, out var item))
+                    {
+                        var actualItemIndex = GetActualItemIndex(cellIndex);
+                        _dataSource.ScrolledToCell(item.cell, actualItemIndex);
+                    }
                     else
+                    {
                         _queuedScrollToCell = cellIndex;
+                    }
                 }
 
                 PreformPostScrollingActions(cellIndex, false);

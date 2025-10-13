@@ -55,7 +55,7 @@ namespace RecyclableSR
                     var cellSize = _itemPositions[i].cellSize;
                     cellSize[_axis] = _dataSource.GetCellSize(i);
                     _itemPositions[i].SetSize(cellSize);
-                    contentSizeDelta[_axis] += _dataSource.GetCellSize(i);
+                    contentSizeDelta[_axis] += cellSize[_axis];
                 }
             }
 
