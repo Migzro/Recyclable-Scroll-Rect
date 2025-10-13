@@ -26,9 +26,10 @@ namespace RecyclableSR
         /// Focuses first item if a new item was added
         /// Scrolls to new page if currentPage page was deleted
         /// </summary>
-        protected override void RefreshAfterReload()
+        /// <param name="reloadAllItems"></param>
+        protected override void RefreshAfterReload(bool reloadAllItems)
         {
-            base.RefreshAfterReload();
+            base.RefreshAfterReload(reloadAllItems);
             
             if (_currentPage >= _itemsCount)
             {

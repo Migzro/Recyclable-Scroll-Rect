@@ -98,7 +98,7 @@ namespace RecyclableSR
                 }
             }
             
-            for (var i = 0; i < _itemsCount; i++)
+            for (var i = 0; i < _originalItemsCount; i++)
             {
                 int xIndexInGrid;
                 int yIndexInGrid;
@@ -300,7 +300,66 @@ namespace RecyclableSR
                 currentStartItemInRowColumn = current2DIndex[_axis] * _gridConstraintCount;
             }
         }
-        
+
+        /// <summary>
+        /// we need to check all the visible cells, and hide the ones that currently have an actual index (not -1)
+        /// we need to check all the items that might need showing that are currently not showing and show them
+        /// </summary>
+        /// <param name="reloadAllItems"></param>
+        protected override void RefreshAfterReload(bool reloadAllItems)
+        {
+            base.RefreshAfterReload(reloadAllItems);
+
+            if (!reloadAllItems)
+            {
+                return;
+            }
+
+            // we start from the _minExtraVisibleItemInViewPort row till the _maxExtraVisibleItemInViewPort
+            var indicesToShow = new List<int>();
+            var indicesToHide = new List<int>();
+            for (var i = _minExtraVisibleItemInViewPort; i <= _maxExtraVisibleItemInViewPort; i++)
+            {
+                for (var j = 0; j < _gridConstraintCount; j++)
+                {
+                    int flatIndex;
+                    int indexValue;
+
+                    if (vertical)
+                    {
+                        flatIndex = j + (i * _gridConstraintCount);
+                        indexValue = _gridIndices[j, i];
+                    }
+                    else
+                    {
+                        flatIndex = (j * _gridConstraintCount) + i;
+                        indexValue = _gridIndices[i, j];
+                    }
+
+                    var isVisible = _visibleItems.ContainsKey(flatIndex);
+                    var shouldBeVisible = indexValue != -1;
+                    if (isVisible && !shouldBeVisible)
+                    {
+                        indicesToHide.Add(flatIndex);
+                    }
+                    else if (!isVisible && shouldBeVisible)
+                    {
+                        indicesToShow.Add(flatIndex);
+                    }
+                }
+            }
+            
+            foreach (var index in indicesToHide)
+            {
+                HideCellAtIndex(index);
+            }
+
+            foreach (var index in indicesToShow)
+            {
+                ShowCellAtIndex(index);
+            }
+        }
+
         /// <summary>
         /// Used to determine which cells will be shown or hidden in case it's a grid layout since we need to show more than one cell depending on the grid configuration
         /// </summary>
@@ -310,42 +369,44 @@ namespace RecyclableSR
         {
             base.ShowHideCellsAtIndex(newIndex, show);
             
-            var indices = new List<int>();
+            var indices = new List<int>(_gridConstraintCount);
             var item2dIndex = Get2dIndex(newIndex);
-            if (vertical)
+
+            for (var i = 0; i < _gridConstraintCount; i++)
             {
-                // show or hide all items in a single row
-                for (var i = item2dIndex.x; i < _gridConstraintCount; i++)
+                int indexValue;
+                int flatIndex;
+
+                if (vertical)
                 {
-                    var indexValue = _gridIndices[i, item2dIndex.y];
-                    if (indexValue != -1 && indexValue < _originalItemsCount)
-                    {
-                        indices.Add(newIndex + i);
-                    }
+                    // same column (x), move along Y (rows)
+                    indexValue = _gridIndices[i, item2dIndex.y];
+                    flatIndex = item2dIndex.y * _gridConstraintCount + i;
                 }
-            }
-            else
-            {
-                // show or hide all items in a single column
-                for (var i = item2dIndex.y; i < _gridConstraintCount; i++)
+                else
                 {
-                    var indexValue = _gridIndices[item2dIndex.x, i];
-                    if (indexValue != -1)
-                    {
-                        indices.Add(newIndex + (i * _gridConstraintCount));
-                    }
+                    // same row (y), move along X (columns)
+                    indexValue = _gridIndices[item2dIndex.x, i];
+                    flatIndex = item2dIndex.x * _gridConstraintCount + i;
+                }
+
+                if (indexValue != -1)
+                {
+                    indices.Add(flatIndex);
                 }
             }
 
-            for (var i = 0; i < indices.Count; i++)
+            foreach (var index in indices)
             {
-                if (show && !_visibleItems.ContainsKey(indices[i]))
+                var isVisible = _visibleItems.ContainsKey(index);
+
+                if (show && !isVisible)
                 {
-                    ShowCellAtIndex(indices[i]);
+                    ShowCellAtIndex(index);
                 }
-                else if (!show && _visibleItems.ContainsKey(indices[i]))
+                else if (!show && isVisible)
                 {
-                    HideCellAtIndex(indices[i]);
+                    HideCellAtIndex(index);
                 }
             }
         }
@@ -422,28 +483,24 @@ namespace RecyclableSR
         {
             base.RemoveExtraItems(itemDiff);
 
-            var start2dIndex = Get2dIndex(_itemsCount);
-            for (var y = start2dIndex.y; y < _gridHeight; y++)
+            for (var i = _itemsCount; i < _itemsCount + itemDiff; i++)
             {
-                for (var x = (y == start2dIndex.y ? start2dIndex.x : 0); x < _gridWidth; x++)
+                if (_visibleItems.ContainsKey(i))
                 {
-                    var itemIndex = _gridIndices[x, y];
-                    if (itemIndex != -1 && _visibleItems.ContainsKey(itemIndex))
-                    {
-                        HideCellAtIndex(itemIndex);
-                    }
+                    HideCellAtIndex(i);
                 }
             }
-
+            
+            var start2dIndex = Get2dIndex(_itemsCount);
             if (vertical)
             {
-                _maxVisibleItemInViewPort = Mathf.Max(0, _gridIndices[0, start2dIndex.y]);
+                _maxVisibleItemInViewPort = start2dIndex.y;
             }
             else
             {
-                _maxVisibleItemInViewPort = Mathf.Max(0, _gridIndices[start2dIndex.x, 0]);
+                _maxVisibleItemInViewPort = start2dIndex.x;
             }
-            _maxExtraVisibleItemInViewPort = Mathf.Min(_itemsCount - 1, _maxVisibleItemInViewPort + (_extraVisibleRowsColumns * _gridConstraintCount));
+            _maxExtraVisibleItemInViewPort = _maxVisibleItemInViewPort + (_extraVisibleRowsColumns * _gridConstraintCount);
         }
 
         /// <summary>

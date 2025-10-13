@@ -12,7 +12,7 @@ public class VerticalGridRSRDemo : MonoBehaviour, IDataSource
     private List<string> _dataSource;
     private int _itemCount;
     
-    public int ItemsCount => _itemsCount;
+    public int ItemsCount => _dataSource.Count;
     public int ExtraItemsVisible => _extraItemsVisible;
     public bool IsCellSizeKnown => true;
     public bool IsSetVisibleUsingCanvasGroupAlpha => false;
@@ -29,8 +29,10 @@ public class VerticalGridRSRDemo : MonoBehaviour, IDataSource
     [ContextMenu(nameof(ReloadData))]
     public void ReloadData()
     {
-        _itemsCount = 15;
-        _scrollRect.ReloadData();
+        var newItemsCount = 15;
+        _dataSource.RemoveRange(newItemsCount, _itemsCount - newItemsCount);
+        _itemsCount = newItemsCount;
+        _scrollRect.ReloadData(true);
     }
 
     public float GetCellSize(int cellIndex)

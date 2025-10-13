@@ -19,13 +19,14 @@ namespace RecyclableSR
         // TODO: FixedColumnCount with Vertical Grids & FixedRowCount with Horizontal Grids (remaining _maxExtraVisibleItemInViewPort needs to be / _maxGridsItemsInAxis
         // TODO: Fix all behaviours for gridLayout and make sure _reverseDirection is working properly
         // TODO: Add support for start corners
+        // TODO: make this class abstract
+        
+        // TODO: encapsulate grid data and functions
         // TODO: convert extra items visible to extra row/columns visible in grid, make extra items visible only in RSR
         // TODO: make _extraRowsColumns in the GridSource?
-        // TODO: make this class abstract
         // TODO: remove all cell recalculating functions to RSR, since it doesnt apply to grids. the grid cell size always remains the same, if something happens the entire grid needs to be reloaded
         // TODO: Do LateUpdate Function
-        // TODO: check CalculateNewMinMaxItemsAfterReloadCell() && RefreshAfterReload()
-        // TODO: check reload with fewer items in grid
+        // TODO: convert min and max port items in grid to min and max row columns, move each set of variables to their own class
         
         // TODO: Separate Scrolling animation
         // TODO: Redo Scrolling animation
@@ -123,13 +124,13 @@ namespace RecyclableSR
             _axis = vertical ? 1 : 0;
             _initialMovementType = movementType;
             
-            ResetData();
+            InitializeData();
         }
         
         /// <summary>
         /// Reload the data in case the content of the RecyclableScrollRect has changed
         /// </summary>
-        public void ResetData()
+        private void InitializeData()
         {
             _init = false;
             
@@ -191,7 +192,7 @@ namespace RecyclableSR
             HideStaticCells();
             SetPrototypeNames();
             InitializeCells();
-            RefreshAfterReload();
+            RefreshAfterReload(false);
 
             _init = true;
         }
@@ -527,7 +528,8 @@ namespace RecyclableSR
             if (reloadCellData)
             {
                 var actualItemIndex = GetActualItemIndex(cellIndex);
-                _dataSource.SetCellData(cell.cell, actualItemIndex);
+                if (actualItemIndex != -1)
+                    _dataSource.SetCellData(cell.cell, actualItemIndex);
             }
 
             var oldSize = _itemPositions[cellIndex].cellSize[_axis];
@@ -603,63 +605,8 @@ namespace RecyclableSR
         /// <summary>
         /// Checks if cells need to be hidden, shown, instantiated after a cell is reloaded and its size changes
         /// </summary>
-        private void CalculateNewMinMaxItemsAfterReloadCell()
+        protected virtual void CalculateNewMinMaxItemsAfterReloadCell()
         {
-            // figure out the new _minVisibleItemInViewPort && _maxVisibleItemInViewPort
-            GetContentBounds();
-            var newMinVisibleItemInViewPortSet = false;
-            var newMinVisibleItemInViewPort = 0;
-            var newMaxVisibleItemInViewPort = 0;
-            foreach (var item in _visibleItems)
-            {
-                var itemPosition = _itemPositions[item.Key];
-                if (itemPosition.absBottomRightPosition[_axis] >= _contentTopLeftCorner[_axis] && !newMinVisibleItemInViewPortSet)
-                {
-                    newMinVisibleItemInViewPort = item.Key;
-                    newMinVisibleItemInViewPortSet = true; // this boolean is needed as all items in the view port will satisfy the above condition, and we only need the first one
-                }
-
-                if (itemPosition.absTopLeftPosition[_axis] <= _contentBottomRightCorner[_axis])
-                {
-                    newMaxVisibleItemInViewPort = item.Key;
-                }
-            }
-
-            var newMinExtraVisibleItemInViewPort = Mathf.Max (0, newMinVisibleItemInViewPort - _extraItemsVisible);
-            var newMaxExtraVisibleItemInViewPort = Mathf.Min (_itemsCount - 1, newMaxVisibleItemInViewPort + _extraItemsVisible);
-            if (newMaxExtraVisibleItemInViewPort < _maxExtraVisibleItemInViewPort)
-            {
-                for (var i = newMaxExtraVisibleItemInViewPort + 1; i <= _maxExtraVisibleItemInViewPort; i++)
-                {
-                    ShowHideCellsAtIndex(i, false);
-                }
-
-                _maxVisibleItemInViewPort = newMaxVisibleItemInViewPort;
-                _maxExtraVisibleItemInViewPort = newMaxExtraVisibleItemInViewPort;
-            }
-            else
-            {
-                // here we initialize cells instead of using ShowCellAtIndex because we don't know much viewport space is left
-                InitializeCells(_maxExtraVisibleItemInViewPort + 1);
-            }
-            
-            if (newMinExtraVisibleItemInViewPort > _minExtraVisibleItemInViewPort)
-            {
-                for (var i = _minExtraVisibleItemInViewPort; i < newMinExtraVisibleItemInViewPort; i++)
-                {
-                    ShowHideCellsAtIndex(i, false);
-                }
-            }
-            else
-            {
-                for (var i = _minExtraVisibleItemInViewPort - 1; i >= newMinExtraVisibleItemInViewPort; i--)
-                {
-                    ShowHideCellsAtIndex(i, true);
-                }
-            }
-
-            _minVisibleItemInViewPort = newMinVisibleItemInViewPort;
-            _minExtraVisibleItemInViewPort = newMinExtraVisibleItemInViewPort;
         }
 
         /// <summary>
@@ -1008,14 +955,14 @@ namespace RecyclableSR
                 _prototypeNames.RemoveRange(_itemsCount, itemDiff);
                 _staticCells.RemoveRange(_itemsCount, itemDiff);
             }
-            
+
             ResetVariables();
             SetContentAnchorsPivot();
-            SetPrototypeNames();
-            SetStaticCells();
             InitializeItemPositions();
             CalculateContentSize();
             CalculatePadding();
+            SetStaticCells();
+            SetPrototypeNames();
 
             if (reloadAllItems)
             {
@@ -1023,7 +970,7 @@ namespace RecyclableSR
                     PreReloadCell(item.Key, "", true, true);
             }
             CalculateNewMinMaxItemsAfterReloadCell();
-            RefreshAfterReload();
+            RefreshAfterReload(reloadAllItems);
         }
 
         /// <summary>
@@ -1035,7 +982,7 @@ namespace RecyclableSR
             
         }
 
-        protected virtual void RefreshAfterReload()
+        protected virtual void RefreshAfterReload(bool reloadAllItems)
         {
         }
 

@@ -610,7 +610,7 @@ MonoBehaviour:
     m_Bottom: 0
   _childAlignment: 0
   _gridCellSize: {x: 100, y: 100}
-  _gridStartAxis: 1
+  _gridStartAxis: 0
   _gridConstraint: 0
   _gridConstraintCount: 2
   _extraVisibleRowsColumns: 0

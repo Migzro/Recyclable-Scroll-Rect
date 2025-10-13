@@ -279,6 +279,70 @@ namespace RecyclableSR
             _maxVisibleItemInViewPort = Mathf.Max(0, _maxVisibleItemInViewPort - itemDiff);
             _maxExtraVisibleItemInViewPort = Mathf.Min(_itemsCount - 1, _maxVisibleItemInViewPort + _extraItemsVisible);
         }
+        
+        /// <summary>
+        /// Checks if cells need to be hidden, shown, instantiated after a cell is reloaded and its size changes
+        /// </summary>
+        protected override void CalculateNewMinMaxItemsAfterReloadCell()
+        {
+            base.CalculateNewMinMaxItemsAfterReloadCell();
+            
+            // figure out the new _minVisibleItemInViewPort && _maxVisibleItemInViewPort
+            GetContentBounds();
+            var newMinVisibleItemInViewPortSet = false;
+            var newMinVisibleItemInViewPort = 0;
+            var newMaxVisibleItemInViewPort = 0;
+            foreach (var item in _visibleItems)
+            {
+                var itemPosition = _itemPositions[item.Key];
+                if (itemPosition.absBottomRightPosition[_axis] >= _contentTopLeftCorner[_axis] && !newMinVisibleItemInViewPortSet)
+                {
+                    newMinVisibleItemInViewPort = item.Key;
+                    newMinVisibleItemInViewPortSet = true; // this boolean is needed as all items in the view port will satisfy the above condition, and we only need the first one
+                }
+
+                if (itemPosition.absTopLeftPosition[_axis] <= _contentBottomRightCorner[_axis])
+                {
+                    newMaxVisibleItemInViewPort = item.Key;
+                }
+            }
+
+            var newMinExtraVisibleItemInViewPort = Mathf.Max (0, newMinVisibleItemInViewPort - _extraItemsVisible);
+            var newMaxExtraVisibleItemInViewPort = Mathf.Min (_itemsCount - 1, newMaxVisibleItemInViewPort + _extraItemsVisible);
+            if (newMaxExtraVisibleItemInViewPort < _maxExtraVisibleItemInViewPort)
+            {
+                for (var i = newMaxExtraVisibleItemInViewPort + 1; i <= _maxExtraVisibleItemInViewPort; i++)
+                {
+                    ShowHideCellsAtIndex(i, false);
+                }
+
+                _maxVisibleItemInViewPort = newMaxVisibleItemInViewPort;
+                _maxExtraVisibleItemInViewPort = newMaxExtraVisibleItemInViewPort;
+            }
+            else
+            {
+                // here we initialize cells instead of using ShowCellAtIndex because we don't know much viewport space is left
+                InitializeCells(_maxExtraVisibleItemInViewPort + 1);
+            }
+            
+            if (newMinExtraVisibleItemInViewPort > _minExtraVisibleItemInViewPort)
+            {
+                for (var i = _minExtraVisibleItemInViewPort; i < newMinExtraVisibleItemInViewPort; i++)
+                {
+                    ShowHideCellsAtIndex(i, false);
+                }
+            }
+            else
+            {
+                for (var i = _minExtraVisibleItemInViewPort - 1; i >= newMinExtraVisibleItemInViewPort; i--)
+                {
+                    ShowHideCellsAtIndex(i, true);
+                }
+            }
+
+            _minVisibleItemInViewPort = newMinVisibleItemInViewPort;
+            _minExtraVisibleItemInViewPort = newMinExtraVisibleItemInViewPort;
+        }
 
         /// <summary>
         /// Call the Show, Hide functions
