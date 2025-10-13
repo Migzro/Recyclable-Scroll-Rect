@@ -301,6 +301,55 @@ namespace RecyclableSR
             }
         }
         
+        /// <summary>
+        /// Used to determine which cells will be shown or hidden in case it's a grid layout since we need to show more than one cell depending on the grid configuration
+        /// </summary>
+        /// <param name="newIndex">current index of item we need to show</param>
+        /// <param name="show">show or hide current cell</param>
+        internal override void ShowHideCellsAtIndex(int newIndex, bool show)
+        {
+            base.ShowHideCellsAtIndex(newIndex, show);
+            
+            var indices = new List<int>();
+            var item2dIndex = Get2dIndex(newIndex);
+            if (vertical)
+            {
+                // show or hide all items in a single row
+                for (var i = item2dIndex.x; i < _gridConstraintCount; i++)
+                {
+                    var indexValue = _gridIndices[i, item2dIndex.y];
+                    if (indexValue != -1 && indexValue < _originalItemsCount)
+                    {
+                        indices.Add(newIndex + i);
+                    }
+                }
+            }
+            else
+            {
+                // show or hide all items in a single column
+                for (var i = item2dIndex.y; i < _gridConstraintCount; i++)
+                {
+                    var indexValue = _gridIndices[item2dIndex.x, i];
+                    if (indexValue != -1)
+                    {
+                        indices.Add(newIndex + (i * _gridConstraintCount));
+                    }
+                }
+            }
+
+            for (var i = 0; i < indices.Count; i++)
+            {
+                if (show && !_visibleItems.ContainsKey(indices[i]))
+                {
+                    ShowCellAtIndex(indices[i]);
+                }
+                else if (!show && _visibleItems.ContainsKey(indices[i]))
+                {
+                    HideCellAtIndex(indices[i]);
+                }
+            }
+        }
+        
         protected override void HideItemsAtTopLeft()
         {
             base.HideItemsAtTopLeft();
@@ -361,55 +410,6 @@ namespace RecyclableSR
                 {
                     _minExtraVisibleItemInViewPort = itemToShow;
                     ShowHideCellsAtIndex(itemToShow, true);
-                }
-            }
-        }
-        
-        /// <summary>
-        /// Used to determine which cells will be shown or hidden in case it's a grid layout since we need to show more than one cell depending on the grid configuration
-        /// </summary>
-        /// <param name="newIndex">current index of item we need to show</param>
-        /// <param name="show">show or hide current cell</param>
-        internal override void ShowHideCellsAtIndex(int newIndex, bool show)
-        {
-            base.ShowHideCellsAtIndex(newIndex, show);
-            
-            var indices = new List<int>();
-            var item2dIndex = Get2dIndex(newIndex);
-            if (vertical)
-            {
-                // show or hide all items in a single row
-                for (var i = item2dIndex.x; i < _gridConstraintCount; i++)
-                {
-                    var indexValue = _gridIndices[i, item2dIndex.y];
-                    if (indexValue != -1 && indexValue < _originalItemsCount)
-                    {
-                        indices.Add(newIndex + i);
-                    }
-                }
-            }
-            else
-            {
-                // show or hide all items in a single column
-                for (var i = item2dIndex.y; i < _gridConstraintCount; i++)
-                {
-                    var indexValue = _gridIndices[item2dIndex.x, i];
-                    if (indexValue != -1)
-                    {
-                        indices.Add(newIndex + (i * _gridConstraintCount));
-                    }
-                }
-            }
-
-            for (var i = 0; i < indices.Count; i++)
-            {
-                if (show && !_visibleItems.ContainsKey(indices[i]))
-                {
-                    ShowCellAtIndex(indices[i]);
-                }
-                else if (!show && _visibleItems.ContainsKey(indices[i]))
-                {
-                    HideCellAtIndex(indices[i]);
                 }
             }
         }
