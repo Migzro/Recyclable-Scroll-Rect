@@ -492,14 +492,7 @@ namespace RecyclableSR
             }
             
             var start2dIndex = Get2dIndex(_itemsCount);
-            if (vertical)
-            {
-                _maxVisibleItemInViewPort = start2dIndex.y;
-            }
-            else
-            {
-                _maxVisibleItemInViewPort = start2dIndex.x;
-            }
+            _maxVisibleItemInViewPort = vertical ? start2dIndex.y : start2dIndex.x;
             _maxExtraVisibleItemInViewPort = _maxVisibleItemInViewPort + (_extraVisibleRowsColumns * _gridConstraintCount);
         }
 
