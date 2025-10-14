@@ -22,9 +22,6 @@ namespace RecyclableSR
         // TODO: make this class abstract
         
         // TODO: encapsulate grid data and functions
-        // TODO: Do LateUpdate Function
-        // TODO: convert min and max port items in grid to min and max row columns, move each set of variables to their own class
-        
         // TODO: Separate Scrolling animation
         // TODO: Redo Scrolling animation
         
@@ -87,6 +84,8 @@ namespace RecyclableSR
         private MovementType _initialMovementType;
 
         public bool IsInitialized => _init;
+        protected virtual bool ReachedMinItemInViewPort => false;
+        protected virtual bool ReachedMaxItemInViewPort => false;
 
         public void Initialize(IDataSource dataSource)
         {
@@ -624,7 +623,7 @@ namespace RecyclableSR
             // if content position is bigger than the position of _maxVisibleItemInViewPort, this means we need to show items in bottom right
             var reachedLimits = false;
             var atStart = _contentTopLeftCorner[_axis] <= 0;
-            var atEnd = _contentBottomRightCorner[_axis] >= content.rect.size[_axis] && _maxExtraVisibleItemInViewPort == _itemsCount - 1;
+            var atEnd = _contentBottomRightCorner[_axis] >= content.rect.size[_axis] && ReachedMaxItemInViewPort;
             if (atStart || atEnd)
             {
                 movementType = _movementType;
@@ -665,15 +664,15 @@ namespace RecyclableSR
                 bottomLeftPadding = vertical ? _padding.bottom : _padding.right;
             }
             
-            var topLeftMinClearance = 0.1f + topLeftPadding * (_minVisibleItemInViewPort == 0 ? 1 : 0) + _spacing[_axis] * (_minVisibleItemInViewPort == 0 ? 0 : 1);
-            var bottomRightMinClearance = 0.1f + bottomLeftPadding * (_maxVisibleItemInViewPort == _itemsCount - 1 ? 1 : 0) + _spacing[_axis] * (_maxVisibleItemInViewPort == _itemsCount - 1 ? 0 : 1);
+            var topLeftMinClearance = 0.1f + topLeftPadding * (ReachedMinItemInViewPort ? 1 : 0) + _spacing[_axis] * (ReachedMinItemInViewPort ? 0 : 1);
+            var bottomRightMinClearance = 0.1f + bottomLeftPadding * (ReachedMaxItemInViewPort ? 1 : 0) + _spacing[_axis] * (ReachedMaxItemInViewPort ? 0 : 1);
             
-            if (_itemPositions[_minVisibleItemInViewPort].absTopLeftPosition[_axis] - _contentTopLeftCorner[_axis] > topLeftMinClearance && _minVisibleItemInViewPort != 0)
+            if (_itemPositions[_minVisibleItemInViewPort].absTopLeftPosition[_axis] - _contentTopLeftCorner[_axis] > topLeftMinClearance && !ReachedMinItemInViewPort)
             {
                 showBottomRight = false;
                 _needsClearance = true;
             }
-            else if (_itemPositions[_maxVisibleItemInViewPort].absBottomRightPosition[_axis] - _contentBottomRightCorner[_axis] < -bottomRightMinClearance && _maxVisibleItemInViewPort != _itemsCount - 1)
+            else if (_itemPositions[_maxVisibleItemInViewPort].absBottomRightPosition[_axis] - _contentBottomRightCorner[_axis] < -bottomRightMinClearance && !ReachedMaxItemInViewPort)
             {
                 showBottomRight = true;
                 _needsClearance = true;

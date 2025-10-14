@@ -7,6 +7,9 @@ namespace RecyclableSR
         private IRSRSource _rsrSource;
         protected int _extraItemsVisible;
         
+        protected override bool ReachedMinItemInViewPort => _minVisibleItemInViewPort == 0;
+        protected override bool ReachedMaxItemInViewPort => _maxVisibleItemInViewPort == _itemsCount - 1;
+        
         protected override void Initialize()
         {
             _rsrSource = (IRSRSource)_dataSource;

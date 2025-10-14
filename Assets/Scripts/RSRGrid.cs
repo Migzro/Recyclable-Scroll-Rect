@@ -20,6 +20,9 @@ namespace RecyclableSR
         private int[,] _gridIndices;
         private Vector2 _gridLayoutPadding;
         
+        protected override bool ReachedMinItemInViewPort => _minVisibleItemInViewPort == 0;
+        protected override bool ReachedMaxItemInViewPort => _maxVisibleItemInViewPort == (_maxGridItemsInAxis - 1) * _gridConstraintCount;
+
         protected override void Initialize()
         {
             _gridSource = (IGridSource)_dataSource;
