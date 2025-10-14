@@ -24,7 +24,6 @@ namespace RecyclableSR
         // TODO: encapsulate grid data and functions
         // TODO: convert extra items visible to extra row/columns visible in grid, make extra items visible only in RSR
         // TODO: make _extraRowsColumns in the GridSource?
-        // TODO: remove all cell recalculating functions to RSR, since it doesnt apply to grids. the grid cell size always remains the same, if something happens the entire grid needs to be reloaded
         // TODO: Do LateUpdate Function
         // TODO: convert min and max port items in grid to min and max row columns, move each set of variables to their own class
         
@@ -67,8 +66,8 @@ namespace RecyclableSR
         protected int _minExtraVisibleItemInViewPort;
         protected int _maxExtraVisibleItemInViewPort;
         private int _queuedScrollToCell;
+        protected bool _isAnimating;
         private bool _init;
-        private bool _isAnimating;
         private bool _needsClearance;
         private bool _pullToRefresh;
         private bool _pushToClose;
@@ -441,7 +440,7 @@ namespace RecyclableSR
         /// <param name="reloadCellData">when set true, it will fetch cell data from IDataSource</param>
         public void ReloadCell(int cellIndex, string reloadTag = "", bool reloadCellData = false)
         {
-            PreReloadCell(cellIndex, reloadTag, reloadCellData);
+            ReloadCellInternal(cellIndex, reloadTag, reloadCellData);
         }
 
         /// <summary>
@@ -452,7 +451,7 @@ namespace RecyclableSR
         /// <param name="reloadCellData">when set true, it will fetch cell data from IDataSource</param>
         /// <param name="isReloadingAllData">Used to prevent calling CalculateNewMinMaxItemsAfterReloadCell in ReloadCellInternal each time when this function is called from ReloadData since we call
         /// CalculateNewMinMaxItemsAfterReloadCell at the end of ReloadData</param> 
-        private void PreReloadCell(int cellIndex, string reloadTag = "", bool reloadCellData = false, bool isReloadingAllData = false)
+        protected virtual void ReloadCellInternal(int cellIndex, string reloadTag = "", bool reloadCellData = false, bool isReloadingAllData = false)
         {
             // add the reloadTag if it doesn't exist for the cellIndex
             // if reloading data, clear all the reloadTags for the cellIndex
@@ -476,7 +475,27 @@ namespace RecyclableSR
                     _reloadTags.Add(cellIndex, new HashSet<string>{reloadTag});
                 }
             }
-            ReloadCellInternal(cellIndex, reloadCellData, isReloadingAllData);
+            
+            // No need to reload cell at index {cellIndex} as its currently not visible and everything will be automatically handled when it appears
+            // it's ok to return here after setting the tag, as if a cell gets marked for reload with multiple tags, it only needs to reload once its visible
+            // reloading the cell multiple times with different tags is needed when multiple changes happen to a cell over the course of some frames when its visible
+            if (!_visibleItems.ContainsKey(cellIndex))
+            {
+                _itemsMarkedForReload.Add(cellIndex);
+                return;
+            }
+
+            // item has been deleted, no need to reload
+            if (cellIndex >= _itemsCount)
+                return;
+            
+            var cell = _visibleItems[cellIndex];
+            if (reloadCellData)
+            {
+                var actualItemIndex = GetActualItemIndex(cellIndex);
+                if (actualItemIndex != -1)
+                    _dataSource.SetCellData(cell.cell, actualItemIndex);
+            }
         }
 
         /// <summary>
@@ -503,118 +522,11 @@ namespace RecyclableSR
         }
 
         /// <summary>
-        /// Reloads cell size and data
-        /// </summary>
-        /// <param name="cellIndex">cell index to reload</param>
-        /// <param name="reloadCellData">when set true, it will fetch cell data from IDataSource</param>
-        /// <param name="isReloadingAllData">Used to prevent calling CalculateNewMinMaxItemsAfterReloadCell in ReloadCellInternal each time when this function is called from ReloadData since we call
-        /// CalculateNewMinMaxItemsAfterReloadCell at the end of ReloadData</param> 
-        private void ReloadCellInternal (int cellIndex, bool reloadCellData = false, bool isReloadingAllData = false)
-        {
-            // No need to reload cell at index {cellIndex} as its currently not visible and everything will be automatically handled when it appears
-            // it's ok to return here after setting the tag, as if a cell gets marked for reload with multiple tags, it only needs to reload once its visible
-            // reloading the cell multiple times with different tags is needed when multiple changes happen to a cell over the course of some frames when its visible
-            if (!_visibleItems.ContainsKey(cellIndex))
-            {
-                _itemsMarkedForReload.Add(cellIndex);
-                return;
-            }
-
-            // item has been deleted, no need to reload
-            if (cellIndex >= _itemsCount)
-                return;
-            
-            var cell = _visibleItems[cellIndex];
-            if (reloadCellData)
-            {
-                var actualItemIndex = GetActualItemIndex(cellIndex);
-                if (actualItemIndex != -1)
-                    _dataSource.SetCellData(cell.cell, actualItemIndex);
-            }
-
-            var oldSize = _itemPositions[cellIndex].cellSize[_axis];
-            CalculateNonAxisSizePosition(cell.transform, cellIndex);
-            CalculateCellAxisSize(cell.transform, cellIndex);
-            SetCellAxisPosition(cell.transform, cellIndex);
-            
-            // no need to call this while reloading data, since ReloadData will call it after reloading call cells
-            // calling it while reload data will add unneeded redundancy
-            if (!isReloadingAllData)
-            {
-                // no need to call CalculateNewMinMaxItemsAfterReloadCell if content moved since it will be handled in Update
-                var contentMoved = RecalculateFollowingCells(cellIndex, oldSize);
-                if (!contentMoved)
-                    CalculateNewMinMaxItemsAfterReloadCell();
-            }
-        }
-
-        /// <summary>
-        /// Sets the positions of all cells of index + 1
-        /// Persists content position to avoid sudden jumps if a cell size changes
-        /// </summary>
-        /// <param name="cellIndex">index of cell to start calculate following cells from</param>
-        /// <param name="oldSize">old cell size used to offset content position with</param>
-        /// <returns></returns>
-        private bool RecalculateFollowingCells(int cellIndex, float oldSize)
-        {
-            // need to adjust all the cells position after cellIndex 
-            var startingCellToAdjustPosition = cellIndex + 1;
-            for (var i = startingCellToAdjustPosition; i <= _maxExtraVisibleItemInViewPort; i++)
-                SetCellAxisPosition(_visibleItems[i].transform, i);
-
-            if (_isAnimating)
-                return true;
-            
-            var contentPosition = content.anchoredPosition;
-            var contentMoved = false;
-            var oldContentPosition = contentPosition[_axis];
-            if (cellIndex < _minExtraVisibleItemInViewPort)
-            {
-                // this is a very special case as items reloaded at the top or right will have a different bottomRight position
-                // and since we are here at the item, if we don't manually set the position of the content, it will seem as the content suddenly shifted and disorient the user
-                contentPosition[_axis] = _itemPositions[cellIndex].absBottomRightPosition[_axis];
-                
-                // set the normalized position as well, because why not
-                // (viewMin - (itemPosition - contentSize)) / (contentSize - viewSize)
-                // var viewportRect = viewport.rect;
-                // var contentRect = content.rect;
-                // var viewPortBounds = new Bounds(viewportRect.center, viewportRect.size);
-                // var newNormalizedPosition = (viewPortBounds.min[_axis] - (_itemPositions[cellIndex].bottomRightPosition[_axis] - contentRect.size[_axis])) / (contentRect.size[_axis] - viewportRect.size[_axis]);
-                // SetNormalizedPosition(newNormalizedPosition, _axis);
-            }
-            else if (_minExtraVisibleItemInViewPort <= cellIndex && _minVisibleItemInViewPort > cellIndex)
-            {
-                contentPosition[_axis] -= (oldSize - _itemPositions[cellIndex].cellSize[_axis]) * (_reverseDirection ? -1 : 1);
-            }
-            
-            var contentPositionDiff = Mathf.Abs(contentPosition[_axis] - oldContentPosition);
-            if (contentPositionDiff > 0)
-                contentMoved = true;
-
-            if (contentMoved)
-            {
-                content.anchoredPosition = contentPosition;
-                // this is important since the scroll rect will likely be dragging, and it will cause a jump
-                // this only took me 6 hours to figure out :(
-                m_ContentStartPosition = contentPosition;
-            }
-
-            return contentMoved;
-        }
-
-        /// <summary>
-        /// Checks if cells need to be hidden, shown, instantiated after a cell is reloaded and its size changes
-        /// </summary>
-        protected virtual void CalculateNewMinMaxItemsAfterReloadCell()
-        {
-        }
-
-        /// <summary>
         /// This function call is only needed when the cell is created, or when the resolution changes
         /// it sets the vertical size of the cell in a horizontal layout
         /// or the horizontal size of a cell in a vertical layout based on the settings of said layout
         /// It also sets the vertical position in horizontal layout or the horizontal position in a vertical layout based on the padding of said layout
-        /// not needed in grid as items will have different positions in non axis position and the non axis size is the same in all of them
+        /// Is not needed in grid as items will have different positions in non axis position and the non axis size is the same in all of them
         /// </summary>
         /// <param name="rect">The rect of the cell that its size will be adjusted</param>
         /// <param name="cellIndex">The index of the cell that its size will be adjusted</param>
@@ -941,7 +853,7 @@ namespace RecyclableSR
         /// Reload data in scroll view
         /// </summary>
         /// <param name="reloadAllItems">should be only used when adding items to the top of the current visible items</param>
-        public void ReloadData(bool reloadAllItems = false)
+        public virtual void ReloadData(bool reloadAllItems = false)
         {
             var oldItemsCount = _itemsCount;
             _itemsCount = _dataSource.ItemsCount;
@@ -967,10 +879,8 @@ namespace RecyclableSR
             if (reloadAllItems)
             {
                 foreach (var item in _visibleItems)
-                    PreReloadCell(item.Key, "", true, true);
+                    ReloadCellInternal(item.Key, "", true, true);
             }
-            CalculateNewMinMaxItemsAfterReloadCell();
-            RefreshAfterReload(reloadAllItems);
         }
 
         /// <summary>

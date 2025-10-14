@@ -260,6 +260,13 @@ namespace RecyclableSR
                 rect.anchoredPosition = itemPosition;
             }
         }
+        
+        public override void ReloadData(bool reloadAllItems = false)
+        {
+            base.ReloadData(reloadAllItems);
+            CalculateNewMinMaxItemsAfterReloadCell();
+            RefreshAfterReload(reloadAllItems);
+        }
 
         /// <summary>
         /// this removes all items that are not needed after item reload if _itemsCount has been reduced
@@ -283,10 +290,8 @@ namespace RecyclableSR
         /// <summary>
         /// Checks if cells need to be hidden, shown, instantiated after a cell is reloaded and its size changes
         /// </summary>
-        protected override void CalculateNewMinMaxItemsAfterReloadCell()
+        private void CalculateNewMinMaxItemsAfterReloadCell()
         {
-            base.CalculateNewMinMaxItemsAfterReloadCell();
-            
             // figure out the new _minVisibleItemInViewPort && _maxVisibleItemInViewPort
             GetContentBounds();
             var newMinVisibleItemInViewPortSet = false;
@@ -342,6 +347,90 @@ namespace RecyclableSR
 
             _minVisibleItemInViewPort = newMinVisibleItemInViewPort;
             _minExtraVisibleItemInViewPort = newMinExtraVisibleItemInViewPort;
+        }
+
+        protected override void ReloadCellInternal(int cellIndex, string reloadTag = "", bool reloadCellData = false, bool isReloadingAllData = false)
+        {
+            base.ReloadCellInternal(cellIndex, reloadTag, reloadCellData, isReloadingAllData);
+            SetCellSizeWithPositionAfterReload(_visibleItems[cellIndex], cellIndex, isReloadingAllData);
+        }
+
+        /// <summary>
+        /// Sets the cell new size and position after reloading, if cell size changed, recalculate all the cells that follow
+        /// </summary>
+        /// <param name="cell"></param>
+        /// <param name="cellIndex"></param>
+        /// <param name="isReloadingAllData"></param>
+        private void SetCellSizeWithPositionAfterReload(Item cell, int cellIndex, bool isReloadingAllData)
+        {
+            var oldSize = _itemPositions[cellIndex].cellSize[_axis];
+            CalculateNonAxisSizePosition(cell.transform, cellIndex);
+            CalculateCellAxisSize(cell.transform, cellIndex);
+            SetCellAxisPosition(cell.transform, cellIndex);
+            
+            // no need to call this while reloading data, since ReloadData will call it after reloading cells
+            // calling it while reload data will add unneeded redundancy
+            if (!isReloadingAllData)
+            {
+                // no need to call CalculateNewMinMaxItemsAfterReloadCell if content moved since it will be handled in Update
+                var contentMoved = RecalculateFollowingCells(cellIndex, oldSize);
+                if (!contentMoved)
+                    CalculateNewMinMaxItemsAfterReloadCell();
+            }
+        }
+        
+        /// <summary>
+        /// Sets the positions of all cells of index + 1
+        /// Persists content position to avoid sudden jumps if a cell size changes
+        /// </summary>
+        /// <param name="cellIndex">index of cell to start calculate following cells from</param>
+        /// <param name="oldSize">old cell size used to offset content position with</param>
+        /// <returns></returns>
+        private bool RecalculateFollowingCells(int cellIndex, float oldSize)
+        {
+            // need to adjust all the cells position after cellIndex 
+            var startingCellToAdjustPosition = cellIndex + 1;
+            for (var i = startingCellToAdjustPosition; i <= _maxExtraVisibleItemInViewPort; i++)
+                SetCellAxisPosition(_visibleItems[i].transform, i);
+
+            if (_isAnimating)
+                return true;
+            
+            var contentPosition = content.anchoredPosition;
+            var contentMoved = false;
+            var oldContentPosition = contentPosition[_axis];
+            if (cellIndex < _minExtraVisibleItemInViewPort)
+            {
+                // this is a very special case as items reloaded at the top or right will have a different bottomRight position
+                // and since we are here at the item, if we don't manually set the position of the content, it will seem as the content suddenly shifted and disorient the user
+                contentPosition[_axis] = _itemPositions[cellIndex].absBottomRightPosition[_axis];
+                
+                // set the normalized position as well, because why not
+                // (viewMin - (itemPosition - contentSize)) / (contentSize - viewSize)
+                // var viewportRect = viewport.rect;
+                // var contentRect = content.rect;
+                // var viewPortBounds = new Bounds(viewportRect.center, viewportRect.size);
+                // var newNormalizedPosition = (viewPortBounds.min[_axis] - (_itemPositions[cellIndex].bottomRightPosition[_axis] - contentRect.size[_axis])) / (contentRect.size[_axis] - viewportRect.size[_axis]);
+                // SetNormalizedPosition(newNormalizedPosition, _axis);
+            }
+            else if (_minExtraVisibleItemInViewPort <= cellIndex && _minVisibleItemInViewPort > cellIndex)
+            {
+                contentPosition[_axis] -= (oldSize - _itemPositions[cellIndex].cellSize[_axis]) * (_reverseDirection ? -1 : 1);
+            }
+            
+            var contentPositionDiff = Mathf.Abs(contentPosition[_axis] - oldContentPosition);
+            if (contentPositionDiff > 0)
+                contentMoved = true;
+
+            if (contentMoved)
+            {
+                content.anchoredPosition = contentPosition;
+                // this is important since the scroll rect will likely be dragging, and it will cause a jump
+                // this only took me 6 hours to figure out :(
+                m_ContentStartPosition = contentPosition;
+            }
+
+            return contentMoved;
         }
 
         /// <summary>

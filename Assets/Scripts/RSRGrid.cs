@@ -300,6 +300,12 @@ namespace RecyclableSR
                 currentStartItemInRowColumn = current2DIndex[_axis] * _gridConstraintCount;
             }
         }
+        
+        public override void ReloadData(bool reloadAllItems = false)
+        {
+            base.ReloadData(reloadAllItems);
+            RefreshAfterReload(reloadAllItems);
+        }
 
         /// <summary>
         /// we need to check all the visible cells, and hide the ones that currently have an actual index (not -1)
