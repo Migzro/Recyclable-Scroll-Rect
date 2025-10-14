@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using RecyclableSR;
 using UnityEngine;
 
-public class HorizontalPagingRSRDemo : MonoBehaviour, IDataSource
+public class HorizontalPagingRSRDemo : MonoBehaviour, IRSRSource
 {
     [SerializeField] private int _itemsCount;
     [SerializeField] private RSRBase _scrollRect;

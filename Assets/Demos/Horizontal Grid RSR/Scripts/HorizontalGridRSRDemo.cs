@@ -2,18 +2,18 @@ using System.Collections.Generic;
 using RecyclableSR;
 using UnityEngine;
 
-public class HorizontalGridRSRDemo : MonoBehaviour, IDataSource
+public class HorizontalGridRSRDemo : MonoBehaviour, IGridSource
 {
     [SerializeField] private int _itemsCount;
-    [SerializeField] private RSRBase _scrollRect;
+    [SerializeField] private RSRGrid _scrollRect;
     [SerializeField] private GameObject[] _prototypeCells;
-    [SerializeField] private int _extraItemsVisible;
+    [SerializeField] private int _extraRowsColumnsVisible;
         
     private List<string> _dataSource;
     private int _itemCount;
     
     public int ItemsCount => _itemsCount;
-    public int ExtraItemsVisible => _extraItemsVisible;
+    public int ExtraRowsColumnsVisible => _extraRowsColumnsVisible;
     public bool IsCellSizeKnown => true;
     public bool IsSetVisibleUsingCanvasGroupAlpha => false;
     public GameObject[] PrototypeCells => _prototypeCells;
@@ -24,6 +24,15 @@ public class HorizontalGridRSRDemo : MonoBehaviour, IDataSource
         for (var i = 0; i < _itemsCount; i++)
             _dataSource.Add( i.ToString() );
         _scrollRect.Initialize(this);
+    }
+    
+    [ContextMenu(nameof(ReloadData))]
+    public void ReloadData()
+    {
+        var newItemsCount = 15;
+        _dataSource.RemoveRange(newItemsCount, _itemsCount - newItemsCount);
+        _itemsCount = newItemsCount;
+        _scrollRect.ReloadData(true);
     }
 
     public float GetCellSize(int cellIndex)
@@ -42,7 +51,9 @@ public class HorizontalGridRSRDemo : MonoBehaviour, IDataSource
 
     public GameObject GetPrototypeCell(int cellIndex)
     {
-        return _prototypeCells[0];
+        if (cellIndex % 2 == 0)
+            return _prototypeCells[0];
+        return _prototypeCells[1];
     }
 
     public void CellCreated(int cellIndex, ICell cell, GameObject cellGo)

@@ -22,8 +22,6 @@ namespace RecyclableSR
         // TODO: make this class abstract
         
         // TODO: encapsulate grid data and functions
-        // TODO: convert extra items visible to extra row/columns visible in grid, make extra items visible only in RSR
-        // TODO: make _extraRowsColumns in the GridSource?
         // TODO: Do LateUpdate Function
         // TODO: convert min and max port items in grid to min and max row columns, move each set of variables to their own class
         
@@ -60,7 +58,6 @@ namespace RecyclableSR
         protected int _axis;
         protected int _itemsCount;
         protected int _currentPage;
-        protected int _extraItemsVisible;
         protected int _minVisibleItemInViewPort;
         protected int _maxVisibleItemInViewPort;
         protected int _minExtraVisibleItemInViewPort;
@@ -165,7 +162,6 @@ namespace RecyclableSR
             _reloadTags = new Dictionary<int, HashSet<string>>();
             _itemsMarkedForReload = new HashSet<int>();
             _ignoreSetCellDataIndices = new HashSet<int>();
-            _extraItemsVisible = _dataSource.ExtraItemsVisible;
             _lastContentPosition = _contentTopLeftCorner;
             SetMovementType(_initialMovementType);
 
@@ -889,7 +885,6 @@ namespace RecyclableSR
         /// <param name="itemDiff">the amount of items that have been deleted</param>
         protected virtual void RemoveExtraItems(int itemDiff)
         {
-            
         }
 
         protected virtual void RefreshAfterReload(bool reloadAllItems)

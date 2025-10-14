@@ -5,7 +5,7 @@ using RecyclableSR;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class ScrollDemoController : MonoBehaviour, IDataSource
+public class ScrollDemoController : MonoBehaviour, IRSRSource
 {
     [SerializeField] private RSRBase _scrollRect;
     [SerializeField] private GameObject[] _prototypeCells;

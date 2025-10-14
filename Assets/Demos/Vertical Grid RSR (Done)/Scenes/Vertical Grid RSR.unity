@@ -252,7 +252,7 @@ MonoBehaviour:
   _prototypeCells:
   - {fileID: 1638117046129563386, guid: 7d07dc272788b4bc9a294d5f0345009a, type: 3}
   - {fileID: 1638117046129563386, guid: 18e652532342b4488814228ed812aff2, type: 3}
-  _extraItemsVisible: 0
+  extraRowsColumnsRowsColumnsVisible: 1
 --- !u!1 &1362537419
 GameObject:
   m_ObjectHideFlags: 0
@@ -613,7 +613,6 @@ MonoBehaviour:
   _gridStartAxis: 0
   _gridConstraint: 0
   _gridConstraintCount: 2
-  _extraVisibleRowsColumns: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

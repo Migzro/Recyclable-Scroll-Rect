@@ -2,18 +2,18 @@ using System.Collections.Generic;
 using RecyclableSR;
 using UnityEngine;
 
-public class VerticalGridRSRDemo : MonoBehaviour, IDataSource
+public class VerticalGridRSRDemo : MonoBehaviour, IGridSource
 {
     [SerializeField] private int _itemsCount;
     [SerializeField] private RSRGrid _scrollRect;
     [SerializeField] private GameObject[] _prototypeCells;
-    [SerializeField] private int _extraItemsVisible;
+    [SerializeField] private int _extraRowsColumnsVisible;
         
     private List<string> _dataSource;
     private int _itemCount;
     
     public int ItemsCount => _dataSource.Count;
-    public int ExtraItemsVisible => _extraItemsVisible;
+    public int ExtraRowsColumnsVisible => _extraRowsColumnsVisible;
     public bool IsCellSizeKnown => true;
     public bool IsSetVisibleUsingCanvasGroupAlpha => false;
     public GameObject[] PrototypeCells => _prototypeCells;

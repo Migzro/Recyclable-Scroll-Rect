@@ -4,6 +4,21 @@ namespace RecyclableSR
 {
     public class RSR : RSRBase
     {
+        private IRSRSource _rsrSource;
+        protected int _extraItemsVisible;
+        
+        protected override void Initialize()
+        {
+            _rsrSource = (IRSRSource)_dataSource;
+            base.Initialize();
+        }
+        
+        protected override void ResetVariables()
+        {
+            base.ResetVariables();
+            _extraItemsVisible = _rsrSource.ExtraItemsVisible;
+        }
+
         /// <summary>
         /// Initialize all cells needed until the view port is filled
         /// extra visible items is an additional amount of cells that can be shown to prevent showing an empty view port if the scrolling is too fast and the update function didn't show all the items

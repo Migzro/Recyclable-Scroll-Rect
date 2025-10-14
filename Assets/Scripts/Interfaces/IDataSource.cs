@@ -5,7 +5,6 @@ namespace RecyclableSR
     public interface IDataSource
     {
         int ItemsCount { get; }
-        int ExtraItemsVisible { get; }
         bool IsCellSizeKnown { get; }
         bool IsSetVisibleUsingCanvasGroupAlpha { get; }
         GameObject[] PrototypeCells { get; }

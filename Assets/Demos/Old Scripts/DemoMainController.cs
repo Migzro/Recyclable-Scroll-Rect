@@ -3,7 +3,7 @@ using System.Linq;
 using RecyclableSR;
 using UnityEngine;
 
-public class DemoMainController : MonoBehaviour, IDataSource
+public class DemoMainController : MonoBehaviour, IRSRSource
 {
     [SerializeField] private int _itemsCount;
     [SerializeField] private RSRBase _scrollRect;
