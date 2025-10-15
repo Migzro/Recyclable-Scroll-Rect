@@ -252,7 +252,7 @@ MonoBehaviour:
   _prototypeItems:
   - {fileID: 1638117046129563386, guid: 236abc0c76a664bb59fc9a78f8103783, type: 3}
   - {fileID: 1638117046129563386, guid: e33034cebc3d744f59b3c2abcd9927a7, type: 3}
-  _extraRowsColumnsVisible: 0
+  _extraRowsColumnsVisible: 2
 --- !u!1 &1362537419
 GameObject:
   m_ObjectHideFlags: 0
@@ -310,7 +310,7 @@ MonoBehaviour:
   m_ChildAlignment: 0
   m_StartCorner: 0
   m_StartAxis: 1
-  m_CellSize: {x: 500, y: 500}
+  m_CellSize: {x: 400, y: 385}
   m_Spacing: {x: 20, y: 40}
   m_Constraint: 2
   m_ConstraintCount: 3
@@ -328,7 +328,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   count: 100
   content: {fileID: 1362537420}
-  prefab: {fileID: 1638117046129563386, guid: 7d07dc272788b4bc9a294d5f0345009a, type: 3}
+  prefab: {fileID: 1638117046129563386, guid: 236abc0c76a664bb59fc9a78f8103783, type: 3}
   update: 0
   delete: 0
 --- !u!1 &1413815494
@@ -609,8 +609,8 @@ MonoBehaviour:
     m_Top: 50
     m_Bottom: 50
   _childAlignment: 0
-  _gridItemSize: {x: 0, y: 0}
-  _gridStartAxis: 1
+  _gridItemSize: {x: 400, y: 385}
+  _gridStartAxis: 0
   _gridConstraint: 2
   _gridConstraintCount: 3
 --- !u!1660057539 &9223372036854775807

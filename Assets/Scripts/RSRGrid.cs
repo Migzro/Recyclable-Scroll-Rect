@@ -113,33 +113,16 @@ namespace RecyclableSR
             {
                 int xIndexInGrid;
                 int yIndexInGrid;
-                if (horizontal)
+                if (_gridStartAxis == GridLayoutGroup.Axis.Vertical)
                 {
-                    if (_gridStartAxis == GridLayoutGroup.Axis.Vertical)
-                    {
-                        xIndexInGrid = Mathf.FloorToInt(i / (float)_gridWidth);
-                        yIndexInGrid = i % _gridWidth;
-                    }
-                    else
-                    {
-                        // TODO: Reversed Grid Code
-                        xIndexInGrid = i % _gridHeight;
-                        yIndexInGrid = Mathf.FloorToInt(i / (float)_gridHeight);
-                    }
+                    xIndexInGrid = Mathf.FloorToInt(i / (float)_gridHeight);
+                    yIndexInGrid = i % _gridHeight;
                 }
                 else
                 {
-                    if (_gridStartAxis == GridLayoutGroup.Axis.Vertical)
-                    {
-                        // TODO: Reversed Grid Code
-                        xIndexInGrid = Mathf.FloorToInt(i / (float)_gridHeight);
-                        yIndexInGrid = i % _gridHeight;
-                    }
-                    else
-                    {
-                        xIndexInGrid = i % _gridWidth;
-                        yIndexInGrid = Mathf.FloorToInt(i / (float)_gridWidth);
-                    }
+                    // TODO: Reversed Grid Code
+                    xIndexInGrid = i % _gridWidth;
+                    yIndexInGrid = Mathf.FloorToInt(i / (float)_gridWidth);
                 }
                 
                 // if (_reverseDirection)
@@ -518,8 +501,19 @@ namespace RecyclableSR
         /// <returns></returns>
         private Vector2Int Get2dIndex(int index)
         {
-            var startX = index % _gridWidth;
-            var startY = index / _gridWidth;
+            int startX;
+            int startY;
+            if (vertical)
+            {
+                startX = index % _gridWidth;
+                startY = index / _gridWidth;
+            }
+            else
+            {
+                startX = index / _gridHeight;
+                startY = index % _gridHeight;
+            }
+
             return new Vector2Int(startX, startY);
         }
     }

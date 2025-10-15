@@ -13,7 +13,7 @@ namespace RecyclableSR
         // TODO: Rework cards behaviours
         // TODO: remove _manuallyHandleCardAnimations
         
-        // TODO: Check Horizontal Grid
+        // TODO: Check Horizontal Grid reload
         // TODO: different start axes for grid layout
         // TODO: FixedColumnCount with Vertical Grids & FixedRowCount with Horizontal Grids (remaining _maxExtraVisibleItemInViewPort needs to be / _maxGridsItemsInAxis
         // TODO: Fix all behaviours for gridLayout and make sure _reverseDirection is working properly
