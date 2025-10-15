@@ -1,12 +1,13 @@
 using System.Collections.Generic;
 using RecyclableSR;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class VerticalGridRSRDemo : MonoBehaviour, IGridSource
 {
     [SerializeField] private int _itemsCount;
     [SerializeField] private RSRGrid _scrollRect;
-    [SerializeField] private GameObject[] _prototypeCells;
+    [SerializeField] private GameObject[] _prototypeItems;
     [SerializeField] private int _extraRowsColumnsVisible;
         
     private List<string> _dataSource;
@@ -14,9 +15,9 @@ public class VerticalGridRSRDemo : MonoBehaviour, IGridSource
     
     public int ItemsCount => _dataSource.Count;
     public int ExtraRowsColumnsVisible => _extraRowsColumnsVisible;
-    public bool IsCellSizeKnown => true;
+    public bool IsItemSizeKnown => true;
     public bool IsSetVisibleUsingCanvasGroupAlpha => false;
-    public GameObject[] PrototypeCells => _prototypeCells;
+    public GameObject[] PrototypeItems => _prototypeItems;
 
     private void Start()
     {
@@ -35,42 +36,42 @@ public class VerticalGridRSRDemo : MonoBehaviour, IGridSource
         _scrollRect.ReloadData(true);
     }
 
-    public float GetCellSize(int cellIndex)
+    public float GetItemSize(int itemIndex)
     {
         return 500f;
     }
 
-    public void SetCellData(ICell cell, int cellIndex)
+    public void SetItemData(IItem item, int itemIndex)
     {
-        (cell as DemoCellPrototype)?.Initialize(_dataSource[cellIndex]);
+        (item as DemoItemPrototype)?.Initialize(_dataSource[itemIndex]);
     }
 
-    public void CellHidden(ICell cell, int cellIndex)
+    public void ItemHidden(IItem item, int itemIndex)
     {
     }
 
-    public GameObject GetPrototypeCell(int cellIndex)
+    public GameObject GetItemPrototype(int itemIndex)
     {
-        if (cellIndex % 2 == 0)
-            return _prototypeCells[0];
-        return _prototypeCells[1];
+        if (itemIndex % 2 == 0)
+            return _prototypeItems[0];
+        return _prototypeItems[1];
     }
 
-    public void CellCreated(int cellIndex, ICell cell, GameObject cellGo)
+    public void ItemCreated(int itemIndex, IItem item, GameObject itemGo)
     {
         
     }
 
-    public bool IsCellStatic(int cellIndex)
+    public bool IsItemStatic(int itemIndex)
     {
         return false;
     }
 
-    public void ScrolledToCell(ICell cell, int cellIndex)
+    public void ScrolledToItem(IItem item, int itemIndex)
     {
     }
 
-    public bool IgnoreContentPadding(int cellIndex)
+    public bool IgnoreContentPadding(int itemIndex)
     {
         return false;
     }

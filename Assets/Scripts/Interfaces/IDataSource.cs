@@ -5,17 +5,17 @@ namespace RecyclableSR
     public interface IDataSource
     {
         int ItemsCount { get; }
-        bool IsCellSizeKnown { get; }
+        bool IsItemSizeKnown { get; }
         bool IsSetVisibleUsingCanvasGroupAlpha { get; }
-        GameObject[] PrototypeCells { get; }
-        float GetCellSize(int cellIndex);
-        void SetCellData(ICell cell, int cellIndex);
-        void CellHidden(ICell cell, int cellIndex);
-        GameObject GetPrototypeCell(int cellIndex);
-        void CellCreated(int cellIndex, ICell cell, GameObject cellGo);
-        bool IsCellStatic(int cellIndex);
-        void ScrolledToCell(ICell cell, int cellIndex);
-        bool IgnoreContentPadding(int cellIndex);
+        GameObject[] PrototypeItems { get; }
+        float GetItemSize(int itemIndex);
+        void SetItemData(IItem item, int itemIndex);
+        void ItemHidden(IItem item, int itemIndex);
+        GameObject GetItemPrototype(int itemIndex);
+        void ItemCreated(int itemIndex, IItem item, GameObject itemGo);
+        bool IsItemStatic(int itemIndex);
+        void ScrolledToItem(IItem item, int itemIndex);
+        bool IgnoreContentPadding(int itemIndex);
         void PullToRefresh();
         void PushToClose();
         void ReachedScrollStart();

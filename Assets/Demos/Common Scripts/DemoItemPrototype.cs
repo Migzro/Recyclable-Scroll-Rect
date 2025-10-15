@@ -2,13 +2,13 @@ using RecyclableSR;
 using TMPro;
 using UnityEngine;
 
-public class DemoCellPrototype : MonoBehaviour, ICell
+public class DemoItemPrototype : MonoBehaviour, IItem
 {
     [SerializeField] private TextMeshProUGUI _text;
     [SerializeField] private CanvasGroup _canvasGroup; 
-    public int CellIndex { get; set; }
+    public int ItemIndex { get; set; }
     public RSRBase RSRBase { get; set; }
-    public RectTransform[] CellsNeededForVisualUpdate => null;
+    public RectTransform[] ItemsNeededForVisualUpdate => null;
     public CanvasGroup CanvasGroup {
         get
         {

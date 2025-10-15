@@ -23,14 +23,14 @@ namespace RecyclableSR
         }
 
         /// <summary>
-        /// Initialize all cells needed until the view port is filled
-        /// extra visible items is an additional amount of cells that can be shown to prevent showing an empty view port if the scrolling is too fast and the update function didn't show all the items
+        /// Initialize all items needed until the view port is filled
+        /// extra visible items is an additional amount of items that can be shown to prevent showing an empty view port if the scrolling is too fast and the update function didn't show all the items
         /// that need to be shown
         /// </summary>
-        /// <param name="startIndex">the starting cell index on which we want initialized</param>
-        protected override void InitializeCells(int startIndex = 0)
+        /// <param name="startIndex">the starting item index on which we want initialized</param>
+        protected override void InitializeItems(int startIndex = 0)
         {
-            base.InitializeCells(startIndex);
+            base.InitializeItems(startIndex);
             
             GetContentBounds();
             var contentHasSpace = startIndex == 0 || _itemPositions[startIndex - 1].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
@@ -38,7 +38,7 @@ namespace RecyclableSR
             var i = startIndex;
             while ((contentHasSpace || extraItemsInitialized < _extraItemsVisible) && i < _itemsCount)
             {
-                ShowHideCellsAtIndex(i, true);
+                ShowHideItemsAtIndex(i, true);
                 if (!contentHasSpace)
                     extraItemsInitialized++;
                 else
@@ -52,8 +52,8 @@ namespace RecyclableSR
         
         /// <summary>
         /// Calculate the content size in their respective direction based on the scrolling direction
-        /// If the cell size is know we simply add all the cell sizes, spacing and padding
-        /// If not we set the cell size as -1 as it will be calculated once the cell comes into view
+        /// If the item size is know we simply add all the item sizes, spacing and padding
+        /// If not we set the item size as -1 as it will be calculated once the item comes into view
         /// </summary>
         protected override void CalculateContentSize()
         {
@@ -64,16 +64,16 @@ namespace RecyclableSR
 
             for (var i = 0; i < _itemsCount; i++)
             {
-                if (!_dataSource.IsCellSizeKnown)
+                if (!_dataSource.IsItemSizeKnown)
                 {
-                    contentSizeDelta[_axis] += _itemPositions[i].cellSize[_axis];
+                    contentSizeDelta[_axis] += _itemPositions[i].itemSize[_axis];
                 }
                 else
                 {
-                    var cellSize = _itemPositions[i].cellSize;
-                    cellSize[_axis] = _dataSource.GetCellSize(i);
-                    _itemPositions[i].SetSize(cellSize);
-                    contentSizeDelta[_axis] += cellSize[_axis];
+                    var itemSize = _itemPositions[i].itemSize;
+                    itemSize[_axis] = _dataSource.GetItemSize(i);
+                    _itemPositions[i].SetSize(itemSize);
+                    contentSizeDelta[_axis] += itemSize[_axis];
                 }
             }
 
@@ -100,12 +100,12 @@ namespace RecyclableSR
         /// </summary>
         /// <param name="rect">rect of the item which position will be set</param>
         /// <param name="newIndex">index of the item that needs its position set</param>
-        protected override void SetCellAxisPosition(RectTransform rect, int newIndex)
+        protected override void SetItemAxisPosition(RectTransform rect, int newIndex)
         {
-            base.SetCellAxisPosition(rect, newIndex);
+            base.SetItemAxisPosition(rect, newIndex);
             
             var newItemPosition = rect.anchoredPosition;
-            // figure out where the prev cell position was
+            // figure out where the prev item position was
             if (newIndex == 0)
             {
                 if (vertical)
@@ -142,26 +142,26 @@ namespace RecyclableSR
         }
         
         /// <summary>
-        /// This function calculates the cell size if its unknown by forcing a Layout rebuild
-        /// if it is known we just get the cell size
+        /// This function calculates the item size if its unknown by forcing a Layout rebuild
+        /// if it is known we just get the item size
         /// </summary>
-        /// <param name="rect">rect of the cell which the size will be calculated for</param>
-        /// <param name="index">cell index which the size will be calculated for</param>
-        protected override void CalculateCellAxisSize(RectTransform rect, int index)
+        /// <param name="rect">rect of the item which the size will be calculated for</param>
+        /// <param name="index">item index which the size will be calculated for</param>
+        protected override void CalculateItemAxisSize(RectTransform rect, int index)
         {
-            base.CalculateCellAxisSize(rect, index);
+            base.CalculateItemAxisSize(rect, index);
             
-            var newCellSize = _itemPositions[index].cellSize;
-            var oldCellSize = newCellSize[_axis];
+            var newItemSize = _itemPositions[index].itemSize;
+            var oldItemSize = newItemSize[_axis];
 
-            if (!_dataSource.IsCellSizeKnown)
+            if (!_dataSource.IsItemSizeKnown)
             {
                 ForceLayoutRebuild(index);
-                newCellSize[_axis] = rect.rect.size[_axis];
+                newItemSize[_axis] = rect.rect.size[_axis];
                 
                 // set the content size since items size was not known at the time of the initialization
                 var contentSize = content.sizeDelta;
-                contentSize[_axis] += newCellSize[_axis] - oldCellSize;
+                contentSize[_axis] += newItemSize[_axis] - oldItemSize;
 
                 if (vertical)
                 {
@@ -175,15 +175,15 @@ namespace RecyclableSR
             }
             else
             {
-                newCellSize[_axis] = _dataSource.GetCellSize(index);
+                newItemSize[_axis] = _dataSource.GetItemSize(index);
             }
 
-            _itemPositions[index].SetSize(newCellSize);
+            _itemPositions[index].SetSize(newItemSize);
         }
 
-        protected override void CalculateNonAxisSizePosition(RectTransform rect, int cellIndex)
+        protected override void CalculateNonAxisSizePosition(RectTransform rect, int itemIndex)
         {
-            base.CalculateNonAxisSizePosition(rect, cellIndex);
+            base.CalculateNonAxisSizePosition(rect, itemIndex);
             
             var forceSize = false;
             // expand item width if it's in a vertical scrollRect and the conditions are satisfied
@@ -191,13 +191,13 @@ namespace RecyclableSR
             {
                 var itemSize = rect.sizeDelta;
                 itemSize.x = content.rect.width;
-                if (!_dataSource.IgnoreContentPadding(cellIndex))
+                if (!_dataSource.IgnoreContentPadding(itemIndex))
                 {
                     itemSize.x -= _padding.right + _padding.left;
                 }
 
                 rect.sizeDelta = itemSize;
-                _itemPositions[cellIndex].SetSize(itemSize);
+                _itemPositions[itemIndex].SetSize(itemSize);
                 forceSize = true;
             }
 
@@ -206,13 +206,13 @@ namespace RecyclableSR
             {
                 var itemSize = rect.sizeDelta;
                 itemSize.y = content.rect.height;
-                if (!_dataSource.IgnoreContentPadding(cellIndex))
+                if (!_dataSource.IgnoreContentPadding(itemIndex))
                 {
                     itemSize.y -= _padding.top + _padding.bottom;
                 }
 
                 rect.sizeDelta = itemSize;
-                _itemPositions[cellIndex].SetSize(itemSize);
+                _itemPositions[itemIndex].SetSize(itemSize);
                 forceSize = true;
             }
 
@@ -222,7 +222,7 @@ namespace RecyclableSR
             contentSizeWithoutPadding.x -= _padding.right + _padding.left;
             contentSizeWithoutPadding.y -= _padding.top + _padding.bottom;
 
-            // set position of cell based on layout alignment
+            // set position of item based on layout alignment
             // we check for multiple conditions together since the content is made to fit the items, so they only move in one axis in each different scroll direction
             var rectSize = rect.rect.size;
             var itemSizeSmallerThanContent = rectSize[_axis] < contentSizeWithoutPadding[_axis];
@@ -233,7 +233,7 @@ namespace RecyclableSR
                 {
                     var rightPadding = _reverseDirection ? _padding.left : _padding.right;
                     var leftPadding = _reverseDirection ? _padding.right : _padding.left;
-                    if (_dataSource.IgnoreContentPadding(cellIndex))
+                    if (_dataSource.IgnoreContentPadding(itemIndex))
                     {
                         rightPadding = 0;
                         leftPadding = 0;
@@ -256,7 +256,7 @@ namespace RecyclableSR
                 {
                     var topPadding = _reverseDirection ? _padding.bottom : _padding.top;
                     var bottomPadding = _reverseDirection ? _padding.top : _padding.bottom;
-                    if (_dataSource.IgnoreContentPadding(cellIndex))
+                    if (_dataSource.IgnoreContentPadding(itemIndex))
                     {
                         topPadding = 0;
                         bottomPadding = 0;
@@ -282,7 +282,7 @@ namespace RecyclableSR
         public override void ReloadData(bool reloadAllItems = false)
         {
             base.ReloadData(reloadAllItems);
-            CalculateNewMinMaxItemsAfterReloadCell();
+            CalculateNewMinMaxItemsAfterReloadItem();
             RefreshAfterReload(reloadAllItems);
         }
 
@@ -298,7 +298,7 @@ namespace RecyclableSR
             {
                 if (_visibleItems.ContainsKey(i))
                 {
-                    HideCellAtIndex(i);
+                    HideItemAtIndex(i);
                 }
             }
             _maxVisibleItemInViewPort = Mathf.Max(0, _maxVisibleItemInViewPort - itemDiff);
@@ -306,9 +306,9 @@ namespace RecyclableSR
         }
         
         /// <summary>
-        /// Checks if cells need to be hidden, shown, instantiated after a cell is reloaded and its size changes
+        /// Checks if items need to be hidden, shown, instantiated after a item is reloaded and its size changes
         /// </summary>
-        private void CalculateNewMinMaxItemsAfterReloadCell()
+        private void CalculateNewMinMaxItemsAfterReloadItem()
         {
             // figure out the new _minVisibleItemInViewPort && _maxVisibleItemInViewPort
             GetContentBounds();
@@ -336,7 +336,7 @@ namespace RecyclableSR
             {
                 for (var i = newMaxExtraVisibleItemInViewPort + 1; i <= _maxExtraVisibleItemInViewPort; i++)
                 {
-                    ShowHideCellsAtIndex(i, false);
+                    ShowHideItemsAtIndex(i, false);
                 }
 
                 _maxVisibleItemInViewPort = newMaxVisibleItemInViewPort;
@@ -344,22 +344,22 @@ namespace RecyclableSR
             }
             else
             {
-                // here we initialize cells instead of using ShowCellAtIndex because we don't know much viewport space is left
-                InitializeCells(_maxExtraVisibleItemInViewPort + 1);
+                // here we initialize items instead of using ShowItemAtIndex because we don't know much viewport space is left
+                InitializeItems(_maxExtraVisibleItemInViewPort + 1);
             }
             
             if (newMinExtraVisibleItemInViewPort > _minExtraVisibleItemInViewPort)
             {
                 for (var i = _minExtraVisibleItemInViewPort; i < newMinExtraVisibleItemInViewPort; i++)
                 {
-                    ShowHideCellsAtIndex(i, false);
+                    ShowHideItemsAtIndex(i, false);
                 }
             }
             else
             {
                 for (var i = _minExtraVisibleItemInViewPort - 1; i >= newMinExtraVisibleItemInViewPort; i--)
                 {
-                    ShowHideCellsAtIndex(i, true);
+                    ShowHideItemsAtIndex(i, true);
                 }
             }
 
@@ -367,49 +367,49 @@ namespace RecyclableSR
             _minExtraVisibleItemInViewPort = newMinExtraVisibleItemInViewPort;
         }
 
-        protected override void ReloadCellInternal(int cellIndex, string reloadTag = "", bool reloadCellData = false, bool isReloadingAllData = false)
+        protected override void ReloadItemInternal(int itemIndex, string reloadTag = "", bool reloadItemData = false, bool isReloadingAllData = false)
         {
-            base.ReloadCellInternal(cellIndex, reloadTag, reloadCellData, isReloadingAllData);
-            SetCellSizeWithPositionAfterReload(_visibleItems[cellIndex], cellIndex, isReloadingAllData);
+            base.ReloadItemInternal(itemIndex, reloadTag, reloadItemData, isReloadingAllData);
+            SetItemSizeWithPositionAfterReload(_visibleItems[itemIndex], itemIndex, isReloadingAllData);
         }
 
         /// <summary>
-        /// Sets the cell new size and position after reloading, if cell size changed, recalculate all the cells that follow
+        /// Sets the item new size and position after reloading, if item size changed, recalculate all the items that follow
         /// </summary>
-        /// <param name="cell"></param>
-        /// <param name="cellIndex"></param>
+        /// <param name="item"></param>
+        /// <param name="itemIndex"></param>
         /// <param name="isReloadingAllData"></param>
-        private void SetCellSizeWithPositionAfterReload(Item cell, int cellIndex, bool isReloadingAllData)
+        private void SetItemSizeWithPositionAfterReload(Item item, int itemIndex, bool isReloadingAllData)
         {
-            var oldSize = _itemPositions[cellIndex].cellSize[_axis];
-            CalculateNonAxisSizePosition(cell.transform, cellIndex);
-            SetCellAxisPosition(cell.transform, cellIndex);
-            CalculateCellAxisSize(cell.transform, cellIndex);
+            var oldSize = _itemPositions[itemIndex].itemSize[_axis];
+            CalculateNonAxisSizePosition(item.transform, itemIndex);
+            SetItemAxisPosition(item.transform, itemIndex);
+            CalculateItemAxisSize(item.transform, itemIndex);
             
-            // no need to call this while reloading data, since ReloadData will call it after reloading cells
+            // no need to call this while reloading data, since ReloadData will call it after reloading items
             // calling it while reload data will add unneeded redundancy
             if (!isReloadingAllData)
             {
-                // no need to call CalculateNewMinMaxItemsAfterReloadCell if content moved since it will be handled in Update
-                var contentMoved = RecalculateFollowingCells(cellIndex, oldSize);
+                // no need to call CalculateNewMinMaxItemsAfterReloadItem if content moved since it will be handled in Update
+                var contentMoved = RecalculateFollowingItems(itemIndex, oldSize);
                 if (!contentMoved)
-                    CalculateNewMinMaxItemsAfterReloadCell();
+                    CalculateNewMinMaxItemsAfterReloadItem();
             }
         }
         
         /// <summary>
-        /// Sets the positions of all cells of index + 1
-        /// Persists content position to avoid sudden jumps if a cell size changes
+        /// Sets the positions of all items of index + 1
+        /// Persists content position to avoid sudden jumps if a item size changes
         /// </summary>
-        /// <param name="cellIndex">index of cell to start calculate following cells from</param>
-        /// <param name="oldSize">old cell size used to offset content position with</param>
+        /// <param name="itemIndex">index of item to start calculate following items from</param>
+        /// <param name="oldSize">old item size used to offset content position with</param>
         /// <returns></returns>
-        private bool RecalculateFollowingCells(int cellIndex, float oldSize)
+        private bool RecalculateFollowingItems(int itemIndex, float oldSize)
         {
-            // need to adjust all the cells position after cellIndex 
-            var startingCellToAdjustPosition = cellIndex + 1;
-            for (var i = startingCellToAdjustPosition; i <= _maxExtraVisibleItemInViewPort; i++)
-                SetCellAxisPosition(_visibleItems[i].transform, i);
+            // need to adjust all the items position after itemIndex 
+            var startingItemToAdjustPosition = itemIndex + 1;
+            for (var i = startingItemToAdjustPosition; i <= _maxExtraVisibleItemInViewPort; i++)
+                SetItemAxisPosition(_visibleItems[i].transform, i);
 
             if (_isAnimating)
                 return true;
@@ -417,23 +417,23 @@ namespace RecyclableSR
             var contentPosition = content.anchoredPosition;
             var contentMoved = false;
             var oldContentPosition = contentPosition[_axis];
-            if (cellIndex < _minExtraVisibleItemInViewPort)
+            if (itemIndex < _minExtraVisibleItemInViewPort)
             {
                 // this is a very special case as items reloaded at the top or right will have a different bottomRight position
                 // and since we are here at the item, if we don't manually set the position of the content, it will seem as the content suddenly shifted and disorient the user
-                contentPosition[_axis] = _itemPositions[cellIndex].absBottomRightPosition[_axis];
+                contentPosition[_axis] = _itemPositions[itemIndex].absBottomRightPosition[_axis];
                 
                 // set the normalized position as well, because why not
                 // (viewMin - (itemPosition - contentSize)) / (contentSize - viewSize)
                 // var viewportRect = viewport.rect;
                 // var contentRect = content.rect;
                 // var viewPortBounds = new Bounds(viewportRect.center, viewportRect.size);
-                // var newNormalizedPosition = (viewPortBounds.min[_axis] - (_itemPositions[cellIndex].bottomRightPosition[_axis] - contentRect.size[_axis])) / (contentRect.size[_axis] - viewportRect.size[_axis]);
+                // var newNormalizedPosition = (viewPortBounds.min[_axis] - (_itemPositions[itemIndex].bottomRightPosition[_axis] - contentRect.size[_axis])) / (contentRect.size[_axis] - viewportRect.size[_axis]);
                 // SetNormalizedPosition(newNormalizedPosition, _axis);
             }
-            else if (_minExtraVisibleItemInViewPort <= cellIndex && _minVisibleItemInViewPort > cellIndex)
+            else if (_minExtraVisibleItemInViewPort <= itemIndex && _minVisibleItemInViewPort > itemIndex)
             {
-                contentPosition[_axis] -= (oldSize - _itemPositions[cellIndex].cellSize[_axis]) * (_reverseDirection ? -1 : 1);
+                contentPosition[_axis] -= (oldSize - _itemPositions[itemIndex].itemSize[_axis]) * (_reverseDirection ? -1 : 1);
             }
             
             var contentPositionDiff = Mathf.Abs(contentPosition[_axis] - oldContentPosition);
@@ -455,18 +455,18 @@ namespace RecyclableSR
         /// Call the Show, Hide functions
         /// </summary>
         /// <param name="newIndex">current index of item we need to show</param>
-        /// <param name="show">show or hide current cell</param>
-        internal override void ShowHideCellsAtIndex(int newIndex, bool show)
+        /// <param name="show">show or hide current item</param>
+        internal override void ShowHideItemsAtIndex(int newIndex, bool show)
         {
-            base.ShowHideCellsAtIndex(newIndex, show);
+            base.ShowHideItemsAtIndex(newIndex, show);
 
             if (show)
             {
-                ShowCellAtIndex(newIndex);
+                ShowItemAtIndex(newIndex);
             }
             else
             {
-                HideCellAtIndex(newIndex);
+                HideItemAtIndex(newIndex);
             }
         }
         
@@ -481,7 +481,7 @@ namespace RecyclableSR
                 if (itemToHide > -1)
                 {
                     _minExtraVisibleItemInViewPort++;
-                    ShowHideCellsAtIndex(itemToHide, false);
+                    ShowHideItemsAtIndex(itemToHide, false);
                 }
             }
         }
@@ -497,7 +497,7 @@ namespace RecyclableSR
                 if (itemToShow < _itemsCount)
                 {
                     _maxExtraVisibleItemInViewPort = itemToShow;
-                    ShowHideCellsAtIndex(itemToShow, true);
+                    ShowHideItemsAtIndex(itemToShow, true);
                 }
             }
         }
@@ -513,7 +513,7 @@ namespace RecyclableSR
                 if (itemToHide < _itemsCount)
                 {
                     _maxExtraVisibleItemInViewPort--;
-                    ShowHideCellsAtIndex(itemToHide, false);
+                    ShowHideItemsAtIndex(itemToHide, false);
                 }
             }
         }
@@ -529,7 +529,7 @@ namespace RecyclableSR
                 if (itemToShow > -1)
                 {
                     _minExtraVisibleItemInViewPort = itemToShow;
-                    ShowHideCellsAtIndex(itemToShow, true);
+                    ShowHideItemsAtIndex(itemToShow, true);
                 }
             }
         }

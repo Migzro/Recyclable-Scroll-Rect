@@ -237,7 +237,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _itemsCount: 100
   _scrollRect: {fileID: 1904557393}
-  _prototypeCells:
+  _prototypeItems:
   - {fileID: 1638117046129563386, guid: e71a2206129434ac9b60b1d7743a0f00, type: 3}
   - {fileID: 1638117046129563386, guid: a8fbeae1039cd4ea9bf358107f5e5c16, type: 3}
   _extraItemsVisible: 0

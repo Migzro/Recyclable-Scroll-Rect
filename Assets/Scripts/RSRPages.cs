@@ -33,21 +33,21 @@ namespace RecyclableSR
             
             if (_currentPage >= _itemsCount)
             {
-                // scroll cell will handle the focus
-                ScrollToCell(Mathf.Max(0, _currentPage - 1), instant:true);
+                // scroll item will handle the focus
+                ScrollToItem(Mathf.Max(0, _currentPage - 1), instant:true);
             }
             else  if (_itemsCount > 0 && _visibleItems.ContainsKey(_currentPage))
             {
-                _pageSource?.PageWillFocus(_currentPage, true, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform, _itemPositions[_currentPage].topLeftPosition);
-                _pageSource?.PageFocused(_currentPage, true, _visibleItems[_currentPage].cell);
+                _pageSource?.PageWillFocus(_currentPage, true, _visibleItems[_currentPage].item, _visibleItems[_currentPage].transform, _itemPositions[_currentPage].topLeftPosition);
+                _pageSource?.PageFocused(_currentPage, true, _visibleItems[_currentPage].item);
             }
             
             SetCardsZIndices();
         }
 
         /// <summary>
-        /// Set cell z index on card when after it finishes scrolling
-        /// also set cell canvas group intractability & order in canvas
+        /// Set item z index on card when after it finishes scrolling
+        /// also set item canvas group intractability & order in canvas
         /// </summary>
         private void SetCardsZIndices(int pageToStaggerAnimationFor = -1)
         {
@@ -58,22 +58,22 @@ namespace RecyclableSR
             foreach (var visibleItem in _visibleItems)
             {
                 // set card z position
-                var cellZIndex = Mathf.Abs(visibleItem.Key -_currentPage) * _cardZMultiplier;
-                var cellPosition = visibleItem.Value.transform.anchoredPosition3D; 
-                cellPosition.y = 0;
-                cellPosition.z = cellZIndex;
-                visibleItem.Value.transform.anchoredPosition3D = cellPosition;
+                var itemZIndex = Mathf.Abs(visibleItem.Key -_currentPage) * _cardZMultiplier;
+                var itemPosition = visibleItem.Value.transform.anchoredPosition3D; 
+                itemPosition.y = 0;
+                itemPosition.z = itemZIndex;
+                visibleItem.Value.transform.anchoredPosition3D = itemPosition;
 
                 // set card as interactable if is current index
-                visibleItem.Value.cell.CanvasGroup.interactable = (visibleItem.Key == _currentPage);
-                visibleItem.Value.cell.CanvasGroup.blocksRaycasts = (visibleItem.Key == _currentPage);
+                visibleItem.Value.item.CanvasGroup.interactable = (visibleItem.Key == _currentPage);
+                visibleItem.Value.item.CanvasGroup.blocksRaycasts = (visibleItem.Key == _currentPage);
                 
                 // sort items
                 var siblingOrder = visibleItem.Key - _currentPage;
                 if (siblingOrder > 0)
                     siblingOrder = siblingOrder * -1 - _currentPage;
 
-                visibleItem.Value.cell.CanvasGroup.alpha = visibleItem.Key >= _currentPage && !_reverseDirection ? 1 : 0;
+                visibleItem.Value.item.CanvasGroup.alpha = visibleItem.Key >= _currentPage && !_reverseDirection ? 1 : 0;
                 childrenSiblingOrder.Add(siblingOrder, visibleItem.Value.transform);
             }
 
@@ -84,7 +84,7 @@ namespace RecyclableSR
 
             if (pageToStaggerAnimationFor != -1)
             {
-                _visibleItems[pageToStaggerAnimationFor].cell.CanvasGroup.alpha = 1;
+                _visibleItems[pageToStaggerAnimationFor].item.CanvasGroup.alpha = 1;
                 _visibleItems[pageToStaggerAnimationFor].transform.SetAsLastSibling();
             }
         }
@@ -92,17 +92,17 @@ namespace RecyclableSR
         public override void ScrollToTopRight()
         {
             base.ScrollToTopRight();
-            ScrollToCell(0, instant:true);
+            ScrollToItem(0, instant:true);
         }
         
-        protected override void PreformPreScrollingActions(int cellIndex, int direction)
+        protected override void PreformPreScrollingActions(int itemIndex, int direction)
         {
-            base.PreformPreScrollingActions(cellIndex, direction);
+            base.PreformPreScrollingActions(itemIndex, direction);
             
-            // create a list that will stop ScrollTo method from calling SetCellData on items that will only be visible in the one frame while scrolling, this assumes
-            // that the paging cell is taking up the entire width or height
-            var endingIndex = cellIndex;
-            _ignoreSetCellDataIndices.Clear();
+            // create a list that will stop ScrollTo method from calling SetItemData on items that will only be visible in the one frame while scrolling, this assumes
+            // that the paging item is taking up the entire width or height
+            var endingIndex = itemIndex;
+            _ignoreSetItemDataIndices.Clear();
             if (direction > 0)
             {
                 endingIndex -= _extraItemsVisible;
@@ -111,7 +111,7 @@ namespace RecyclableSR
                 {
                     if (!_visibleItems.ContainsKey(j) && _itemPositions[j].positionSet)
                     {
-                        _ignoreSetCellDataIndices.Add(j);
+                        _ignoreSetItemDataIndices.Add(j);
                     }
                 }
             }
@@ -123,31 +123,31 @@ namespace RecyclableSR
                 {
                     if (!_visibleItems.ContainsKey(j) && _itemPositions[j].positionSet)
                     {
-                        _ignoreSetCellDataIndices.Add(j);
+                        _ignoreSetItemDataIndices.Add(j);
                     }
                 }
             }
             
-            _forceCallWillFocusAfterAnimation = !_visibleItems.ContainsKey(cellIndex);
-            var isNextPage = cellIndex > _currentPage && !_reverseDirection;
-            if (_visibleItems.ContainsKey(cellIndex))
+            _forceCallWillFocusAfterAnimation = !_visibleItems.ContainsKey(itemIndex);
+            var isNextPage = itemIndex > _currentPage && !_reverseDirection;
+            if (_visibleItems.ContainsKey(itemIndex))
             {
-                _pageSource?.PageWillFocus(cellIndex, isNextPage, _visibleItems[cellIndex].cell, _visibleItems[cellIndex].transform, _itemPositions[cellIndex].topLeftPosition);
+                _pageSource?.PageWillFocus(itemIndex, isNextPage, _visibleItems[itemIndex].item, _visibleItems[itemIndex].transform, _itemPositions[itemIndex].topLeftPosition);
             }
 
             if (_visibleItems.ContainsKey(_currentPage))
             {
-                _pageSource?.PageWillUnFocus(_currentPage, isNextPage, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform);
+                _pageSource?.PageWillUnFocus(_currentPage, isNextPage, _visibleItems[_currentPage].item, _visibleItems[_currentPage].transform);
             }
         }
 
-        protected override void PreformPostScrollingActions(int cellIndex, bool instant)
+        protected override void PreformPostScrollingActions(int itemIndex, bool instant)
         {
-            base.PreformPostScrollingActions(cellIndex, instant);
+            base.PreformPostScrollingActions(itemIndex, instant);
             
-            if (_currentPage != cellIndex)
+            if (_currentPage != itemIndex)
             {
-                var isNextPage = cellIndex > _currentPage && !_reverseDirection;
+                var isNextPage = itemIndex > _currentPage && !_reverseDirection;
 
                 var pageToStaggerAnimation = -1;
                 if (!instant)
@@ -157,12 +157,12 @@ namespace RecyclableSR
                 }
 
                 if (_visibleItems.TryGetValue(_currentPage, out var visibleItem))
-                    _pageSource?.PageUnFocused(_currentPage, isNextPage, visibleItem.cell);
+                    _pageSource?.PageUnFocused(_currentPage, isNextPage, visibleItem.item);
 
-                _currentPage = cellIndex;
+                _currentPage = itemIndex;
                 if (_forceCallWillFocusAfterAnimation)
-                    _pageSource?.PageWillFocus(_currentPage, isNextPage, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform, _itemPositions[_currentPage].topLeftPosition);
-                _pageSource?.PageFocused(_currentPage, isNextPage, _visibleItems[_currentPage].cell);
+                    _pageSource?.PageWillFocus(_currentPage, isNextPage, _visibleItems[_currentPage].item, _visibleItems[_currentPage].transform, _itemPositions[_currentPage].topLeftPosition);
+                _pageSource?.PageFocused(_currentPage, isNextPage, _visibleItems[_currentPage].item);
                 
                 SetCardsZIndices(pageToStaggerAnimation);
             }
@@ -205,8 +205,8 @@ namespace RecyclableSR
             _isDragging = false;
             var newPage = CalculateNextPageAfterDrag();
             // TODO: why was this here?
-            // _dataSource.ScrolledToCell(_visibleItems[newPage].cell, newPage);
-            ScrollToCell(newPage);
+            // _dataSource.ScrolledToItem(_visibleItems[newPage].item, newPage);
+            ScrollToItem(newPage);
         }
 
         protected virtual int CalculateNextPageAfterDrag()
@@ -231,11 +231,11 @@ namespace RecyclableSR
         {
             if (Input.GetKeyUp(KeyCode.UpArrow))
             {
-                ScrollToCell(Mathf.Max(_currentPage - 1, 0), false);
+                ScrollToItem(Mathf.Max(_currentPage - 1, 0), false);
             }
             else if (Input.GetKeyUp( KeyCode.DownArrow))
             {
-                ScrollToCell(Mathf.Min(_currentPage + 1, _itemsCount-1), false);
+                ScrollToItem(Mathf.Min(_currentPage + 1, _itemsCount-1), false);
             }
         }
 #endif

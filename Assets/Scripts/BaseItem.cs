@@ -2,12 +2,12 @@ using UnityEngine;
 
 namespace RecyclableSR
 {
-    public class BaseCell : MonoBehaviour, ICell
+    public class BaseItem : MonoBehaviour, IItem
     {
         [SerializeField] private CanvasGroup canvasGroup;
-        public int CellIndex { get; set; }
+        public int ItemIndex { get; set; }
         public RSRBase RSRBase { get; set; }
-        public RectTransform[] CellsNeededForVisualUpdate { get; }
+        public RectTransform[] ItemsNeededForVisualUpdate { get; }
 
         public CanvasGroup CanvasGroup
         {

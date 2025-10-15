@@ -7,7 +7,7 @@ namespace RecyclableSR
     [CanEditMultipleObjects]
     public class RSRGridEditor : RSRBaseEditor
     {
-        private SerializedProperty _gridCellSize;
+        private SerializedProperty _gridItemSize;
         private SerializedProperty _gridStartAxis;
         private SerializedProperty _gridConstraint;
         private SerializedProperty _gridConstraintCount;
@@ -15,7 +15,7 @@ namespace RecyclableSR
         protected override void OnEnable()
         {
             base.OnEnable();
-            _gridCellSize = serializedObject.FindProperty(nameof(_gridCellSize));
+            _gridItemSize = serializedObject.FindProperty(nameof(_gridItemSize));
             _gridStartAxis = serializedObject.FindProperty(nameof(_gridStartAxis));
             _gridConstraint = serializedObject.FindProperty(nameof(_gridConstraint));
             _gridConstraintCount = serializedObject.FindProperty(nameof(_gridConstraintCount));
@@ -25,7 +25,7 @@ namespace RecyclableSR
         {
             base.OnInspectorGUI();
             EditorGUILayout.Space();
-            EditorGUILayout.PropertyField(_gridCellSize);
+            EditorGUILayout.PropertyField(_gridItemSize);
             EditorGUILayout.PropertyField(_gridStartAxis);
             EditorGUILayout.PropertyField(_gridConstraint);
 

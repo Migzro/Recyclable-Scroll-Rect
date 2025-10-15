@@ -32,7 +32,7 @@ public class PrefabInitializer : MonoBehaviour
             for (var i = 0; i < count; i++)
             {
                 var go = Instantiate(prefab, content);
-                go.GetComponent<DemoCellPrototype>().Initialize(i.ToString());
+                go.GetComponent<DemoItemPrototype>().Initialize(i.ToString());
             }
         }
     }

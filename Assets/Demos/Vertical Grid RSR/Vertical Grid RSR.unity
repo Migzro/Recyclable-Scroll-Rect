@@ -249,7 +249,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _itemsCount: 100
   _scrollRect: {fileID: 1904557393}
-  _prototypeCells:
+  _prototypeItems:
   - {fileID: 1638117046129563386, guid: 7d07dc272788b4bc9a294d5f0345009a, type: 3}
   - {fileID: 1638117046129563386, guid: 18e652532342b4488814228ed812aff2, type: 3}
   _extraRowsColumnsVisible: 0
@@ -566,7 +566,7 @@ MonoBehaviour:
     m_Top: 0
     m_Bottom: 0
   _childAlignment: 0
-  _gridCellSize: {x: 100, y: 100}
+  _gridItemSize: {x: 100, y: 100}
   _gridStartAxis: 0
   _gridConstraint: 0
   _gridConstraintCount: 2

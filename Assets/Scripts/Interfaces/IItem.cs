@@ -2,11 +2,11 @@ using UnityEngine;
 
 namespace RecyclableSR
 {
-    public interface ICell
+    public interface IItem
     { 
-        int CellIndex { set; }
+        int ItemIndex { set; }
         RSRBase RSRBase { set; }
-        RectTransform[] CellsNeededForVisualUpdate { get; }
+        RectTransform[] ItemsNeededForVisualUpdate { get; }
         CanvasGroup CanvasGroup { get; }
     }
 }

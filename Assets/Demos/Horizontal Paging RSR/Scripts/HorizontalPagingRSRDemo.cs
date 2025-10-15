@@ -1,12 +1,13 @@
 using System.Collections.Generic;
 using RecyclableSR;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class HorizontalPagingRSRDemo : MonoBehaviour, IPageSource
 {
     [SerializeField] private int _itemsCount;
     [SerializeField] private RSRPages _scrollRect;
-    [SerializeField] private GameObject[] _prototypeCells;
+    [SerializeField] private GameObject[] _prototypeItems;
     [SerializeField] private int _extraItemsVisible;
         
     private List<string> _dataSource;
@@ -14,9 +15,9 @@ public class HorizontalPagingRSRDemo : MonoBehaviour, IPageSource
     
     public int ItemsCount => _itemsCount;
     public int ExtraItemsVisible => _extraItemsVisible;
-    public bool IsCellSizeKnown => true;
+    public bool IsItemSizeKnown => true;
     public bool IsSetVisibleUsingCanvasGroupAlpha => false;
-    public GameObject[] PrototypeCells => _prototypeCells;
+    public GameObject[] PrototypeItems => _prototypeItems;
 
     private void Start()
     {
@@ -26,42 +27,42 @@ public class HorizontalPagingRSRDemo : MonoBehaviour, IPageSource
         _scrollRect.Initialize(this);
     }
 
-    public float GetCellSize(int cellIndex)
+    public float GetItemSize(int itemIndex)
     {
         return 1334f;
     }
 
-    public void SetCellData(ICell cell, int cellIndex)
+    public void SetItemData(IItem item, int itemIndex)
     {
-        (cell as DemoCellPrototype)?.Initialize(_dataSource[cellIndex]);
+        (item as DemoItemPrototype)?.Initialize(_dataSource[itemIndex]);
     }
 
-    public void CellHidden(ICell cell, int cellIndex)
+    public void ItemHidden(IItem item, int itemIndex)
     {
     }
 
-    public GameObject GetPrototypeCell(int cellIndex)
+    public GameObject GetItemPrototype(int itemIndex)
     {
-        if (cellIndex % 2 == 0)
-            return _prototypeCells[0]; 
-        return _prototypeCells[1];
+        if (itemIndex % 2 == 0)
+            return _prototypeItems[0]; 
+        return _prototypeItems[1];
     }
 
-    public void CellCreated(int cellIndex, ICell cell, GameObject cellGo)
+    public void ItemCreated(int itemIndex, IItem item, GameObject itemGo)
     {
         
     }
 
-    public bool IsCellStatic(int cellIndex)
+    public bool IsItemStatic(int itemIndex)
     {
         return false;
     }
 
-    public void ScrolledToCell(ICell cell, int cellIndex)
+    public void ScrolledToItem(IItem item, int itemIndex)
     {
     }
 
-    public bool IgnoreContentPadding(int cellIndex)
+    public bool IgnoreContentPadding(int itemIndex)
     {
         return false;
     }
@@ -86,19 +87,19 @@ public class HorizontalPagingRSRDemo : MonoBehaviour, IPageSource
     {
     }
 
-    public void PageFocused(int cellIndex, bool isNextPage, ICell cell)
+    public void PageFocused(int itemIndex, bool isNextPage, IItem item)
     {
     }
 
-    public void PageUnFocused(int cellIndex, bool isNextPage, ICell cell)
+    public void PageUnFocused(int itemIndex, bool isNextPage, IItem item)
     {
     }
 
-    public void PageWillFocus(int cellIndex, bool isNextPage, ICell cell, RectTransform rect, Vector2 originalPosition)
+    public void PageWillFocus(int itemIndex, bool isNextPage, IItem item, RectTransform rect, Vector2 originalPosition)
     {
     }
 
-    public void PageWillUnFocus(int cellIndex, bool isNextPage, ICell cell, RectTransform rect)
+    public void PageWillUnFocus(int itemIndex, bool isNextPage, IItem item, RectTransform rect)
     {
     }
 }

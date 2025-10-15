@@ -4,9 +4,9 @@ namespace RecyclableSR
 {
     public interface IPageSource : IRSRSource
     {
-        void PageFocused(int cellIndex, bool isNextPage, ICell cell);
-        void PageUnFocused(int cellIndex, bool isNextPage, ICell cell);
-        void PageWillFocus(int cellIndex, bool isNextPage, ICell cell, RectTransform rect, Vector2 originalPosition);
-        void PageWillUnFocus(int cellIndex, bool isNextPage, ICell cell, RectTransform rect);
+        void PageFocused(int itemIndex, bool isNextPage, IItem item);
+        void PageUnFocused(int itemIndex, bool isNextPage, IItem item);
+        void PageWillFocus(int itemIndex, bool isNextPage, IItem item, RectTransform rect, Vector2 originalPosition);
+        void PageWillUnFocus(int itemIndex, bool isNextPage, IItem item, RectTransform rect);
     }
 }

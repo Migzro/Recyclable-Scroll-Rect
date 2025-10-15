@@ -20,8 +20,8 @@ namespace RecyclableSR
 
                 if (newPage != _currentPage)
                 {
-                    _pageSource?.PageWillFocus(newPage, isNextPage, _visibleItems[newPage].cell, _visibleItems[newPage].transform, _itemPositions[newPage].topLeftPosition);
-                    _pageSource?.PageWillUnFocus(_currentPage, isNextPage, _visibleItems[_currentPage].cell, _visibleItems[_currentPage].transform);
+                    _pageSource?.PageWillFocus(newPage, isNextPage, _visibleItems[newPage].item, _visibleItems[newPage].transform, _itemPositions[newPage].topLeftPosition);
+                    _pageSource?.PageWillUnFocus(_currentPage, isNextPage, _visibleItems[_currentPage].item, _visibleItems[_currentPage].transform);
                 }
             }
             
