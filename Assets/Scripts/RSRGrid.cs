@@ -263,9 +263,7 @@ namespace RecyclableSR
         }
         
         /// <summary>
-        /// This function calculates the cell size if its unknown by forcing a Layout rebuild
-        /// if it is known we just get the cell size
-        /// then calculating the new content size based on the old cell size if it was set previously
+        /// This function just sets the rect.sizeDelta of the grid
         /// </summary>
         /// <param name="rect">rect of the cell which the size will be calculated for</param>
         /// <param name="index">cell index which the size will be calculated for</param>

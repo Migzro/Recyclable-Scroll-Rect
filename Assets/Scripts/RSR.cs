@@ -144,7 +144,6 @@ namespace RecyclableSR
         /// <summary>
         /// This function calculates the cell size if its unknown by forcing a Layout rebuild
         /// if it is known we just get the cell size
-        /// then calculating the new content size based on the old cell size if it was set previously
         /// </summary>
         /// <param name="rect">rect of the cell which the size will be calculated for</param>
         /// <param name="index">cell index which the size will be calculated for</param>
@@ -159,28 +158,27 @@ namespace RecyclableSR
             {
                 ForceLayoutRebuild(index);
                 newCellSize[_axis] = rect.rect.size[_axis];
+                
+                // set the content size since items size was not known at the time of the initialization
+                var contentSize = content.sizeDelta;
+                contentSize[_axis] += newCellSize[_axis] - oldCellSize;
+
+                if (vertical)
+                {
+                    _layoutElement.preferredHeight = contentSize.y;
+                }
+                else
+                {
+                    _layoutElement.preferredWidth = contentSize.x;
+                } 
+                content.sizeDelta = contentSize;
             }
             else
             {
                 newCellSize[_axis] = _dataSource.GetCellSize(index);
             }
 
-            // get difference in cell size if its size has changed
             _itemPositions[index].SetSize(newCellSize);
-            
-            var contentSize = content.sizeDelta;
-            contentSize[_axis] += newCellSize[_axis] - oldCellSize;
-
-            if (vertical)
-            {
-                _layoutElement.preferredHeight = contentSize.y;
-            }
-            else
-            {
-                _layoutElement.preferredWidth = contentSize.x;
-            }
-
-            content.sizeDelta = contentSize;
         }
 
         protected override void CalculateNonAxisSizePosition(RectTransform rect, int cellIndex)
@@ -188,7 +186,7 @@ namespace RecyclableSR
             base.CalculateNonAxisSizePosition(rect, cellIndex);
             
             var forceSize = false;
-            // expand item width if it's in a vertical layout group and the conditions are satisfied
+            // expand item width if it's in a vertical scrollRect and the conditions are satisfied
             if (vertical && _childForceExpand)
             {
                 var itemSize = rect.sizeDelta;
@@ -199,10 +197,11 @@ namespace RecyclableSR
                 }
 
                 rect.sizeDelta = itemSize;
+                _itemPositions[cellIndex].SetSize(itemSize);
                 forceSize = true;
             }
 
-            // expand item height if it's in a horizontal layout group and the conditions are satisfied
+            // expand item height if it's in a horizontal scrollRect and the conditions are satisfied
             else if (!vertical && _childForceExpand)
             {
                 var itemSize = rect.sizeDelta;
@@ -213,6 +212,7 @@ namespace RecyclableSR
                 }
 
                 rect.sizeDelta = itemSize;
+                _itemPositions[cellIndex].SetSize(itemSize);
                 forceSize = true;
             }
 
@@ -383,8 +383,8 @@ namespace RecyclableSR
         {
             var oldSize = _itemPositions[cellIndex].cellSize[_axis];
             CalculateNonAxisSizePosition(cell.transform, cellIndex);
-            CalculateCellAxisSize(cell.transform, cellIndex);
             SetCellAxisPosition(cell.transform, cellIndex);
+            CalculateCellAxisSize(cell.transform, cellIndex);
             
             // no need to call this while reloading data, since ReloadData will call it after reloading cells
             // calling it while reload data will add unneeded redundancy

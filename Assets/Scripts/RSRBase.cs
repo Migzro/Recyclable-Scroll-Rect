@@ -14,7 +14,7 @@ namespace RecyclableSR
         // TODO: remove _manuallyHandleCardAnimations
         
         // TODO: Check Horizontal Grid
-        // TODO: Check what triggers Hide & Show Cell in grids
+        // TODO: rename the word cell to item 
         // TODO: different start axes for grid layout
         // TODO: FixedColumnCount with Vertical Grids & FixedRowCount with Horizontal Grids (remaining _maxExtraVisibleItemInViewPort needs to be / _maxGridsItemsInAxis
         // TODO: Fix all behaviours for gridLayout and make sure _reverseDirection is working properly
@@ -572,8 +572,6 @@ namespace RecyclableSR
         /// <summary>
         /// This function calculates the cell size if its unknown by forcing a Layout rebuild
         /// if it is known we just get the cell size
-        /// then calculating the new content size based on the old cell size if it was set previously
-        /// not needed in Gridlayout as the cell size will never change
         /// </summary>
         /// <param name="rect">rect of the cell which the size will be calculated for</param>
         /// <param name="index">cell index which the size will be calculated for</param>
