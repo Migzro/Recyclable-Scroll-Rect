@@ -2,10 +2,10 @@ using System.Collections.Generic;
 using RecyclableSR;
 using UnityEngine;
 
-public class HorizontalPagingRSRDemo : MonoBehaviour, IRSRSource
+public class HorizontalPagingRSRDemo : MonoBehaviour, IPageSource
 {
     [SerializeField] private int _itemsCount;
-    [SerializeField] private RSRBase _scrollRect;
+    [SerializeField] private RSRPages _scrollRect;
     [SerializeField] private GameObject[] _prototypeCells;
     [SerializeField] private int _extraItemsVisible;
         
@@ -83,6 +83,22 @@ public class HorizontalPagingRSRDemo : MonoBehaviour, IRSRSource
     }
 
     public void LastItemInScrollIsVisible()
+    {
+    }
+
+    public void PageFocused(int cellIndex, bool isNextPage, ICell cell)
+    {
+    }
+
+    public void PageUnFocused(int cellIndex, bool isNextPage, ICell cell)
+    {
+    }
+
+    public void PageWillFocus(int cellIndex, bool isNextPage, ICell cell, RectTransform rect, Vector2 originalPosition)
+    {
+    }
+
+    public void PageWillUnFocus(int cellIndex, bool isNextPage, ICell cell, RectTransform rect)
     {
     }
 }

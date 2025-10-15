@@ -131,8 +131,8 @@ GameObject:
   - component: {fileID: 658359682}
   - component: {fileID: 658359681}
   - component: {fileID: 658359680}
-  - component: {fileID: 658359684}
   - component: {fileID: 658359685}
+  - component: {fileID: 658359684}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -232,14 +232,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 658359679}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5b16be8a8a1fc489db8997c77a2e7e47, type: 3}
+  m_Script: {fileID: 11500000, guid: 030cc04c1433d4501a2c281164d3196f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _itemsCount: 5
+  _itemsCount: 100
   _scrollRect: {fileID: 1904557393}
   _prototypeCells:
-  - {fileID: 1638117046129563386, guid: 4fd4597b061924e918bc6e7e119fad53, type: 3}
-  - {fileID: 1638117046129563386, guid: acc2975b468f8492c857dad0a3bce0c8, type: 3}
+  - {fileID: 1638117046129563386, guid: e71a2206129434ac9b60b1d7743a0f00, type: 3}
+  - {fileID: 1638117046129563386, guid: a8fbeae1039cd4ea9bf358107f5e5c16, type: 3}
   _extraItemsVisible: 0
 --- !u!114 &658359685
 MonoBehaviour:
@@ -252,7 +252,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0d34df9e18eb5408d9102a9d34cbe7d8, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: Assembly-CSharp::SetVerticalGameView
 --- !u!1 &1362537419
 GameObject:
   m_ObjectHideFlags: 0
@@ -286,7 +286,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 40}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1413815494
 GameObject:
@@ -341,14 +341,13 @@ MonoBehaviour:
   m_FirstSelected: {fileID: 0}
   m_sendNavigationEvents: 1
   m_DragThreshold: 10
---- !u!4 &1413815497
-Transform:
+--- !u!224 &1413815497
+RectTransform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1413815494}
-  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
@@ -356,6 +355,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1896353321
 GameObject:
   m_ObjectHideFlags: 0
@@ -532,9 +536,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1904557388}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4ef1dfd3b097946c18d01233312d2807, type: 3}
+  m_Script: {fileID: 11500000, guid: 94e6061fd4abe43a39a8549645085b7f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RecyclableSR.RSRPages
+  m_EditorClassIdentifier: Assembly-CSharp::RecyclableSR.RSR
   m_Content: {fileID: 1362537420}
   m_Horizontal: 0
   m_Vertical: 1
@@ -553,29 +557,19 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
-  _spacing: {x: 0, y: 0}
+  _reverseDirection: 0
+  _childForceExpand: 1
+  _pullToRefreshThreshold: 150
+  _pushToCloseThreshold: 150
+  _useConstantScrollingSpeed: 0
+  _constantScrollingSpeed: 0
+  _spacing: {x: 0, y: 10}
   _padding:
     m_Left: 0
     m_Right: 0
     m_Top: 0
     m_Bottom: 0
-  _alignment: 0
-  _reverseDirection: 0
-  _childForceExpand: 1
-  _pullToRefreshThreshold: 150
-  _pushToCloseThreshold: 150
-  _manuallyHandleCardAnimations: 0
-  _useConstantScrollingSpeed: 0
-  _constantScrollingSpeed: 0
-  _paged: 1
-  _swipeThreshold: 200
-  _isGridLayout: 0
-  _gridCellSize: {x: 0, y: 0}
-  _gridStartAxis: 0
-  _gridConstraint: 0
-  _gridConstraintCount: 0
-  _cardZMultiplier: 0
-  _cardMode: 0
+  _childAlignment: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

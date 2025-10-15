@@ -5,7 +5,7 @@ using UnityEngine;
 public class VerticalDynamicRSRDemo : MonoBehaviour, IRSRSource
 {
     [SerializeField] private int _itemsCount;
-    [SerializeField] private RSRBase _scrollRect;
+    [SerializeField] private RSR _scrollRect;
     [SerializeField] private GameObject[] _prototypeCells;
     [SerializeField] private int _extraItemsVisible;
         
@@ -28,7 +28,6 @@ public class VerticalDynamicRSRDemo : MonoBehaviour, IRSRSource
 
     private void ReloadCell()
     {
-        Debug.Log("Reloading Cell");
         _dataSource[5] = "5";
         _scrollRect.ReloadCell(5, "", true);
     }

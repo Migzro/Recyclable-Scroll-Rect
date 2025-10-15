@@ -5,7 +5,7 @@ using UnityEngine;
 public class HorizontalDynamicRSRDemo : MonoBehaviour, IRSRSource
 {
     [SerializeField] private int _itemsCount;
-    [SerializeField] private RSRBase _scrollRect;
+    [SerializeField] private RSR _scrollRect;
     [SerializeField] private GameObject[] _prototypeCells;
     [SerializeField] private int _extraItemsVisible;
         

@@ -6,7 +6,7 @@ using UnityEngine;
 public class HorizontalCardsRSRDemo : MonoBehaviour, IPageSource
 {
     [SerializeField] private int _itemsCount;
-    [SerializeField] private RSRBase _scrollRect;
+    [SerializeField] private RSRCards _scrollRect;
     [SerializeField] private GameObject[] _prototypeCells;
     [SerializeField] private int _extraItemsVisible;
     [SerializeField] private float _animationTime;

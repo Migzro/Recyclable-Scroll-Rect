@@ -174,7 +174,7 @@ MonoBehaviour:
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 750, y: 1334}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 1
+  m_MatchWidthOrHeight: 0
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
@@ -198,7 +198,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
-  m_AdditionalShaderChannelsFlag: 25
+  m_AdditionalShaderChannelsFlag: 0
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 0
@@ -232,9 +232,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 658359679}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d34df9e18eb5408d9102a9d34cbe7d8, type: 3}
+  m_Script: {fileID: 11500000, guid: 5b16be8a8a1fc489db8997c77a2e7e47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _itemsCount: 5
+  _scrollRect: {fileID: 1904557393}
+  _prototypeCells:
+  - {fileID: 1638117046129563386, guid: 4fd4597b061924e918bc6e7e119fad53, type: 3}
+  - {fileID: 1638117046129563386, guid: acc2975b468f8492c857dad0a3bce0c8, type: 3}
+  _extraItemsVisible: 0
 --- !u!114 &658359685
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -244,15 +250,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 658359679}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dc9b30100807b416487dc1ed5d6fc7df, type: 3}
+  m_Script: {fileID: 11500000, guid: 0d34df9e18eb5408d9102a9d34cbe7d8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _itemsCount: 100
-  _scrollRect: {fileID: 1904557393}
-  _prototypeCells:
-  - {fileID: 1638117046129563386, guid: 7d07dc272788b4bc9a294d5f0345009a, type: 3}
-  - {fileID: 1638117046129563386, guid: 18e652532342b4488814228ed812aff2, type: 3}
-  extraRowsColumnsRowsColumnsVisible: 1
 --- !u!1 &1362537419
 GameObject:
   m_ObjectHideFlags: 0
@@ -262,8 +262,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1362537420}
-  - component: {fileID: 1362537422}
-  - component: {fileID: 1362537421}
   m_Layer: 5
   m_Name: Content
   m_TagString: Untagged
@@ -288,49 +286,8 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 1334}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
---- !u!114 &1362537421
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1362537419}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8a8695521f0d02e499659fee002a26c2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GridLayoutGroup
-  m_Padding:
-    m_Left: 0
-    m_Right: 0
-    m_Top: 0
-    m_Bottom: 0
-  m_ChildAlignment: 0
-  m_StartCorner: 0
-  m_StartAxis: 0
-  m_CellSize: {x: 100, y: 100}
-  m_Spacing: {x: 10, y: 0}
-  m_Constraint: 0
-  m_ConstraintCount: 7
---- !u!114 &1362537422
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1362537419}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4741d17c4bb48434cbaab7b061ba530a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PrefabInitializer
-  count: 100
-  content: {fileID: 1362537420}
-  prefab: {fileID: 1638117046129563386, guid: 7d07dc272788b4bc9a294d5f0345009a, type: 3}
-  update: 0
-  delete: 0
 --- !u!1 &1413815494
 GameObject:
   m_ObjectHideFlags: 0
@@ -575,9 +532,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1904557388}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c85cb66a9166d4ecdabb93a753139597, type: 3}
+  m_Script: {fileID: 11500000, guid: 4ef1dfd3b097946c18d01233312d2807, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RecyclableSR.RSRGrid
+  m_EditorClassIdentifier: Assembly-CSharp::RecyclableSR.RSRPages
   m_Content: {fileID: 1362537420}
   m_Horizontal: 0
   m_Vertical: 1
@@ -597,22 +554,22 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   _reverseDirection: 0
-  _childForceExpand: 0
+  _childForceExpand: 1
   _pullToRefreshThreshold: 150
   _pushToCloseThreshold: 150
   _useConstantScrollingSpeed: 0
   _constantScrollingSpeed: 0
-  _spacing: {x: 10, y: 0}
+  _spacing: {x: 0, y: 0}
   _padding:
     m_Left: 0
     m_Right: 0
     m_Top: 0
     m_Bottom: 0
   _childAlignment: 0
-  _gridCellSize: {x: 100, y: 100}
-  _gridStartAxis: 0
-  _gridConstraint: 0
-  _gridConstraintCount: 2
+  _swipeThreshold: 200
+  _cardZMultiplier: 0
+  _cardMode: 0
+  _manuallyHandleCardAnimations: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
