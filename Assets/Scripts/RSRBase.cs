@@ -340,31 +340,37 @@ namespace RecyclableSR
         
         /// <summary>
         /// Set prefab names for when needed to retrieve from pool
+        /// if item already has a prototype name and isVisible, change the prototype gameObject
         /// </summary>
         private void SetPrototypeNames()
         {
-            // create an array of items that need their prototype changed
-            var changeItemPrototypeList = new List<int>();
-
-            // set an array of prototype names to be used when getting the correct prefab for the item index it exists in its respective pool
+            // set an array of prototype names to be used when getting the correct prefab for the item index if it exists
             for (var i = 0; i < _itemsCount; i++)
             {
                 var actualItemIndex = GetActualItemIndex(i);
-                var newPrototype = actualItemIndex == -1 ? string.Empty : _dataSource.GetItemPrototype(actualItemIndex).name;
+                var newPrototypeName = actualItemIndex == -1 ? string.Empty : _dataSource.GetItemPrototype(actualItemIndex).name;
                 if (i < _prototypeNames.Count)
                 {
-                    if (newPrototype != _prototypeNames[i] && actualItemIndex != -1)
+                    if (newPrototypeName != _prototypeNames[i] && actualItemIndex != -1)
                     {
-                        changeItemPrototypeList.Add(i);
+                        // hide the item if its visible, remove the old prototype name from the pool, show the cell again with the new prototype name
+                        var isVisible = _visibleItems.ContainsKey(i);
+                        if (isVisible)
+                        {
+                            HideItemAtIndex(i);
+                        }
+                        _prototypeNames[i] = newPrototypeName;
+                        if (isVisible)
+                        {
+                            ShowItemAtIndex(i);
+                        }
                     }
                 }
                 else
                 {
-                    _prototypeNames.Add(newPrototype);
+                    _prototypeNames.Add(newPrototypeName);
                 }
             }
-            
-            ChangeItemsPrototype(changeItemPrototypeList);
         }
 
         /// <summary>
@@ -883,36 +889,6 @@ namespace RecyclableSR
 
         protected virtual void RefreshAfterReload(bool reloadAllItems)
         {
-        }
-
-        /// <summary>
-        /// An item needs its game object type changed
-        /// </summary>
-        /// <param name="itemIndices">item index in which we need to change prototype for</param>
-        private void ChangeItemsPrototype(List<int> itemIndices)
-        {
-            var wasVisible = new List<int>();
-            
-            for (var i = 0; i < itemIndices.Count; i++)
-            {
-                if (_visibleItems.ContainsKey(itemIndices[i]))
-                {
-                    wasVisible.Add(itemIndices[i]);
-                    HideItemAtIndex(itemIndices[i]);
-                }
-            }
-            
-            for (var i = 0; i < itemIndices.Count; i++)
-            {
-                var actualItemIndex = GetActualItemIndex(itemIndices[i]);
-                _prototypeNames[itemIndices[i]] = _dataSource.GetItemPrototype(actualItemIndex).name;
-                _staticItems[itemIndices[i]] = _dataSource.IsItemStatic(actualItemIndex);
-
-                if (wasVisible.Contains(itemIndices[i]))
-                {
-                    ShowItemAtIndex(itemIndices[i]);
-                }
-            }
         }
 
         /// <summary>
