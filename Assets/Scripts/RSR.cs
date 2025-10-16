@@ -38,7 +38,7 @@ namespace RecyclableSR
             var i = startIndex;
             while ((contentHasSpace || extraItemsInitialized < _extraItemsVisible) && i < _itemsCount)
             {
-                ShowHideItemsAtIndex(i, true);
+                ShowItemAtIndex(i);
                 if (!contentHasSpace)
                     extraItemsInitialized++;
                 else
@@ -336,7 +336,7 @@ namespace RecyclableSR
             {
                 for (var i = newMaxExtraVisibleItemInViewPort + 1; i <= _maxExtraVisibleItemInViewPort; i++)
                 {
-                    ShowHideItemsAtIndex(i, false);
+                    HideItemAtIndex(i);
                 }
 
                 _maxVisibleItemInViewPort = newMaxVisibleItemInViewPort;
@@ -352,14 +352,14 @@ namespace RecyclableSR
             {
                 for (var i = _minExtraVisibleItemInViewPort; i < newMinExtraVisibleItemInViewPort; i++)
                 {
-                    ShowHideItemsAtIndex(i, false);
+                    HideItemAtIndex(i);
                 }
             }
             else
             {
                 for (var i = _minExtraVisibleItemInViewPort - 1; i >= newMinExtraVisibleItemInViewPort; i--)
                 {
-                    ShowHideItemsAtIndex(i, true);
+                    ShowItemAtIndex(i);
                 }
             }
 
@@ -451,25 +451,6 @@ namespace RecyclableSR
             return contentMoved;
         }
 
-        /// <summary>
-        /// Call the Show, Hide functions
-        /// </summary>
-        /// <param name="newIndex">current index of item we need to show</param>
-        /// <param name="show">show or hide current item</param>
-        internal override void ShowHideItemsAtIndex(int newIndex, bool show)
-        {
-            base.ShowHideItemsAtIndex(newIndex, show);
-
-            if (show)
-            {
-                ShowItemAtIndex(newIndex);
-            }
-            else
-            {
-                HideItemAtIndex(newIndex);
-            }
-        }
-        
         protected override void HideItemsAtTopLeft()
         {
             base.HideItemsAtTopLeft();
@@ -481,7 +462,7 @@ namespace RecyclableSR
                 if (itemToHide > -1)
                 {
                     _minExtraVisibleItemInViewPort++;
-                    ShowHideItemsAtIndex(itemToHide, false);
+                    HideItemAtIndex(itemToHide);
                 }
             }
         }
@@ -497,7 +478,7 @@ namespace RecyclableSR
                 if (itemToShow < _itemsCount)
                 {
                     _maxExtraVisibleItemInViewPort = itemToShow;
-                    ShowHideItemsAtIndex(itemToShow, true);
+                    ShowItemAtIndex(itemToShow);
                 }
             }
         }
@@ -513,7 +494,7 @@ namespace RecyclableSR
                 if (itemToHide < _itemsCount)
                 {
                     _maxExtraVisibleItemInViewPort--;
-                    ShowHideItemsAtIndex(itemToHide, false);
+                    HideItemAtIndex(itemToHide);
                 }
             }
         }
@@ -529,7 +510,7 @@ namespace RecyclableSR
                 if (itemToShow > -1)
                 {
                     _minExtraVisibleItemInViewPort = itemToShow;
-                    ShowHideItemsAtIndex(itemToShow, true);
+                    ShowItemAtIndex(itemToShow);
                 }
             }
         }

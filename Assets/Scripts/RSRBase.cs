@@ -724,16 +724,6 @@ namespace RecyclableSR
         }
 
         /// <summary>
-        /// Used to determine which items will be shown or hidden in case it is a grid layout since we need to show more than one item depending on the grid configuration
-        /// if it's not a grid layout, just call the Show, Hide functions
-        /// </summary>
-        /// <param name="newIndex">current index of item we need to show</param>
-        /// <param name="show">show or hide current item</param>
-        internal virtual void ShowHideItemsAtIndex(int newIndex, bool show)
-        {
-        }
-
-        /// <summary>
         /// User has scrolled, and we need to show an item
         /// If there is a pooled item available, we get it and set its position, sibling index, and remove it from the pool
         /// If there is no pooled item available, we create a new one

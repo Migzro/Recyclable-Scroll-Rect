@@ -277,7 +277,7 @@ namespace RecyclableSR
 
             while ((contentHasSpace || extraRowsColumnsInitialized < _extraRowsColumnsVisible) && currentStartItemInRowColumn < _itemsCount)
             {
-                ShowHideItemsAtIndex(currentStartItemInRowColumn, true);
+                ShowHideRowsColumnsAtIndex(currentStartItemInRowColumn, true);
                 
                 if (!contentHasSpace)
                     extraRowsColumnsInitialized++;
@@ -353,10 +353,8 @@ namespace RecyclableSR
         /// </summary>
         /// <param name="newIndex">current index of item we need to show</param>
         /// <param name="show">show or hide current item</param>
-        internal override void ShowHideItemsAtIndex(int newIndex, bool show)
+        private void ShowHideRowsColumnsAtIndex(int newIndex, bool show)
         {
-            base.ShowHideItemsAtIndex(newIndex, show);
-            
             var indices = new List<int>(_gridConstraintCount);
             var item2dIndex = Get2dIndex(newIndex);
 
@@ -408,7 +406,7 @@ namespace RecyclableSR
                 if (itemToHide > -1)
                 {
                     _minExtraVisibleItemInViewPort += _gridConstraintCount;
-                    ShowHideItemsAtIndex(itemToHide, false);
+                    ShowHideRowsColumnsAtIndex(itemToHide, false);
                 }
             }
         }
@@ -424,7 +422,7 @@ namespace RecyclableSR
                 if (itemToShow < _itemsCount)
                 {
                     _maxExtraVisibleItemInViewPort = itemToShow;
-                    ShowHideItemsAtIndex(itemToShow, true);
+                    ShowHideRowsColumnsAtIndex(itemToShow, true);
                 }
             }
         }
@@ -440,7 +438,7 @@ namespace RecyclableSR
                 if (itemToHide < _itemsCount)
                 {
                     _maxExtraVisibleItemInViewPort -= _gridConstraintCount;
-                    ShowHideItemsAtIndex(itemToHide, false);
+                    ShowHideRowsColumnsAtIndex(itemToHide, false);
                 }
             }
         }
@@ -456,7 +454,7 @@ namespace RecyclableSR
                 if (itemToShow > -1)
                 {
                     _minExtraVisibleItemInViewPort = itemToShow;
-                    ShowHideItemsAtIndex(itemToShow, true);
+                    ShowHideRowsColumnsAtIndex(itemToShow, true);
                 }
             }
         }
