@@ -13,6 +13,7 @@ namespace RecyclableSR
         // TODO: Rework cards behaviours
         // TODO: remove _manuallyHandleCardAnimations
         
+        // TODO: encapsulate grid data and functions
         // TODO: maybe when removing extra items, dont remove extraRowsColumnsItems in both grid and rsr
         // TODO: also fix maxViewPortInRsr
         
@@ -22,7 +23,6 @@ namespace RecyclableSR
         // TODO: Add support for start corners
         // TODO: make this class abstract
         
-        // TODO: encapsulate grid data and functions
         // TODO: Separate Scrolling animation
         // TODO: Redo Scrolling animation
         
@@ -290,10 +290,15 @@ namespace RecyclableSR
             for (var i = 0; i < _itemsCount; i++)
             {
                 var actualItemIndex = GetActualItemIndex(i);
+                var isCellStatic = actualItemIndex != -1 && _dataSource.IsItemStatic(actualItemIndex); 
                 if (i < _staticItems.Count)
-                    _staticItems[i] = _dataSource.IsItemStatic(actualItemIndex);
+                {
+                    _staticItems[i] = isCellStatic;
+                }
                 else
-                    _staticItems.Add(_dataSource.IsItemStatic(actualItemIndex));
+                {
+                    _staticItems.Add(isCellStatic);
+                }
             }
         }
         
@@ -305,6 +310,7 @@ namespace RecyclableSR
         {
             for (var i = 0; i < _itemsCount; i++)
             {
+                // no need to check if an item with actual index of -1 is going to be hidden or not, since it's set in SetStaticItems
                 if (_staticItems[i])
                 {
                     RectTransform itemRect;
@@ -344,23 +350,21 @@ namespace RecyclableSR
             for (var i = 0; i < _itemsCount; i++)
             {
                 var actualItemIndex = GetActualItemIndex(i);
+                var newPrototype = actualItemIndex == -1 ? string.Empty : _dataSource.GetItemPrototype(actualItemIndex).name;
                 if (i < _prototypeNames.Count)
                 {
-                    var newPrototype = _dataSource.GetItemPrototype(actualItemIndex).name;
-                    var oldPrototype = _prototypeNames[i];
-                    if (newPrototype != oldPrototype)
+                    if (newPrototype != _prototypeNames[i] && actualItemIndex != -1)
                     {
                         changeItemPrototypeList.Add(i);
                     }
                 }
                 else
                 {
-                    _prototypeNames.Add(_dataSource.GetItemPrototype(actualItemIndex).name);
+                    _prototypeNames.Add(newPrototype);
                 }
             }
             
-            for (var i = 0; i < changeItemPrototypeList.Count; i++)
-                ChangeItemPrototype(changeItemPrototypeList);
+            ChangeItemsPrototype(changeItemPrototypeList);
         }
 
         /// <summary>
@@ -885,7 +889,7 @@ namespace RecyclableSR
         /// An item needs its game object type changed
         /// </summary>
         /// <param name="itemIndices">item index in which we need to change prototype for</param>
-        private void ChangeItemPrototype(List<int> itemIndices)
+        private void ChangeItemsPrototype(List<int> itemIndices)
         {
             var wasVisible = new List<int>();
             
@@ -903,9 +907,11 @@ namespace RecyclableSR
                 var actualItemIndex = GetActualItemIndex(itemIndices[i]);
                 _prototypeNames[itemIndices[i]] = _dataSource.GetItemPrototype(actualItemIndex).name;
                 _staticItems[itemIndices[i]] = _dataSource.IsItemStatic(actualItemIndex);
-                
+
                 if (wasVisible.Contains(itemIndices[i]))
+                {
                     ShowItemAtIndex(itemIndices[i]);
+                }
             }
         }
 
