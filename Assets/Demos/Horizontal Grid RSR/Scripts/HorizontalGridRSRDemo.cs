@@ -9,6 +9,7 @@ public class HorizontalGridRSRDemo : MonoBehaviour, IGridSource
     [SerializeField] private RSRGrid _scrollRect;
     [SerializeField] private GameObject[] _prototypeItems;
     [SerializeField] private int _extraRowsColumnsVisible;
+    [SerializeField] private int _itemsToReloadTo;
         
     private List<string> _dataSource;
     private int _itemCount;
@@ -30,9 +31,8 @@ public class HorizontalGridRSRDemo : MonoBehaviour, IGridSource
     [ContextMenu(nameof(ReloadData))]
     public void ReloadData()
     {
-        var newItemsCount = 15;
-        _dataSource.RemoveRange(newItemsCount, _itemsCount - newItemsCount);
-        _itemsCount = newItemsCount;
+        _dataSource.RemoveRange(_itemsToReloadTo, _itemsCount - _itemsToReloadTo);
+        _itemsCount = _itemsToReloadTo;
         _scrollRect.ReloadData(true);
     }
 

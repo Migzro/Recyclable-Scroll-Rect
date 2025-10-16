@@ -13,7 +13,9 @@ namespace RecyclableSR
         // TODO: Rework cards behaviours
         // TODO: remove _manuallyHandleCardAnimations
         
-        // TODO: Check Horizontal Grid reload
+        // TODO: maybe when removing extra items, dont remove extraRowsColumnsItems in both grid and rsr
+        // TODO: also fix maxViewPortInRsr
+        
         // TODO: different start axes for grid layout
         // TODO: FixedColumnCount with Vertical Grids & FixedRowCount with Horizontal Grids (remaining _maxExtraVisibleItemInViewPort needs to be / _maxGridsItemsInAxis
         // TODO: Fix all behaviours for gridLayout and make sure _reverseDirection is working properly
@@ -169,11 +171,11 @@ namespace RecyclableSR
                 _pooledItems = new Dictionary<string, List<Item>>();
             
             // create a new list for each prototype items to hold the pooled items
-            var prototypItems = _dataSource.PrototypeItems;
-            for (var i = 0; i < prototypItems.Length; i++)
+            var prototypeItems = _dataSource.PrototypeItems;
+            for (var i = 0; i < prototypeItems.Length; i++)
             {
-                if (!_pooledItems.ContainsKey(prototypItems[i].name))
-                    _pooledItems.Add(prototypItems[i].name, new List<Item>());
+                if (!_pooledItems.ContainsKey(prototypeItems[i].name))
+                    _pooledItems.Add(prototypeItems[i].name, new List<Item>());
             }
 
             ResetVariables();
@@ -347,7 +349,9 @@ namespace RecyclableSR
                     var newPrototype = _dataSource.GetItemPrototype(actualItemIndex).name;
                     var oldPrototype = _prototypeNames[i];
                     if (newPrototype != oldPrototype)
+                    {
                         changeItemPrototypeList.Add(i);
+                    }
                 }
                 else
                 {
@@ -380,7 +384,7 @@ namespace RecyclableSR
 
         /// <summary>
         /// Initialize the items
-        /// Its only called when there are no pooled items available and the RecyclableScrollRect needs to show a item
+        /// Its only called when there are no pooled items available and the RecyclableScrollRect needs to show an item
         /// </summary>
         /// <param name="index"></param>
         private void InitializeItem(int index)
@@ -471,8 +475,8 @@ namespace RecyclableSR
             }
             
             // No need to reload item at index {itemIndex} as its currently not visible and everything will be automatically handled when it appears
-            // it's ok to return here after setting the tag, as if a item gets marked for reload with multiple tags, it only needs to reload once its visible
-            // reloading the item multiple times with different tags is needed when multiple changes happen to a item over the course of some frames when its visible
+            // it's ok to return here after setting the tag, as if an item gets marked for reload with multiple tags, it only needs to reload once its visible
+            // reloading the item multiple times with different tags is needed when multiple changes happen to an item over the course of some frames when its visible
             if (!_visibleItems.ContainsKey(itemIndex))
             {
                 _itemsMarkedForReload.Add(itemIndex);
@@ -518,7 +522,7 @@ namespace RecyclableSR
         /// <summary>
         /// This function call is only needed when the item is created, or when the resolution changes
         /// it sets the vertical size of the item in a horizontal layout
-        /// or the horizontal size of a item in a vertical layout based on the settings of said layout
+        /// or the horizontal size of an item in a vertical layout based on the settings of said layout
         /// It also sets the vertical position in horizontal layout or the horizontal position in a vertical layout based on the padding of said layout
         /// Is not needed in grid as items will have different positions in non axis position and the non axis size is the same in all of them
         /// </summary>
@@ -737,7 +741,7 @@ namespace RecyclableSR
         /// <param name="newIndex">current index of item we need to show</param>
         protected void ShowItemAtIndex(int newIndex)
         {
-            // Get empty item and adjust its position and size, else just create a new a item
+            // Get empty item and adjust its position and size, else just create a new an item
             var itemPrototypeName = _prototypeNames[newIndex];
             if (_pooledItems[itemPrototypeName].Count > 0)
             {
@@ -888,8 +892,7 @@ namespace RecyclableSR
         }
 
         /// <summary>
-        /// A item needs its game object type changed
-        /// Useful for when adding items and there are static items that need to be replaced
+        /// An item needs its game object type changed
         /// </summary>
         /// <param name="itemIndices">item index in which we need to change prototype for</param>
         private void ChangeItemPrototype(List<int> itemIndices)
@@ -901,7 +904,7 @@ namespace RecyclableSR
                 if (_visibleItems.ContainsKey(itemIndices[i]))
                 {
                     wasVisible.Add(itemIndices[i]);
-                    ShowHideItemsAtIndex(itemIndices[i], false);
+                    HideItemAtIndex(itemIndices[i]);
                 }
             }
             
@@ -912,7 +915,7 @@ namespace RecyclableSR
                 _staticItems[itemIndices[i]] = _dataSource.IsItemStatic(actualItemIndex);
                 
                 if (wasVisible.Contains(itemIndices[i]))
-                    ShowHideItemsAtIndex(itemIndices[i], true);
+                    ShowItemAtIndex(itemIndices[i]);
             }
         }
 

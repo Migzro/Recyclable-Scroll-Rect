@@ -253,6 +253,7 @@ MonoBehaviour:
   - {fileID: 1638117046129563386, guid: 236abc0c76a664bb59fc9a78f8103783, type: 3}
   - {fileID: 1638117046129563386, guid: e33034cebc3d744f59b3c2abcd9927a7, type: 3}
   _extraRowsColumnsVisible: 2
+  _itemsToReloadTo: 0
 --- !u!1 &1362537419
 GameObject:
   m_ObjectHideFlags: 0
@@ -610,7 +611,7 @@ MonoBehaviour:
     m_Bottom: 50
   _childAlignment: 0
   _gridItemSize: {x: 400, y: 385}
-  _gridStartAxis: 0
+  _gridStartAxis: 1
   _gridConstraint: 2
   _gridConstraintCount: 3
 --- !u!1660057539 &9223372036854775807

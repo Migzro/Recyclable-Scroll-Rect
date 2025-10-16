@@ -313,27 +313,17 @@ namespace RecyclableSR
                 return;
             }
 
-            // we start from the _minExtraVisibleItemInViewPort row till the _maxExtraVisibleItemInViewPort
+            // we start from the _minExtraVisibleItemInViewPort row/column till the _maxExtraVisibleItemInViewPort
             var indicesToShow = new List<int>();
             var indicesToHide = new List<int>();
-            for (var i = _minExtraVisibleItemInViewPort; i <= _maxExtraVisibleItemInViewPort; i++)
+            var startingRowColumn = Get2dIndex(_minExtraVisibleItemInViewPort)[_axis];
+            var endingRowColumn = Get2dIndex(_maxExtraVisibleItemInViewPort)[_axis];
+            for (var i = startingRowColumn; i <= endingRowColumn; i++)
             {
                 for (var j = 0; j < _gridConstraintCount; j++)
                 {
-                    int flatIndex;
-                    int indexValue;
-
-                    if (vertical)
-                    {
-                        flatIndex = j + (i * _gridConstraintCount);
-                        indexValue = _gridIndices[j, i];
-                    }
-                    else
-                    {
-                        flatIndex = (j * _gridConstraintCount) + i;
-                        indexValue = _gridIndices[i, j];
-                    }
-
+                    var flatIndex = j + (i * _gridConstraintCount);
+                    var indexValue = vertical ? _gridIndices[j, i] : _gridIndices[i, j];
                     var isVisible = _visibleItems.ContainsKey(flatIndex);
                     var shouldBeVisible = indexValue != -1;
                     if (isVisible && !shouldBeVisible)
@@ -346,7 +336,7 @@ namespace RecyclableSR
                     }
                 }
             }
-            
+
             foreach (var index in indicesToHide)
             {
                 HideItemAtIndex(index);
@@ -377,15 +367,13 @@ namespace RecyclableSR
 
                 if (vertical)
                 {
-                    // same column (x), move along Y (rows)
-                    indexValue = _gridIndices[i, item2dIndex.y];
                     flatIndex = item2dIndex.y * _gridConstraintCount + i;
+                    indexValue = _gridIndices[i, item2dIndex.y];
                 }
                 else
                 {
-                    // same row (y), move along X (columns)
-                    indexValue = _gridIndices[item2dIndex.x, i];
                     flatIndex = item2dIndex.x * _gridConstraintCount + i;
+                    indexValue = _gridIndices[item2dIndex.x, i];
                 }
 
                 if (indexValue != -1)
@@ -489,9 +477,26 @@ namespace RecyclableSR
                 }
             }
             
-            var start2dIndex = Get2dIndex(_itemsCount);
-            _maxVisibleItemInViewPort = vertical ? start2dIndex.y : start2dIndex.x;
-            _maxExtraVisibleItemInViewPort = _maxVisibleItemInViewPort + (_extraRowsColumnsVisible * _gridConstraintCount);
+            var lastItem2dIndex = Get2dIndex(_itemsCount - 1);
+            var lastItemFlatIndex = lastItem2dIndex[_axis] * _gridConstraintCount;
+            if (lastItemFlatIndex < _maxVisibleItemInViewPort)
+            {
+                _maxVisibleItemInViewPort = lastItemFlatIndex;
+            }
+            
+            if (lastItemFlatIndex < _maxExtraVisibleItemInViewPort)
+            {
+                // get the amount of extra rows/columns possible based on the new item count
+                var extraRowsColumnsPossible = Mathf.Min((lastItemFlatIndex - _maxVisibleItemInViewPort) / _gridConstraintCount, _extraRowsColumnsVisible);
+                if (vertical)
+                {
+                    _maxExtraVisibleItemInViewPort = _maxVisibleItemInViewPort + (extraRowsColumnsPossible * _gridConstraintCount);
+                }
+                else
+                {
+                    _maxExtraVisibleItemInViewPort = _maxVisibleItemInViewPort + extraRowsColumnsPossible;
+                }
+            }
         }
 
         /// <summary>
