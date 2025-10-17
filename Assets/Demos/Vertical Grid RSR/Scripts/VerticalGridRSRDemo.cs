@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using RecyclableSR;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public class VerticalGridRSRDemo : MonoBehaviour, IGridSource
 {

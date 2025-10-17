@@ -235,12 +235,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 030cc04c1433d4501a2c281164d3196f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _itemsCount: 100
+  _itemsCount: 300
   _scrollRect: {fileID: 1904557393}
   _prototypeItems:
   - {fileID: 1638117046129563386, guid: e71a2206129434ac9b60b1d7743a0f00, type: 3}
   - {fileID: 1638117046129563386, guid: a8fbeae1039cd4ea9bf358107f5e5c16, type: 3}
   _extraItemsVisible: 0
+  _itemsToReloadTo: 0
 --- !u!114 &658359685
 MonoBehaviour:
   m_ObjectHideFlags: 0

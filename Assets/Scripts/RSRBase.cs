@@ -15,7 +15,6 @@ namespace RecyclableSR
         
         // TODO: encapsulate grid data and functions
         // TODO: maybe when removing extra items, dont remove extraRowsColumnsItems in both grid and rsr
-        // TODO: also fix maxViewPortInRsr
         
         // TODO: different start axes for grid layout
         // TODO: FixedColumnCount with Vertical Grids & FixedRowCount with Horizontal Grids (remaining _maxExtraVisibleItemInViewPort needs to be / _maxGridsItemsInAxis
@@ -25,6 +24,7 @@ namespace RecyclableSR
         
         // TODO: Separate Scrolling animation
         // TODO: Redo Scrolling animation
+        // TODO: remove _maxExtraVisibleItemInViewPort from here and move them to RSR, rename ones in RSRGrid to maxRowColumn
         
         // TODO: Maybe remove ScrolledToItem event call in pages?
         // TODO: check todos in RSRPages
@@ -855,10 +855,14 @@ namespace RecyclableSR
             _itemsCount = _dataSource.ItemsCount;
             
             // removes extra items
-            if (oldItemsCount > _itemsCount && _visibleItems.Count > _itemsCount)
+            if (oldItemsCount > _itemsCount)
             {
                 var itemDiff = oldItemsCount - _itemsCount;
-                RemoveExtraItems(itemDiff);
+                if (_visibleItems.Count > _itemsCount)
+                {
+                    RemoveExtraItems(itemDiff);
+                }
+
                 _itemPositions.RemoveRange(_itemsCount, itemDiff);
                 _prototypeNames.RemoveRange(_itemsCount, itemDiff);
                 _staticItems.RemoveRange(_itemsCount, itemDiff);
@@ -885,6 +889,13 @@ namespace RecyclableSR
         /// <param name="itemDiff">the amount of items that have been deleted</param>
         protected virtual void RemoveExtraItems(int itemDiff)
         {
+            for (var i = _itemsCount; i < _itemsCount + itemDiff; i++)
+            {
+                if (_visibleItems.ContainsKey(i))
+                {
+                    HideItemAtIndex(i);
+                }
+            }
         }
 
         protected virtual void RefreshAfterReload(bool reloadAllItems)

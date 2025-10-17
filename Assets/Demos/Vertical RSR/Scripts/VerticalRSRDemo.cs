@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using RecyclableSR;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public class VerticalRSRDemo : MonoBehaviour, IRSRSource
 {
@@ -9,6 +8,7 @@ public class VerticalRSRDemo : MonoBehaviour, IRSRSource
     [SerializeField] private RSR _scrollRect;
     [SerializeField] private GameObject[] _prototypeItems;
     [SerializeField] private int _extraItemsVisible;
+    [SerializeField] private int _itemsToReloadTo;
         
     private List<string> _dataSource;
     private int _itemCount;
@@ -25,6 +25,14 @@ public class VerticalRSRDemo : MonoBehaviour, IRSRSource
         for (var i = 0; i < _itemsCount; i++)
             _dataSource.Add( i.ToString() );
         _scrollRect.Initialize(this);
+    }
+    
+    [ContextMenu(nameof(ReloadData))]
+    public void ReloadData()
+    {
+        _dataSource.RemoveRange(_itemsToReloadTo, _itemsCount - _itemsToReloadTo);
+        _itemsCount = _itemsToReloadTo;
+        _scrollRect.ReloadData(true);
     }
 
     public float GetItemSize(int itemIndex)

@@ -467,14 +467,6 @@ namespace RecyclableSR
         {
             base.RemoveExtraItems(itemDiff);
 
-            for (var i = _itemsCount; i < _itemsCount + itemDiff; i++)
-            {
-                if (_visibleItems.ContainsKey(i))
-                {
-                    HideItemAtIndex(i);
-                }
-            }
-            
             var lastItem2dIndex = Get2dIndex(_itemsCount - 1);
             var lastItemFlatIndex = lastItem2dIndex[_axis] * _gridConstraintCount;
             if (lastItemFlatIndex < _maxVisibleItemInViewPort)

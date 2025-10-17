@@ -294,15 +294,14 @@ namespace RecyclableSR
         {
             base.RemoveExtraItems(itemDiff);
             
-            for (var i = _itemsCount; i < _itemsCount + itemDiff; i++)
+            if (_itemsCount - 1 < _maxVisibleItemInViewPort)
             {
-                if (_visibleItems.ContainsKey(i))
-                {
-                    HideItemAtIndex(i);
-                }
+                _maxVisibleItemInViewPort = _itemsCount - 1;
             }
-            _maxVisibleItemInViewPort = Mathf.Max(0, _maxVisibleItemInViewPort - itemDiff);
-            _maxExtraVisibleItemInViewPort = Mathf.Min(_itemsCount - 1, _maxVisibleItemInViewPort + _extraItemsVisible);
+            if (_itemsCount - 1 < _maxExtraVisibleItemInViewPort)
+            {
+                _maxExtraVisibleItemInViewPort = Mathf.Min(_itemsCount - 1, _maxVisibleItemInViewPort + _extraItemsVisible);
+            }
         }
         
         /// <summary>
