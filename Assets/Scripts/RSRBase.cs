@@ -24,7 +24,6 @@ namespace RecyclableSR
         
         // TODO: Separate Scrolling animation
         // TODO: Redo Scrolling animation
-        // TODO: remove _maxExtraVisibleItemInViewPort from here and move them to RSR, rename ones in RSRGrid to maxRowColumn
         
         // TODO: Maybe remove ScrolledToItem event call in pages?
         // TODO: check todos in RSRPages
@@ -56,10 +55,10 @@ namespace RecyclableSR
         protected int _axis;
         protected int _itemsCount;
         protected int _currentPage;
-        protected int _minVisibleItemInViewPort;
-        protected int _maxVisibleItemInViewPort;
-        protected int _minExtraVisibleItemInViewPort;
-        protected int _maxExtraVisibleItemInViewPort;
+        protected int _minVisibleRowColumnInViewPort;
+        protected int _maxVisibleRowColumnInViewPort;
+        protected int _minExtraVisibleRowColumnInViewPort;
+        protected int _maxExtraVisibleRowColumnInViewPort;
         private int _queuedScrollToItem;
         protected bool _isAnimating;
         private bool _init;
@@ -142,10 +141,10 @@ namespace RecyclableSR
 
             StopMovement();
             
-            _minVisibleItemInViewPort = 0;
-            _minExtraVisibleItemInViewPort = 0;
-            _maxVisibleItemInViewPort = 0;
-            _maxExtraVisibleItemInViewPort = 0;
+            _minVisibleRowColumnInViewPort = 0;
+            _minExtraVisibleRowColumnInViewPort = 0;
+            _maxVisibleRowColumnInViewPort = 0;
+            _maxExtraVisibleRowColumnInViewPort = 0;
             
             _currentPage = 0;
 
@@ -678,12 +677,12 @@ namespace RecyclableSR
             var topLeftMinClearance = 0.1f + topLeftPadding * (ReachedMinItemInViewPort ? 1 : 0) + _spacing[_axis] * (ReachedMinItemInViewPort ? 0 : 1);
             var bottomRightMinClearance = 0.1f + bottomLeftPadding * (ReachedMaxItemInViewPort ? 1 : 0) + _spacing[_axis] * (ReachedMaxItemInViewPort ? 0 : 1);
             
-            if (_itemPositions[_minVisibleItemInViewPort].absTopLeftPosition[_axis] - _contentTopLeftCorner[_axis] > topLeftMinClearance && !ReachedMinItemInViewPort)
+            if (_itemPositions[_minVisibleRowColumnInViewPort].absTopLeftPosition[_axis] - _contentTopLeftCorner[_axis] > topLeftMinClearance && !ReachedMinItemInViewPort)
             {
                 showBottomRight = false;
                 _needsClearance = true;
             }
-            else if (_itemPositions[_maxVisibleItemInViewPort].absBottomRightPosition[_axis] - _contentBottomRightCorner[_axis] < -bottomRightMinClearance && !ReachedMaxItemInViewPort)
+            else if (_itemPositions[_maxVisibleRowColumnInViewPort].absBottomRightPosition[_axis] - _contentBottomRightCorner[_axis] < -bottomRightMinClearance && !ReachedMaxItemInViewPort)
             {
                 showBottomRight = true;
                 _needsClearance = true;
@@ -1012,7 +1011,7 @@ namespace RecyclableSR
                     }
                     else
                     {
-                        var scrollingDistance = Mathf.Max(1, Mathf.Abs(_minVisibleItemInViewPort - itemIndex));
+                        var scrollingDistance = Mathf.Max(1, Mathf.Abs(_minVisibleRowColumnInViewPort - itemIndex));
                         var scrollingDistancePercentage = Mathf.Clamp01((float)scrollingDistance / Mathf.Min(10, _itemsCount));
                         var exponentialSpeed = (Mathf.Exp(scrollingDistancePercentage) - 1) * itemSizeAverage;
                         speedToUse = Mathf.Min(itemSizeAverage, exponentialSpeed);
@@ -1061,7 +1060,7 @@ namespace RecyclableSR
                     }
 
                     // reached bottom or right
-                    else if (_maxExtraVisibleItemInViewPort == _itemsCount - 1 && Mathf.Abs(contentBottomRightCorner[_axis]) >= content.sizeDelta[_axis])
+                    else if (_maxExtraVisibleRowColumnInViewPort == _itemsCount - 1 && Mathf.Abs(contentBottomRightCorner[_axis]) >= content.sizeDelta[_axis])
                     {
                         contentTopLeftCorner[_axis] = (content.rect.size[_axis] - _viewPortSize[_axis]) * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
                         reachedItem = true;

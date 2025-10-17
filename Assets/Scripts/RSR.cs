@@ -7,8 +7,8 @@ namespace RecyclableSR
         private IRSRSource _rsrSource;
         protected int _extraItemsVisible;
         
-        protected override bool ReachedMinItemInViewPort => _minVisibleItemInViewPort == 0;
-        protected override bool ReachedMaxItemInViewPort => _maxVisibleItemInViewPort == _itemsCount - 1;
+        protected override bool ReachedMinItemInViewPort => _minVisibleRowColumnInViewPort == 0;
+        protected override bool ReachedMaxItemInViewPort => _maxVisibleRowColumnInViewPort == _itemsCount - 1;
         
         protected override void Initialize()
         {
@@ -34,7 +34,7 @@ namespace RecyclableSR
             
             GetContentBounds();
             var contentHasSpace = startIndex == 0 || _itemPositions[startIndex - 1].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
-            var extraItemsInitialized = contentHasSpace ? 0 : _maxExtraVisibleItemInViewPort - _maxVisibleItemInViewPort;
+            var extraItemsInitialized = contentHasSpace ? 0 : _maxExtraVisibleRowColumnInViewPort - _maxVisibleRowColumnInViewPort;
             var i = startIndex;
             while ((contentHasSpace || extraItemsInitialized < _extraItemsVisible) && i < _itemsCount)
             {
@@ -42,12 +42,12 @@ namespace RecyclableSR
                 if (!contentHasSpace)
                     extraItemsInitialized++;
                 else
-                    _maxVisibleItemInViewPort = i;
+                    _maxVisibleRowColumnInViewPort = i;
 
                 contentHasSpace = _itemPositions[i].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
                 i++;
             }
-            _maxExtraVisibleItemInViewPort = i - 1;
+            _maxExtraVisibleRowColumnInViewPort = i - 1;
         }
         
         /// <summary>
@@ -294,13 +294,13 @@ namespace RecyclableSR
         {
             base.RemoveExtraItems(itemDiff);
             
-            if (_itemsCount - 1 < _maxVisibleItemInViewPort)
+            if (_itemsCount - 1 < _maxVisibleRowColumnInViewPort)
             {
-                _maxVisibleItemInViewPort = _itemsCount - 1;
+                _maxVisibleRowColumnInViewPort = _itemsCount - 1;
             }
-            if (_itemsCount - 1 < _maxExtraVisibleItemInViewPort)
+            if (_itemsCount - 1 < _maxExtraVisibleRowColumnInViewPort)
             {
-                _maxExtraVisibleItemInViewPort = Mathf.Min(_itemsCount - 1, _maxVisibleItemInViewPort + _extraItemsVisible);
+                _maxExtraVisibleRowColumnInViewPort = Mathf.Min(_itemsCount - 1, _maxVisibleRowColumnInViewPort + _extraItemsVisible);
             }
         }
         
@@ -331,39 +331,39 @@ namespace RecyclableSR
 
             var newMinExtraVisibleItemInViewPort = Mathf.Max (0, newMinVisibleItemInViewPort - _extraItemsVisible);
             var newMaxExtraVisibleItemInViewPort = Mathf.Min (_itemsCount - 1, newMaxVisibleItemInViewPort + _extraItemsVisible);
-            if (newMaxExtraVisibleItemInViewPort < _maxExtraVisibleItemInViewPort)
+            if (newMaxExtraVisibleItemInViewPort < _maxExtraVisibleRowColumnInViewPort)
             {
-                for (var i = newMaxExtraVisibleItemInViewPort + 1; i <= _maxExtraVisibleItemInViewPort; i++)
+                for (var i = newMaxExtraVisibleItemInViewPort + 1; i <= _maxExtraVisibleRowColumnInViewPort; i++)
                 {
                     HideItemAtIndex(i);
                 }
 
-                _maxVisibleItemInViewPort = newMaxVisibleItemInViewPort;
-                _maxExtraVisibleItemInViewPort = newMaxExtraVisibleItemInViewPort;
+                _maxVisibleRowColumnInViewPort = newMaxVisibleItemInViewPort;
+                _maxExtraVisibleRowColumnInViewPort = newMaxExtraVisibleItemInViewPort;
             }
             else
             {
                 // here we initialize items instead of using ShowItemAtIndex because we don't know much viewport space is left
-                InitializeItems(_maxExtraVisibleItemInViewPort + 1);
+                InitializeItems(_maxExtraVisibleRowColumnInViewPort + 1);
             }
             
-            if (newMinExtraVisibleItemInViewPort > _minExtraVisibleItemInViewPort)
+            if (newMinExtraVisibleItemInViewPort > _minExtraVisibleRowColumnInViewPort)
             {
-                for (var i = _minExtraVisibleItemInViewPort; i < newMinExtraVisibleItemInViewPort; i++)
+                for (var i = _minExtraVisibleRowColumnInViewPort; i < newMinExtraVisibleItemInViewPort; i++)
                 {
                     HideItemAtIndex(i);
                 }
             }
             else
             {
-                for (var i = _minExtraVisibleItemInViewPort - 1; i >= newMinExtraVisibleItemInViewPort; i--)
+                for (var i = _minExtraVisibleRowColumnInViewPort - 1; i >= newMinExtraVisibleItemInViewPort; i--)
                 {
                     ShowItemAtIndex(i);
                 }
             }
 
-            _minVisibleItemInViewPort = newMinVisibleItemInViewPort;
-            _minExtraVisibleItemInViewPort = newMinExtraVisibleItemInViewPort;
+            _minVisibleRowColumnInViewPort = newMinVisibleItemInViewPort;
+            _minExtraVisibleRowColumnInViewPort = newMinExtraVisibleItemInViewPort;
         }
 
         protected override void ReloadItemInternal(int itemIndex, string reloadTag = "", bool reloadItemData = false, bool isReloadingAllData = false)
@@ -407,7 +407,7 @@ namespace RecyclableSR
         {
             // need to adjust all the items position after itemIndex 
             var startingItemToAdjustPosition = itemIndex + 1;
-            for (var i = startingItemToAdjustPosition; i <= _maxExtraVisibleItemInViewPort; i++)
+            for (var i = startingItemToAdjustPosition; i <= _maxExtraVisibleRowColumnInViewPort; i++)
                 SetItemAxisPosition(_visibleItems[i].transform, i);
 
             if (_isAnimating)
@@ -416,7 +416,7 @@ namespace RecyclableSR
             var contentPosition = content.anchoredPosition;
             var contentMoved = false;
             var oldContentPosition = contentPosition[_axis];
-            if (itemIndex < _minExtraVisibleItemInViewPort)
+            if (itemIndex < _minExtraVisibleRowColumnInViewPort)
             {
                 // this is a very special case as items reloaded at the top or right will have a different bottomRight position
                 // and since we are here at the item, if we don't manually set the position of the content, it will seem as the content suddenly shifted and disorient the user
@@ -430,7 +430,7 @@ namespace RecyclableSR
                 // var newNormalizedPosition = (viewPortBounds.min[_axis] - (_itemPositions[itemIndex].bottomRightPosition[_axis] - contentRect.size[_axis])) / (contentRect.size[_axis] - viewportRect.size[_axis]);
                 // SetNormalizedPosition(newNormalizedPosition, _axis);
             }
-            else if (_minExtraVisibleItemInViewPort <= itemIndex && _minVisibleItemInViewPort > itemIndex)
+            else if (_minExtraVisibleRowColumnInViewPort <= itemIndex && _minVisibleRowColumnInViewPort > itemIndex)
             {
                 contentPosition[_axis] -= (oldSize - _itemPositions[itemIndex].itemSize[_axis]) * (_reverseDirection ? -1 : 1);
             }
@@ -454,13 +454,13 @@ namespace RecyclableSR
         {
             base.HideItemsAtTopLeft();
             
-            if (_minVisibleItemInViewPort < _itemsCount - 1 && _contentTopLeftCorner[_axis] >= _itemPositions[_minVisibleItemInViewPort].absBottomRightPosition[_axis])
+            if (_minVisibleRowColumnInViewPort < _itemsCount - 1 && _contentTopLeftCorner[_axis] >= _itemPositions[_minVisibleRowColumnInViewPort].absBottomRightPosition[_axis])
             {
-                var itemToHide = _minVisibleItemInViewPort - _extraItemsVisible;
-                _minVisibleItemInViewPort++;
+                var itemToHide = _minVisibleRowColumnInViewPort - _extraItemsVisible;
+                _minVisibleRowColumnInViewPort++;
                 if (itemToHide > -1)
                 {
-                    _minExtraVisibleItemInViewPort++;
+                    _minExtraVisibleRowColumnInViewPort++;
                     HideItemAtIndex(itemToHide);
                 }
             }
@@ -470,13 +470,13 @@ namespace RecyclableSR
         {
             base.ShowItemsAtBottomRight();
             
-            if (_maxVisibleItemInViewPort < _itemsCount - 1 && _contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleItemInViewPort].absBottomRightPosition[_axis] + _spacing[_axis])
+            if (_maxVisibleRowColumnInViewPort < _itemsCount - 1 && _contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleRowColumnInViewPort].absBottomRightPosition[_axis] + _spacing[_axis])
             {
-                _maxVisibleItemInViewPort++;
-                var itemToShow = _maxVisibleItemInViewPort + _extraItemsVisible;
+                _maxVisibleRowColumnInViewPort++;
+                var itemToShow = _maxVisibleRowColumnInViewPort + _extraItemsVisible;
                 if (itemToShow < _itemsCount)
                 {
-                    _maxExtraVisibleItemInViewPort = itemToShow;
+                    _maxExtraVisibleRowColumnInViewPort = itemToShow;
                     ShowItemAtIndex(itemToShow);
                 }
             }
@@ -486,13 +486,13 @@ namespace RecyclableSR
         {
             base.HideItemsAtBottomRight();
             
-            if (_maxVisibleItemInViewPort > 0 && _contentBottomRightCorner[_axis] <= _itemPositions[_maxVisibleItemInViewPort].absTopLeftPosition[_axis])
+            if (_maxVisibleRowColumnInViewPort > 0 && _contentBottomRightCorner[_axis] <= _itemPositions[_maxVisibleRowColumnInViewPort].absTopLeftPosition[_axis])
             {
-                var itemToHide = _maxVisibleItemInViewPort + _extraItemsVisible;
-                _maxVisibleItemInViewPort--;
+                var itemToHide = _maxVisibleRowColumnInViewPort + _extraItemsVisible;
+                _maxVisibleRowColumnInViewPort--;
                 if (itemToHide < _itemsCount)
                 {
-                    _maxExtraVisibleItemInViewPort--;
+                    _maxExtraVisibleRowColumnInViewPort--;
                     HideItemAtIndex(itemToHide);
                 }
             }
@@ -502,13 +502,13 @@ namespace RecyclableSR
         {
             base.ShowItemsAtTopLeft();
             
-            if (_minVisibleItemInViewPort > 0 && _contentTopLeftCorner[_axis] < _itemPositions[_minVisibleItemInViewPort].absTopLeftPosition[_axis] - _spacing[_axis])
+            if (_minVisibleRowColumnInViewPort > 0 && _contentTopLeftCorner[_axis] < _itemPositions[_minVisibleRowColumnInViewPort].absTopLeftPosition[_axis] - _spacing[_axis])
             {
-                _minVisibleItemInViewPort--;
-                var itemToShow = _minVisibleItemInViewPort - _extraItemsVisible;
+                _minVisibleRowColumnInViewPort--;
+                var itemToShow = _minVisibleRowColumnInViewPort - _extraItemsVisible;
                 if (itemToShow > -1)
                 {
-                    _minExtraVisibleItemInViewPort = itemToShow;
+                    _minExtraVisibleRowColumnInViewPort = itemToShow;
                     ShowItemAtIndex(itemToShow);
                 }
             }

@@ -20,8 +20,8 @@ namespace RecyclableSR
         private int[,] _gridIndices;
         private Vector2 _gridLayoutPadding;
         
-        protected override bool ReachedMinItemInViewPort => _minVisibleItemInViewPort == 0;
-        protected override bool ReachedMaxItemInViewPort => _maxVisibleItemInViewPort == (_maxGridItemsInAxis - 1) * _gridConstraintCount;
+        protected override bool ReachedMinItemInViewPort => _minVisibleRowColumnInViewPort == 0;
+        protected override bool ReachedMaxItemInViewPort => _maxVisibleRowColumnInViewPort == (_maxGridItemsInAxis - 1) * _gridConstraintCount;
 
         protected override void Initialize()
         {
@@ -273,7 +273,7 @@ namespace RecyclableSR
             
             GetContentBounds();
             var contentHasSpace = currentStartItemInRowColumn == 0 || _itemPositions[currentStartItemInRowColumn].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
-            var extraRowsColumnsInitialized = contentHasSpace ? 0 : (_maxExtraVisibleItemInViewPort - _maxVisibleItemInViewPort) / _gridConstraintCount;
+            var extraRowsColumnsInitialized = contentHasSpace ? 0 : (_maxExtraVisibleRowColumnInViewPort - _maxVisibleRowColumnInViewPort) / _gridConstraintCount;
 
             while ((contentHasSpace || extraRowsColumnsInitialized < _extraRowsColumnsVisible) && currentStartItemInRowColumn < _itemsCount)
             {
@@ -282,10 +282,10 @@ namespace RecyclableSR
                 if (!contentHasSpace)
                     extraRowsColumnsInitialized++;
                 else
-                    _maxVisibleItemInViewPort = currentStartItemInRowColumn;
+                    _maxVisibleRowColumnInViewPort = currentStartItemInRowColumn;
             
                 contentHasSpace = _itemPositions[currentStartItemInRowColumn].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
-                _maxExtraVisibleItemInViewPort = currentStartItemInRowColumn;
+                _maxExtraVisibleRowColumnInViewPort = currentStartItemInRowColumn;
                 
                 // get the first item in the next row or column that needs to be initialized
                 current2DIndex[_axis]++;
@@ -316,8 +316,8 @@ namespace RecyclableSR
             // we start from the _minExtraVisibleItemInViewPort row/column till the _maxExtraVisibleItemInViewPort
             var indicesToShow = new List<int>();
             var indicesToHide = new List<int>();
-            var startingRowColumn = Get2dIndex(_minExtraVisibleItemInViewPort)[_axis];
-            var endingRowColumn = Get2dIndex(_maxExtraVisibleItemInViewPort)[_axis];
+            var startingRowColumn = Get2dIndex(_minExtraVisibleRowColumnInViewPort)[_axis];
+            var endingRowColumn = Get2dIndex(_maxExtraVisibleRowColumnInViewPort)[_axis];
             for (var i = startingRowColumn; i <= endingRowColumn; i++)
             {
                 for (var j = 0; j < _gridConstraintCount; j++)
@@ -399,13 +399,13 @@ namespace RecyclableSR
         {
             base.HideItemsAtTopLeft();
             
-            if (_minVisibleItemInViewPort < _itemsCount - _gridConstraintCount - 1 && _contentTopLeftCorner[_axis] >= _itemPositions[_minVisibleItemInViewPort].absBottomRightPosition[_axis])
+            if (_minVisibleRowColumnInViewPort < _itemsCount - _gridConstraintCount - 1 && _contentTopLeftCorner[_axis] >= _itemPositions[_minVisibleRowColumnInViewPort].absBottomRightPosition[_axis])
             {
-                var itemToHide = _minVisibleItemInViewPort - (_extraRowsColumnsVisible * _gridConstraintCount);
-                _minVisibleItemInViewPort += _gridConstraintCount;
+                var itemToHide = _minVisibleRowColumnInViewPort - (_extraRowsColumnsVisible * _gridConstraintCount);
+                _minVisibleRowColumnInViewPort += _gridConstraintCount;
                 if (itemToHide > -1)
                 {
-                    _minExtraVisibleItemInViewPort += _gridConstraintCount;
+                    _minExtraVisibleRowColumnInViewPort += _gridConstraintCount;
                     ShowHideRowsColumnsAtIndex(itemToHide, false);
                 }
             }
@@ -415,13 +415,13 @@ namespace RecyclableSR
         {
             base.ShowItemsAtBottomRight();
             
-            if (_maxVisibleItemInViewPort < _itemsCount - _gridConstraintCount - 1 && _contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleItemInViewPort].absBottomRightPosition[_axis] + _spacing[_axis])
+            if (_maxVisibleRowColumnInViewPort < _itemsCount - _gridConstraintCount - 1 && _contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleRowColumnInViewPort].absBottomRightPosition[_axis] + _spacing[_axis])
             {
-                _maxVisibleItemInViewPort += _gridConstraintCount;
-                var itemToShow = _maxVisibleItemInViewPort + (_extraRowsColumnsVisible * _gridConstraintCount);
+                _maxVisibleRowColumnInViewPort += _gridConstraintCount;
+                var itemToShow = _maxVisibleRowColumnInViewPort + (_extraRowsColumnsVisible * _gridConstraintCount);
                 if (itemToShow < _itemsCount)
                 {
-                    _maxExtraVisibleItemInViewPort = itemToShow;
+                    _maxExtraVisibleRowColumnInViewPort = itemToShow;
                     ShowHideRowsColumnsAtIndex(itemToShow, true);
                 }
             }
@@ -431,13 +431,13 @@ namespace RecyclableSR
         {
             base.HideItemsAtBottomRight();
             
-            if (_maxVisibleItemInViewPort > 0 && _contentBottomRightCorner[_axis] <= _itemPositions[_maxVisibleItemInViewPort].absTopLeftPosition[_axis])
+            if (_maxVisibleRowColumnInViewPort > 0 && _contentBottomRightCorner[_axis] <= _itemPositions[_maxVisibleRowColumnInViewPort].absTopLeftPosition[_axis])
             {
-                var itemToHide = _maxVisibleItemInViewPort + (_extraRowsColumnsVisible * _gridConstraintCount);
-                _maxVisibleItemInViewPort -= _gridConstraintCount;
+                var itemToHide = _maxVisibleRowColumnInViewPort + (_extraRowsColumnsVisible * _gridConstraintCount);
+                _maxVisibleRowColumnInViewPort -= _gridConstraintCount;
                 if (itemToHide < _itemsCount)
                 {
-                    _maxExtraVisibleItemInViewPort -= _gridConstraintCount;
+                    _maxExtraVisibleRowColumnInViewPort -= _gridConstraintCount;
                     ShowHideRowsColumnsAtIndex(itemToHide, false);
                 }
             }
@@ -447,13 +447,13 @@ namespace RecyclableSR
         {
             base.ShowItemsAtTopLeft();
             
-            if (_minVisibleItemInViewPort > 0 && _contentTopLeftCorner[_axis] < _itemPositions[_minVisibleItemInViewPort].absTopLeftPosition[_axis] - _spacing[_axis])
+            if (_minVisibleRowColumnInViewPort > 0 && _contentTopLeftCorner[_axis] < _itemPositions[_minVisibleRowColumnInViewPort].absTopLeftPosition[_axis] - _spacing[_axis])
             {
-                _minVisibleItemInViewPort -= _gridConstraintCount;
-                var itemToShow = _minVisibleItemInViewPort - (_extraRowsColumnsVisible * _gridConstraintCount);
+                _minVisibleRowColumnInViewPort -= _gridConstraintCount;
+                var itemToShow = _minVisibleRowColumnInViewPort - (_extraRowsColumnsVisible * _gridConstraintCount);
                 if (itemToShow > -1)
                 {
-                    _minExtraVisibleItemInViewPort = itemToShow;
+                    _minExtraVisibleRowColumnInViewPort = itemToShow;
                     ShowHideRowsColumnsAtIndex(itemToShow, true);
                 }
             }
@@ -469,22 +469,22 @@ namespace RecyclableSR
 
             var lastItem2dIndex = Get2dIndex(_itemsCount - 1);
             var lastItemFlatIndex = lastItem2dIndex[_axis] * _gridConstraintCount;
-            if (lastItemFlatIndex < _maxVisibleItemInViewPort)
+            if (lastItemFlatIndex < _maxVisibleRowColumnInViewPort)
             {
-                _maxVisibleItemInViewPort = lastItemFlatIndex;
+                _maxVisibleRowColumnInViewPort = lastItemFlatIndex;
             }
             
-            if (lastItemFlatIndex < _maxExtraVisibleItemInViewPort)
+            if (lastItemFlatIndex < _maxExtraVisibleRowColumnInViewPort)
             {
                 // get the amount of extra rows/columns possible based on the new item count
-                var extraRowsColumnsPossible = Mathf.Min((lastItemFlatIndex - _maxVisibleItemInViewPort) / _gridConstraintCount, _extraRowsColumnsVisible);
+                var extraRowsColumnsPossible = Mathf.Min((lastItemFlatIndex - _maxVisibleRowColumnInViewPort) / _gridConstraintCount, _extraRowsColumnsVisible);
                 if (vertical)
                 {
-                    _maxExtraVisibleItemInViewPort = _maxVisibleItemInViewPort + (extraRowsColumnsPossible * _gridConstraintCount);
+                    _maxExtraVisibleRowColumnInViewPort = _maxVisibleRowColumnInViewPort + (extraRowsColumnsPossible * _gridConstraintCount);
                 }
                 else
                 {
-                    _maxExtraVisibleItemInViewPort = _maxVisibleItemInViewPort + extraRowsColumnsPossible;
+                    _maxExtraVisibleRowColumnInViewPort = _maxVisibleRowColumnInViewPort + extraRowsColumnsPossible;
                 }
             }
         }
