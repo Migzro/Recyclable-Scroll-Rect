@@ -10,6 +10,7 @@ namespace RecyclableSR
         [SerializeField] private GridLayoutGroup.Axis _gridStartAxis;
         [SerializeField] private GridLayoutGroup.Constraint _gridConstraint;
         [SerializeField] private int _gridConstraintCount;
+        [SerializeField] private GridLayoutGroup.Corner _gridStartCorner;
 
         private IGridSource _gridSource;
         private Grid _grid;
@@ -48,7 +49,7 @@ namespace RecyclableSR
                 }
             }
             
-            _grid = new Grid(_itemsCount, _gridConstraintCount, vertical, _gridStartAxis);
+            _grid = new Grid(_itemsCount, _gridConstraintCount, vertical, _gridStartAxis, _gridStartCorner);
             // set the items count to the fill the entire grid with items
             _itemsCount = _grid.width * _grid.height;
         }

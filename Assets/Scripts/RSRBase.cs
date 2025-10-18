@@ -13,9 +13,7 @@ namespace RecyclableSR
         // TODO: Rework cards behaviours
         // TODO: remove _manuallyHandleCardAnimations
         
-        // TODO: FixedColumnCount with Vertical Grids & FixedRowCount with Horizontal Grids (remaining _maxExtraVisibleItemInViewPort needs to be / _maxGridsItemsInAxis
         // TODO: Fix all behaviours for gridLayout and make sure _reverseDirection is working properly
-        // TODO: Add support for start corners
         // TODO: make this class abstract
         
         // TODO: Separate Scrolling animation

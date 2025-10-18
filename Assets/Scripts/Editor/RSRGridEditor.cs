@@ -11,6 +11,7 @@ namespace RecyclableSR
         private SerializedProperty _gridStartAxis;
         private SerializedProperty _gridConstraint;
         private SerializedProperty _gridConstraintCount;
+        private SerializedProperty _gridStartCorner;
         
         protected override void OnEnable()
         {
@@ -19,12 +20,14 @@ namespace RecyclableSR
             _gridStartAxis = serializedObject.FindProperty(nameof(_gridStartAxis));
             _gridConstraint = serializedObject.FindProperty(nameof(_gridConstraint));
             _gridConstraintCount = serializedObject.FindProperty(nameof(_gridConstraintCount));
+            _gridStartCorner = serializedObject.FindProperty(nameof(_gridStartCorner));
         }
         
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
             EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Grid Data", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(_gridItemSize);
             EditorGUILayout.PropertyField(_gridStartAxis);
             EditorGUILayout.PropertyField(_gridConstraint);
@@ -33,6 +36,7 @@ namespace RecyclableSR
             {
                 EditorGUILayout.PropertyField(_gridConstraintCount);
             }
+            EditorGUILayout.PropertyField(_gridStartCorner);
             serializedObject.ApplyModifiedProperties();
         }
     }

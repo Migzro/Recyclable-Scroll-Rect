@@ -68,23 +68,25 @@ namespace RecyclableSR
 
     public class Grid
     {
-        private Dictionary<int, Vector2Int> _grid2dIndices;
-        private GridLayoutGroup.Axis _gridStartAxis;
         private int[,] _gridActualIndices;
-        private int _realItemsCount;
-        private int _gridConstraintCount;
-        private bool _vertical;
+        private Dictionary<int, Vector2Int> _grid2dIndices;
+        private readonly GridLayoutGroup.Axis _gridStartAxis;
+        private readonly int _realItemsCount;
+        private readonly int _gridConstraintCount;
+        private readonly bool _vertical;
+        private readonly GridLayoutGroup.Corner _gridStartCorner;
 
         public int width { get; private set; }
         public int height { get; private set; }
         public int maxGridItemsInAxis { get; private set; }
 
-        public Grid(int itemsCount, int gridConstraintCount, bool vertical, GridLayoutGroup.Axis gridStartAxis)
+        public Grid(int itemsCount, int gridConstraintCount, bool vertical, GridLayoutGroup.Axis gridStartAxis, GridLayoutGroup.Corner gridStartCorner)
         {
             _realItemsCount = itemsCount;
             _gridConstraintCount = gridConstraintCount;
             _vertical = vertical;
             _gridStartAxis = gridStartAxis;
+            _gridStartCorner = gridStartCorner;
 
             CalculateWidthWithHeight();
             BuildIndices();
@@ -117,14 +119,49 @@ namespace RecyclableSR
                 int yIndexInGrid;
                 if (_gridStartAxis == GridLayoutGroup.Axis.Vertical)
                 {
-                    xIndexInGrid = Mathf.FloorToInt(i / (float)height);
-                    yIndexInGrid = i % height;
+                    if (_gridStartCorner == GridLayoutGroup.Corner.LowerRight)
+                    {
+                        xIndexInGrid = (width - 1) - (i / height);
+                        yIndexInGrid = (height - 1) - (i % height);
+                    }
+                    else if (_gridStartCorner == GridLayoutGroup.Corner.LowerLeft)
+                    {
+                        xIndexInGrid = i / height;
+                        yIndexInGrid = (height - 1) - (i % height);
+                    }
+                    else if (_gridStartCorner == GridLayoutGroup.Corner.UpperRight)
+                    {
+                        xIndexInGrid = (width - 1) - (i / height);
+                        yIndexInGrid = i % height;
+                    }
+                    else // UpperLeft
+                    {
+                        xIndexInGrid = i / height;
+                        yIndexInGrid = i % height;
+                    }
                 }
                 else
                 {
-                    // TODO: Reversed Grid Code
-                    xIndexInGrid = i % width;
-                    yIndexInGrid = Mathf.FloorToInt(i / (float)width);
+                    if (_gridStartCorner == GridLayoutGroup.Corner.LowerRight)
+                    {
+                        xIndexInGrid = (width - 1) - (i % width);
+                        yIndexInGrid = (height - 1) - (i / width);
+                    }
+                    else if (_gridStartCorner == GridLayoutGroup.Corner.LowerLeft)
+                    {
+                        xIndexInGrid = i % width;
+                        yIndexInGrid = (height - 1) - (i / width);
+                    }
+                    else if (_gridStartCorner == GridLayoutGroup.Corner.UpperRight)
+                    {
+                        xIndexInGrid = (width - 1) - (i % width);
+                        yIndexInGrid = i / width;
+                    }
+                    else // UpperLeft
+                    {
+                        xIndexInGrid = i % width;
+                        yIndexInGrid = i / width;
+                    }
                 }
                 
                 // if (_reverseDirection)
