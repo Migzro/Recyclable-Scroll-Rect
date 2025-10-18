@@ -111,41 +111,35 @@ namespace RecyclableSR
             
             if (vertical)
             {
-                var rightPadding = _reverseDirection ? _padding.left : _padding.right;
-                var leftPadding = _reverseDirection ? _padding.right : _padding.left;
-
                 if (_childAlignment == TextAnchor.LowerCenter || _childAlignment == TextAnchor.MiddleCenter || _childAlignment == TextAnchor.UpperCenter)
                 {
-                    _gridLayoutPadding.x = leftPadding + (contentSize.x - (_gridItemSize.x * _gridConstraintCount) - (_spacing.x * (_gridConstraintCount - 1))) / 2 - rightPadding;
+                    _gridLayoutPadding.x = _padding.left + (contentSize.x - (_gridItemSize.x * _gridConstraintCount) - (_spacing.x * (_gridConstraintCount - 1))) / 2 - _padding.right;
                 }
                 else if (_childAlignment == TextAnchor.LowerRight || _childAlignment == TextAnchor.MiddleRight || _childAlignment == TextAnchor.UpperRight)
                 {
-                    _gridLayoutPadding.x = contentSize.x - _gridItemSize.x - rightPadding;
+                    _gridLayoutPadding.x = contentSize.x - _gridItemSize.x - _padding.right;
                 }
                 else
                 {
-                    _gridLayoutPadding.x = leftPadding;
+                    _gridLayoutPadding.x = _padding.left;
                 }
-                _gridLayoutPadding.y = _reverseDirection ? _padding.bottom : _padding.top;
+                _gridLayoutPadding.y = _padding.top;
             }
             else
             {
-                var topPadding = _reverseDirection ? _padding.bottom : _padding.top;
-                var bottomPadding = _reverseDirection ? _padding.top : _padding.bottom;
-                
                 if (_childAlignment == TextAnchor.MiddleLeft || _childAlignment == TextAnchor.MiddleCenter || _childAlignment == TextAnchor.MiddleRight)
                 {
-                    _gridLayoutPadding.y = topPadding + (contentSize.y - (_gridItemSize.y * _gridConstraintCount) - (_spacing.y * (_gridConstraintCount - 1))) / 2 - bottomPadding;
+                    _gridLayoutPadding.y = _padding.top + (contentSize.y - (_gridItemSize.y * _gridConstraintCount) - (_spacing.y * (_gridConstraintCount - 1))) / 2 - _padding.bottom;
                 }
                 else if (_childAlignment == TextAnchor.LowerLeft || _childAlignment == TextAnchor.LowerCenter || _childAlignment == TextAnchor.LowerRight)
                 {
-                    _gridLayoutPadding.y = contentSize.y - _gridItemSize.y - bottomPadding;
+                    _gridLayoutPadding.y = contentSize.y - _gridItemSize.y - _padding.bottom;
                 }
                 else
                 {
-                    _gridLayoutPadding.y = topPadding;
+                    _gridLayoutPadding.y = _padding.top;
                 }
-                _gridLayoutPadding.x = _reverseDirection ? _padding.right : _padding.left;
+                _gridLayoutPadding.x = _padding.left;
             }
         }
         

@@ -9,7 +9,7 @@ namespace RecyclableSR
             var currentPagePosition = _visibleItems[_currentPage].transform.anchoredPosition;
             var currentPageStartingPosition = _itemPositions[_currentPage].topLeftPosition;
             var distance = Vector2.Distance(currentPageStartingPosition, currentPagePosition);
-            var isNextPage = (currentPagePosition[_axis] < currentPageStartingPosition[_axis]) && !_reverseDirection;
+            var isNextPage = (currentPagePosition[_axis] < currentPageStartingPosition[_axis]);
             var newPage = _currentPage;
             if (distance > _swipeThreshold)
             {

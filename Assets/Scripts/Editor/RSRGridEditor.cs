@@ -5,7 +5,7 @@ namespace RecyclableSR
 {
     [CustomEditor(typeof(RSRGrid), true)]
     [CanEditMultipleObjects]
-    public class RSRGridEditor : RSRBaseEditor
+    public class RSRGridEditor : RSREditor
     {
         private SerializedProperty _gridItemSize;
         private SerializedProperty _gridStartAxis;

@@ -73,7 +73,7 @@ namespace RecyclableSR
                 if (siblingOrder > 0)
                     siblingOrder = siblingOrder * -1 - _currentPage;
 
-                visibleItem.Value.item.CanvasGroup.alpha = visibleItem.Key >= _currentPage && !_reverseDirection ? 1 : 0;
+                visibleItem.Value.item.CanvasGroup.alpha = visibleItem.Key >= _currentPage ? 1 : 0;
                 childrenSiblingOrder.Add(siblingOrder, visibleItem.Value.transform);
             }
 
@@ -129,7 +129,7 @@ namespace RecyclableSR
             }
             
             _forceCallWillFocusAfterAnimation = !_visibleItems.ContainsKey(itemIndex);
-            var isNextPage = itemIndex > _currentPage && !_reverseDirection;
+            var isNextPage = itemIndex > _currentPage;
             if (_visibleItems.ContainsKey(itemIndex))
             {
                 _pageSource?.PageWillFocus(itemIndex, isNextPage, _visibleItems[itemIndex].item, _visibleItems[itemIndex].transform, _itemPositions[itemIndex].topLeftPosition);
@@ -147,8 +147,7 @@ namespace RecyclableSR
             
             if (_currentPage != itemIndex)
             {
-                var isNextPage = itemIndex > _currentPage && !_reverseDirection;
-
+                var isNextPage = itemIndex > _currentPage;
                 var pageToStaggerAnimation = -1;
                 if (!instant)
                 {
@@ -174,7 +173,7 @@ namespace RecyclableSR
                 base.OnBeginDrag(eventData);
 
             _isDragging = true;
-            _dragStartingPosition = content.anchoredPosition * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
+            _dragStartingPosition = content.anchoredPosition * (vertical ? 1 : -1);
         }
         
         /// <summary>
@@ -211,7 +210,7 @@ namespace RecyclableSR
 
         protected virtual int CalculateNextPageAfterDrag()
         {
-            var currentContentPosition = content.anchoredPosition * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
+            var currentContentPosition = content.anchoredPosition * (vertical ? 1 : -1);
             var distance = Vector3.Distance(_dragStartingPosition, currentContentPosition);
             var isNextPage = currentContentPosition[_axis] > _dragStartingPosition[_axis];
             var newPage = _currentPage;

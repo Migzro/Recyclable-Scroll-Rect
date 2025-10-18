@@ -4,6 +4,8 @@ namespace RecyclableSR
 {
     public class RSR : RSRBase
     {
+        [SerializeField] protected bool _reverseArrangement;
+        
         private IRSRSource _rsrSource;
         protected int _extraItemsVisible;
         
@@ -20,6 +22,19 @@ namespace RecyclableSR
         {
             base.ResetVariables();
             _extraItemsVisible = _rsrSource.ExtraItemsVisible;
+        }
+        
+        /// <summary>
+        /// get the index of the item
+        /// </summary>
+        /// <returns></returns>
+        protected override int GetActualItemIndex(int itemIndex)
+        {
+            if (_reverseArrangement)
+            {
+                return _itemsCount - 1 - itemIndex;
+            }
+            return itemIndex;
         }
 
         /// <summary>
@@ -110,30 +125,16 @@ namespace RecyclableSR
             {
                 if (vertical)
                 {
-                    if (_reverseDirection)
-                    {
-                        newItemPosition.y = _padding.bottom;
-                    }
-                    else
-                    {
-                        newItemPosition.y = -_padding.top;
-                    }
+                    newItemPosition.y = -_padding.top;
                 }
                 else
                 {
-                    if (_reverseDirection)
-                    {
-                        newItemPosition.x = -_padding.right;
-                    }
-                    else
-                    {
-                        newItemPosition.x = _padding.left;
-                    }
+                    newItemPosition.x = _padding.left;
                 }
             }
             else
             {
-                var verticalSign = (vertical ? -1 : 1) * (_reverseDirection ? -1 : 1);
+                var verticalSign = vertical ? -1 : 1;
                 newItemPosition[_axis] = verticalSign * _itemPositions[newIndex - 1].absBottomRightPosition[_axis] + verticalSign * _spacing[_axis];
             }
 
@@ -231,8 +232,8 @@ namespace RecyclableSR
                 var itemPosition = rect.anchoredPosition;
                 if (vertical)
                 {
-                    var rightPadding = _reverseDirection ? _padding.left : _padding.right;
-                    var leftPadding = _reverseDirection ? _padding.right : _padding.left;
+                    var rightPadding = _padding.right;
+                    var leftPadding = _padding.left;
                     if (_dataSource.IgnoreContentPadding(itemIndex))
                     {
                         rightPadding = 0;
@@ -254,8 +255,8 @@ namespace RecyclableSR
                 }
                 else
                 {
-                    var topPadding = _reverseDirection ? _padding.bottom : _padding.top;
-                    var bottomPadding = _reverseDirection ? _padding.top : _padding.bottom;
+                    var topPadding = _padding.top;
+                    var bottomPadding = _padding.bottom;
                     if (_dataSource.IgnoreContentPadding(itemIndex))
                     {
                         topPadding = 0;
@@ -432,7 +433,7 @@ namespace RecyclableSR
             }
             else if (_minExtraVisibleRowColumnInViewPort <= itemIndex && _minVisibleRowColumnInViewPort > itemIndex)
             {
-                contentPosition[_axis] -= (oldSize - _itemPositions[itemIndex].itemSize[_axis]) * (_reverseDirection ? -1 : 1);
+                contentPosition[_axis] -= (oldSize - _itemPositions[itemIndex].itemSize[_axis]);
             }
             
             var contentPositionDiff = Mathf.Abs(contentPosition[_axis] - oldContentPosition);
@@ -517,7 +518,7 @@ namespace RecyclableSR
         public override void ScrollToTopRight()
         {
             base.ScrollToTopRight();
-            StartCoroutine(ScrollToTargetNormalisedPosition((vertical ? 1 : 0) * (_reverseDirection ? 0 : 1)));
+            StartCoroutine(ScrollToTargetNormalisedPosition(vertical ? 1 : 0));
         }
     }
 }

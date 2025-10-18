@@ -13,7 +13,7 @@ namespace RecyclableSR
         // TODO: Rework cards behaviours
         // TODO: remove _manuallyHandleCardAnimations
         
-        // TODO: Fix all behaviours for gridLayout and make sure _reverseDirection is working properly
+        // TODO: check alignment
         // TODO: make this class abstract
         
         // TODO: Separate Scrolling animation
@@ -23,10 +23,8 @@ namespace RecyclableSR
         // TODO: check todos in RSRPages
         // TODO: check todos in this class
         // TODO: Add headers, footers, sections
-        // TODO: Check TODOs in RSRBaseEditor
         // TODO: i don't like static items?
         
-        [SerializeField] protected bool _reverseDirection;
         [SerializeField] protected bool _childForceExpand;
         [SerializeField] private float _pullToRefreshThreshold = 150;
         [SerializeField] private float _pushToCloseThreshold = 150;
@@ -190,35 +188,17 @@ namespace RecyclableSR
         /// </summary>
         private void SetContentAnchorsPivot()
         {
-            if (_reverseDirection)
+            if (vertical)
             {
-                if (vertical)
-                {
-                    content.anchorMin = Vector2.zero;
-                    content.anchorMax = new Vector2(1, 0);
-                    content.pivot = Vector2.zero;
-                }
-                else
-                {
-                    content.anchorMin = new Vector2(1, 0);
-                    content.anchorMax = new Vector2(1, 1);
-                    content.pivot = new Vector2(1, 1);
-                }
+                content.anchorMin = new Vector2(0, 1);
+                content.anchorMax = new Vector2(1, 1);
+                content.pivot = new Vector2(0, 1);
             }
             else
             {
-                if (vertical)
-                {
-                    content.anchorMin = new Vector2(0, 1);
-                    content.anchorMax = new Vector2(1, 1);
-                    content.pivot = new Vector2(0, 1);
-                }
-                else
-                {
-                    content.anchorMin = Vector2.zero;
-                    content.anchorMax = new Vector2(0, 1);
-                    content.pivot = new Vector2(0, 1);
-                }
+                content.anchorMin = Vector2.zero;
+                content.anchorMax = new Vector2(0, 1);
+                content.pivot = new Vector2(0, 1);
             }
         }
 
@@ -533,19 +513,7 @@ namespace RecyclableSR
         /// <param name="itemIndex">The index of the item that its size will be adjusted</param>
         protected virtual void CalculateNonAxisSizePosition(RectTransform rect, int itemIndex)
         {
-            Vector2 anchorVector;
-            if (_reverseDirection)
-            {
-                if (vertical)
-                    anchorVector = new Vector2(0, 0);
-                else
-                    anchorVector = new Vector2(1, 1);
-            }
-            else
-            {
-                anchorVector = new Vector2(0, 1);
-            }
-
+            var anchorVector = new Vector2(0, 1);
             rect.anchorMin = anchorVector;
             rect.anchorMax = anchorVector;
             rect.pivot = anchorVector;
@@ -595,7 +563,7 @@ namespace RecyclableSR
                 return;
             if (_visibleItems.Count <= 0)
                 return;
-            var currentContentAnchoredPosition = content.anchoredPosition * ((vertical ? 1f : -1f) * (_reverseDirection ? -1f : 1f));
+            var currentContentAnchoredPosition = content.anchoredPosition * (vertical ? 1f : -1f);
             if (Mathf.Approximately(currentContentAnchoredPosition[_axis], _lastContentPosition[_axis]) && !_needsClearance)
                 return;
             
@@ -654,20 +622,9 @@ namespace RecyclableSR
 
             var showBottomRight = _contentTopLeftCorner[_axis] > _lastContentPosition[_axis];
             _needsClearance = false;
-            
-            int topLeftPadding;
-            int bottomLeftPadding;
-            if (_reverseDirection)
-            {
-                topLeftPadding = vertical ? _padding.bottom : _padding.right;
-                bottomLeftPadding = vertical ? _padding.top : _padding.left;
-            }
-            else
-            {
-                topLeftPadding = vertical ? _padding.top : _padding.left;
-                bottomLeftPadding = vertical ? _padding.bottom : _padding.right;
-            }
-            
+
+            var topLeftPadding = vertical ? _padding.top : _padding.left;
+            var bottomLeftPadding = vertical ? _padding.bottom : _padding.right;
             var topLeftMinClearance = 0.1f + topLeftPadding * (ReachedMinItemInViewPort ? 1 : 0) + _spacing[_axis] * (ReachedMinItemInViewPort ? 0 : 1);
             var bottomRightMinClearance = 0.1f + bottomLeftPadding * (ReachedMaxItemInViewPort ? 1 : 0) + _spacing[_axis] * (ReachedMaxItemInViewPort ? 0 : 1);
             
@@ -833,7 +790,7 @@ namespace RecyclableSR
         protected void GetContentBounds()
         {
             _viewPortSize = viewport.rect.size;
-            _contentTopLeftCorner = content.anchoredPosition * ((vertical ? 1f : -1f) * (_reverseDirection ? -1f : 1f));
+            _contentTopLeftCorner = content.anchoredPosition * (vertical ? 1f : -1f);
             _contentBottomRightCorner[1 - _axis] = _contentTopLeftCorner[1 - _axis];
             _contentBottomRightCorner[_axis] = _contentTopLeftCorner[_axis] + _viewPortSize[_axis];
         }
@@ -954,7 +911,7 @@ namespace RecyclableSR
             if (itemVisiblePositionKnown && instant)
             {
                 var currentContentPosition = content.anchoredPosition;
-                currentContentPosition[_axis] = _itemPositions[itemIndex].absTopLeftPosition[_axis] * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1)) + offset;
+                currentContentPosition[_axis] = _itemPositions[itemIndex].absTopLeftPosition[_axis] * (vertical ? 1 : -1) + offset;
                 content.anchoredPosition = currentContentPosition;
                 m_ContentStartPosition = currentContentPosition;
                 if (callEvent)
@@ -1012,7 +969,7 @@ namespace RecyclableSR
                 }
 
                 _isAnimating = true;
-                var increment = speedToUse * direction * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
+                var increment = speedToUse * direction * (vertical ? 1 : -1);
                 StartCoroutine(StartScrolling(increment, direction, itemIndex, callEvent, offset));
             }
         }
@@ -1036,23 +993,23 @@ namespace RecyclableSR
                 contentTopLeftCorner[ _axis ] = content.sizeDelta[ _axis ] - _viewPortSize[_axis];
             
             var contentBottomRightCorner = contentTopLeftCorner;
-            contentBottomRightCorner[_axis] += _viewPortSize[_axis] * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
+            contentBottomRightCorner[_axis] += _viewPortSize[_axis] * (vertical ? 1 : -1);
             
             if (_itemPositions[itemIndex].positionSet)
             {
-                var itemTopLeftCorner = _itemPositions[itemIndex].absTopLeftPosition[_axis] + offset * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
+                var itemTopLeftCorner = _itemPositions[itemIndex].absTopLeftPosition[_axis] + offset * (vertical ? 1 : -1);
                 if (direction == 1) 
                 {
                     if (itemTopLeftCorner <= Mathf.Abs(contentTopLeftCorner[_axis]))
                     {
-                        contentTopLeftCorner[_axis] = itemTopLeftCorner * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
+                        contentTopLeftCorner[_axis] = itemTopLeftCorner * (vertical ? 1 : -1);
                         reachedItem = true;
                     }
 
                     // reached bottom or right
                     else if (_maxExtraVisibleRowColumnInViewPort == _itemsCount - 1 && Mathf.Abs(contentBottomRightCorner[_axis]) >= content.sizeDelta[_axis])
                     {
-                        contentTopLeftCorner[_axis] = (content.rect.size[_axis] - _viewPortSize[_axis]) * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
+                        contentTopLeftCorner[_axis] = (content.rect.size[_axis] - _viewPortSize[_axis]) * (vertical ? 1 : -1);
                         reachedItem = true;
                     }
                 }
@@ -1060,13 +1017,12 @@ namespace RecyclableSR
                 {
                     if (itemTopLeftCorner >= Mathf.Abs(contentTopLeftCorner[_axis]))
                     {
-                        contentTopLeftCorner[_axis] = itemTopLeftCorner * ((vertical ? 1 : -1) * (_reverseDirection ? -1 : 1));
+                        contentTopLeftCorner[_axis] = itemTopLeftCorner * (vertical ? 1 : -1);
                         reachedItem = true;
                     }
 
                     // reached top or left
-                    else if (!_reverseDirection && (vertical && contentTopLeftCorner[_axis] <= 0 || !vertical && contentTopLeftCorner[_axis] >= 0)
-                        || _reverseDirection && (vertical && contentTopLeftCorner[_axis] >= 0 || !vertical && contentTopLeftCorner[_axis] <= 0))
+                    else if (vertical && contentTopLeftCorner[_axis] <= 0 || !vertical && contentTopLeftCorner[_axis] >= 0)
                     {
                         contentTopLeftCorner[_axis] = 0;
                         reachedItem = true;

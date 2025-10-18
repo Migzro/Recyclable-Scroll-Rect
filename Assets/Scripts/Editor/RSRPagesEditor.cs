@@ -4,7 +4,7 @@ namespace RecyclableSR
 {
     [CustomEditor(typeof(RSRPages), true)]
     [CanEditMultipleObjects]
-    public class RSRPagesEditor : RSRBaseEditor
+    public class RSRPagesEditor : RSREditor
     {
         private SerializedProperty _swipeThreshold;
         private SerializedProperty _cardMode;

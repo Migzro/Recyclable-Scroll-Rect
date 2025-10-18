@@ -163,27 +163,6 @@ namespace RecyclableSR
                         yIndexInGrid = i / width;
                     }
                 }
-                
-                // if (_reverseDirection)
-                // {
-                //     // TODO: this should be horizontal
-                //     if (_gridConstraint == GridLayoutGroup.Constraint.FixedRowCount && _gridStartAxis == GridLayoutGroup.Axis.Vertical)
-                //     {
-                //         newItemPosition.x = -_gridLayoutPadding.x - xIndexInGrid * _itemPositions[newIndex].itemSize[0] - _spacing[0] * xIndexInGrid;
-                //         newItemPosition.y = -_gridLayoutPadding.y - yIndexInGrid * _itemPositions[newIndex].itemSize[1] - _spacing[1] * yIndexInGrid;
-                //     }
-                //     // TODO: this should be vertical
-                //     else if (_gridConstraint == GridLayoutGroup.Constraint.FixedColumnCount && _gridStartAxis == GridLayoutGroup.Axis.Horizontal)
-                //     {
-                //         newItemPosition.x = _gridLayoutPadding.x + xIndexInGrid * _itemPositions[newIndex].itemSize[0] + _spacing[0] * xIndexInGrid;
-                //         newItemPosition.y = _gridLayoutPadding.y + yIndexInGrid * _itemPositions[newIndex].itemSize[1] + _spacing[1] * yIndexInGrid;
-                //     }
-                // }
-                // else
-                // {
-                //     newItemPosition.x = _gridLayoutPadding.x + xIndexInGrid * _itemPositions[newIndex].itemSize[0] + _spacing[0] * xIndexInGrid;
-                //     newItemPosition.y = -_gridLayoutPadding.y - yIndexInGrid * _itemPositions[newIndex].itemSize[1] - _spacing[1] * yIndexInGrid;
-                // }
 
                 if (i < _realItemsCount)
                 {
@@ -194,17 +173,6 @@ namespace RecyclableSR
                     _gridActualIndices[xIndexInGrid, yIndexInGrid] = -1;   
                 }
             }
-
-            // Debugging code
-            // for (var j = 0; j < _gridHeight; j++)
-            // {
-            //     var stringToShow = "";
-            //     for (var i = 0; i < _gridWidth; i++)
-            //     {
-            //         stringToShow += _gridIndices[i, j] + " ";
-            //     }
-            //     Debug.LogError(stringToShow);
-            // }
         }
         
         private void Set2dIndex(int index)
