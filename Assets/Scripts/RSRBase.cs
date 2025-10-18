@@ -16,6 +16,7 @@ namespace RecyclableSR
         // TODO: check alignment
         // TODO: check lastItemVisible in IDataSource, what should it do in RSRGrid?
         // TODO: make this class abstract
+        // TODO: consider removing IRSRSource and IGridSource
         
         // TODO: Separate Scrolling animation
         // TODO: Redo Scrolling animation
@@ -26,6 +27,7 @@ namespace RecyclableSR
         // TODO: Add headers, footers, sections
         // TODO: i don't like static items?
         
+        [SerializeField] private bool _showUsingCanvasGroupAlpha;
         [SerializeField] protected bool _childForceExpand;
         [SerializeField] private float _pullToRefreshThreshold = 150;
         [SerializeField] private float _pushToCloseThreshold = 150;
@@ -107,7 +109,9 @@ namespace RecyclableSR
             // add a LayoutElement if not present to set the content size in case another element is controlling it 
             _layoutElement = content.gameObject.GetComponent<LayoutElement>();
             if (_layoutElement == null)
+            {
                 _layoutElement = content.gameObject.AddComponent<LayoutElement>();
+            }
 
             _axis = vertical ? 1 : 0;
             _initialMovementType = movementType;
@@ -127,7 +131,9 @@ namespace RecyclableSR
                 foreach (var visibleItem in _visibleItems)
                 {
                     if (!_staticItems[visibleItem.Key])
+                    {
                         Destroy(visibleItem.Value.transform.gameObject);
+                    }
                 }
                 _visibleItems.Clear();
             }
@@ -160,14 +166,18 @@ namespace RecyclableSR
             _visibleItems = new SortedDictionary<int, Item>();
             
             if (_pooledItems == null)
+            {
                 _pooledItems = new Dictionary<string, List<Item>>();
+            }
             
             // create a new list for each prototype items to hold the pooled items
             var prototypeItems = _dataSource.PrototypeItems;
             for (var i = 0; i < prototypeItems.Length; i++)
             {
                 if (!_pooledItems.ContainsKey(prototypeItems[i].name))
+                {
                     _pooledItems.Add(prototypeItems[i].name, new List<Item>());
+                }
             }
 
             ResetVariables();
@@ -218,7 +228,9 @@ namespace RecyclableSR
         {
             base.OnDestroy();
             if (Application.isPlaying && !_isApplicationQuitting && ScreenResolutionDetector.Instance != null)
+            {
                 ScreenResolutionDetector.Instance.OnResolutionChanged -= UpdateContentLayouts;
+            }
         }
 
         private void OnApplicationQuit()
@@ -299,7 +311,7 @@ namespace RecyclableSR
                     }
                     SetVisibilityInHierarchy(itemRect, false);
 
-                    if (_dataSource.IsSetVisibleUsingCanvasGroupAlpha)
+                    if (_showUsingCanvasGroupAlpha)
                     {
                         var item = itemRect.GetComponent<IItem>() ?? itemRect.gameObject.AddComponent<BaseItem>();
                         item.CanvasGroup.alpha = 0;
@@ -307,7 +319,9 @@ namespace RecyclableSR
                         item.CanvasGroup.blocksRaycasts = false;
                     }
                     else
+                    {
                         itemRect.gameObject.SetActive(false);
+                    }
                 }
             }
         }
@@ -395,7 +409,7 @@ namespace RecyclableSR
                 
                 SetVisibilityInHierarchy((RectTransform)itemGo.transform, true);
                 itemGo.SetActive(true);
-                if (_dataSource.IsSetVisibleUsingCanvasGroupAlpha)
+                if (_showUsingCanvasGroupAlpha)
                 {
                     itemImpl.CanvasGroup.alpha = 1;
                     itemImpl.CanvasGroup.interactable = true;
@@ -699,7 +713,7 @@ namespace RecyclableSR
                 var item = _pooledItems[itemPrototypeName][0];
                 _pooledItems[itemPrototypeName].RemoveAt(0);
 
-                if (_dataSource.IsSetVisibleUsingCanvasGroupAlpha)
+                if (_showUsingCanvasGroupAlpha)
                 {
                     item.item.CanvasGroup.alpha = 1;
                     item.item.CanvasGroup.interactable = true;
@@ -769,15 +783,17 @@ namespace RecyclableSR
         /// <param name="itemIndex">itemIndex which will be hidden</param>
         protected void HideItemAtIndex(int itemIndex)
         {
-            if (_dataSource.IsSetVisibleUsingCanvasGroupAlpha)
+            if (_showUsingCanvasGroupAlpha)
             {
                 _visibleItems[itemIndex].item.CanvasGroup.alpha = 0;
                 _visibleItems[itemIndex].item.CanvasGroup.interactable = false;
                 _visibleItems[itemIndex].item.CanvasGroup.blocksRaycasts = false;
             }
             else
+            {
                 _visibleItems[itemIndex].transform.gameObject.SetActive(false);
-            
+            }
+
             var actualItemIndex = GetActualItemIndex(itemIndex);
             SetVisibilityInHierarchy(_visibleItems[itemIndex].transform, false);
             _dataSource.ItemHidden(_visibleItems[itemIndex].item, actualItemIndex);

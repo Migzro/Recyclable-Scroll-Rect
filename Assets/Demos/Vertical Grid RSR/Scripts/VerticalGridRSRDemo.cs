@@ -14,7 +14,6 @@ public class VerticalGridRSRDemo : MonoBehaviour, IGridSource
     
     public int ItemsCount => _dataSource.Count;
     public bool IsItemSizeKnown => true;
-    public bool IsSetVisibleUsingCanvasGroupAlpha => false;
     public GameObject[] PrototypeItems => _prototypeItems;
 
     private void Start()

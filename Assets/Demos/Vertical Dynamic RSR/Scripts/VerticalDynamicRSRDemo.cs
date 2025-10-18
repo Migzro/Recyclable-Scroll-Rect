@@ -12,7 +12,6 @@ public class VerticalDynamicRSRDemo : MonoBehaviour, IRSRSource
     
     public int ItemsCount => _itemsCount;
     public bool IsItemSizeKnown => false;
-    public bool IsSetVisibleUsingCanvasGroupAlpha => false;
     public GameObject[] PrototypeItems => _prototypeItems;
 
     private void Start()

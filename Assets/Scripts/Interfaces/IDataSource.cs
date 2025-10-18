@@ -6,7 +6,6 @@ namespace RecyclableSR
     {
         int ItemsCount { get; }
         bool IsItemSizeKnown { get; }
-        bool IsSetVisibleUsingCanvasGroupAlpha { get; }
         GameObject[] PrototypeItems { get; }
         float GetItemSize(int itemIndex);
         GameObject GetItemPrototype(int itemIndex);
