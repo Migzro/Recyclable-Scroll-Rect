@@ -611,7 +611,7 @@ MonoBehaviour:
     m_Bottom: 50
   _childAlignment: 0
   _gridItemSize: {x: 400, y: 385}
-  _gridStartAxis: 1
+  _gridStartAxis: 0
   _gridConstraint: 2
   _gridConstraintCount: 3
 --- !u!1660057539 &9223372036854775807

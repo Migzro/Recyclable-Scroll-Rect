@@ -13,8 +13,7 @@ namespace RecyclableSR
         // TODO: Rework cards behaviours
         // TODO: remove _manuallyHandleCardAnimations
         
-        // TODO: encapsulate grid data and functions
-        // TODO: maybe when removing extra items, dont remove extraRowsColumnsItems in both grid and rsr
+        // TODO: Check bug when reloading when at bottom of the grid
         
         // TODO: different start axes for grid layout
         // TODO: FixedColumnCount with Vertical Grids & FixedRowCount with Horizontal Grids (remaining _maxExtraVisibleItemInViewPort needs to be / _maxGridsItemsInAxis
