@@ -5,9 +5,9 @@ namespace RecyclableSR
     public class RSR : RSRBase
     {
         [SerializeField] protected bool _reverseArrangement;
+        [SerializeField] protected int _extraItemsVisible;
         
         private IRSRSource _rsrSource;
-        protected int _extraItemsVisible;
         
         protected override bool ReachedMinItemInViewPort => _minVisibleRowColumnInViewPort == 0;
         protected override bool ReachedMaxItemInViewPort => _maxVisibleRowColumnInViewPort == _itemsCount - 1;
@@ -16,12 +16,6 @@ namespace RecyclableSR
         {
             _rsrSource = (IRSRSource)_dataSource;
             base.Initialize();
-        }
-        
-        protected override void ResetVariables()
-        {
-            base.ResetVariables();
-            _extraItemsVisible = _rsrSource.ExtraItemsVisible;
         }
         
         /// <summary>

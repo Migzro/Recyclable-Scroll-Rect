@@ -2,14 +2,12 @@ using System.Collections.Generic;
 using DG.Tweening;
 using RecyclableSR;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public class HorizontalCardsRSRDemo : MonoBehaviour, IPageSource
 {
     [SerializeField] private int _itemsCount;
     [SerializeField] private RSRCards _scrollRect;
     [SerializeField] private GameObject[] _prototypeItems;
-    [SerializeField] private int _extraItemsVisible;
     [SerializeField] private float _animationTime;
     [SerializeField] private Ease _animationEase;
         
@@ -17,7 +15,6 @@ public class HorizontalCardsRSRDemo : MonoBehaviour, IPageSource
     private int _itemCount;
     
     public int ItemsCount => _itemsCount;
-    public int ExtraItemsVisible => _extraItemsVisible;
     public bool IsItemSizeKnown => true;
     public bool IsSetVisibleUsingCanvasGroupAlpha => false;
     public GameObject[] PrototypeItems => _prototypeItems;

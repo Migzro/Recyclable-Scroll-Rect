@@ -1,19 +1,16 @@
 using System.Collections.Generic;
 using RecyclableSR;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public class VerticalDynamicRSRDemo : MonoBehaviour, IRSRSource
 {
     [SerializeField] private int _itemsCount;
     [SerializeField] private RSR _scrollRect;
     [SerializeField] private GameObject[] _prototypeItems;
-    [SerializeField] private int _extraItemsVisible;
         
     private List<string> _dataSource;
     
     public int ItemsCount => _itemsCount;
-    public int ExtraItemsVisible => _extraItemsVisible;
     public bool IsItemSizeKnown => false;
     public bool IsSetVisibleUsingCanvasGroupAlpha => false;
     public GameObject[] PrototypeItems => _prototypeItems;

@@ -5,8 +5,9 @@ namespace RecyclableSR
 {
     [CustomEditor(typeof(RSRGrid), true)]
     [CanEditMultipleObjects]
-    public class RSRGridEditor : RSREditor
+    public class RSRGridEditor : RSRBaseEditor
     {
+        private SerializedProperty _extraRowsColumnsVisible;
         private SerializedProperty _gridItemSize;
         private SerializedProperty _gridStartAxis;
         private SerializedProperty _gridConstraint;
@@ -16,6 +17,7 @@ namespace RecyclableSR
         protected override void OnEnable()
         {
             base.OnEnable();
+            _extraRowsColumnsVisible = serializedObject.FindProperty(nameof(_extraRowsColumnsVisible));
             _gridItemSize = serializedObject.FindProperty(nameof(_gridItemSize));
             _gridStartAxis = serializedObject.FindProperty(nameof(_gridStartAxis));
             _gridConstraint = serializedObject.FindProperty(nameof(_gridConstraint));
@@ -28,10 +30,10 @@ namespace RecyclableSR
             base.OnInspectorGUI();
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Grid Data", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(_extraRowsColumnsVisible);
             EditorGUILayout.PropertyField(_gridItemSize);
             EditorGUILayout.PropertyField(_gridStartAxis);
             EditorGUILayout.PropertyField(_gridConstraint);
-
             if (_gridConstraint.intValue != (int)GridLayoutGroup.Constraint.Flexible)
             {
                 EditorGUILayout.PropertyField(_gridConstraintCount);

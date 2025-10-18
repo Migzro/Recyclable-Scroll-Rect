@@ -11,12 +11,12 @@ namespace RecyclableSR
         [SerializeField] private GridLayoutGroup.Constraint _gridConstraint;
         [SerializeField] private int _gridConstraintCount;
         [SerializeField] private GridLayoutGroup.Corner _gridStartCorner;
+        [SerializeField] private int _extraRowsColumnsVisible;
 
         private IGridSource _gridSource;
         private Grid _grid;
         private Vector2 _gridLayoutPadding;
         private int _originalItemsCount;
-        private int _extraRowsColumnsVisible;
 
         protected override bool ReachedMinItemInViewPort => _minVisibleRowColumnInViewPort == 0;
         protected override bool ReachedMaxItemInViewPort => _maxVisibleRowColumnInViewPort == (_grid.maxGridItemsInAxis - 1) * _gridConstraintCount;
@@ -31,7 +31,6 @@ namespace RecyclableSR
         {
             base.ResetVariables();
 
-            _extraRowsColumnsVisible = _gridSource.ExtraRowsColumnsVisible;
             if (_gridConstraint == GridLayoutGroup.Constraint.Flexible)
             {
                 // Calculate how many items can fit in the current scroll view opposite axis, this is our _gridConstraintCount

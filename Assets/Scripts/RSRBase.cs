@@ -14,6 +14,7 @@ namespace RecyclableSR
         // TODO: remove _manuallyHandleCardAnimations
         
         // TODO: check alignment
+        // TODO: check lastItemVisible in IDataSource, what should it do in RSRGrid?
         // TODO: make this class abstract
         
         // TODO: Separate Scrolling animation

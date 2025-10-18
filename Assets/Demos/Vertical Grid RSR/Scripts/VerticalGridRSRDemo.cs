@@ -7,14 +7,12 @@ public class VerticalGridRSRDemo : MonoBehaviour, IGridSource
     [SerializeField] private int _itemsCount;
     [SerializeField] private RSRGrid _scrollRect;
     [SerializeField] private GameObject[] _prototypeItems;
-    [SerializeField] private int _extraRowsColumnsVisible;
     [SerializeField] private int _itemsToReloadTo;
         
     private List<string> _dataSource;
     private int _itemCount;
     
     public int ItemsCount => _dataSource.Count;
-    public int ExtraRowsColumnsVisible => _extraRowsColumnsVisible;
     public bool IsItemSizeKnown => true;
     public bool IsSetVisibleUsingCanvasGroupAlpha => false;
     public GameObject[] PrototypeItems => _prototypeItems;

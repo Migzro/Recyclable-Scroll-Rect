@@ -7,14 +7,12 @@ public class VerticalRSRDemo : MonoBehaviour, IRSRSource
     [SerializeField] private int _itemsCount;
     [SerializeField] private RSR _scrollRect;
     [SerializeField] private GameObject[] _prototypeItems;
-    [SerializeField] private int _extraItemsVisible;
     [SerializeField] private int _itemsToReloadTo;
         
     private List<string> _dataSource;
     private int _itemCount;
     
     public int ItemsCount => _itemsCount;
-    public int ExtraItemsVisible => _extraItemsVisible;
     public bool IsItemSizeKnown => true;
     public bool IsSetVisibleUsingCanvasGroupAlpha => false;
     public GameObject[] PrototypeItems => _prototypeItems;

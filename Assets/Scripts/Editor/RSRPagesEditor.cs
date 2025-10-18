@@ -3,7 +3,6 @@ using UnityEditor;
 namespace RecyclableSR
 {
     [CustomEditor(typeof(RSRPages), true)]
-    [CanEditMultipleObjects]
     public class RSRPagesEditor : RSREditor
     {
         private SerializedProperty _swipeThreshold;
@@ -23,7 +22,6 @@ namespace RecyclableSR
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
-            
             EditorGUILayout.PropertyField(_swipeThreshold);
             EditorGUILayout.PropertyField(_cardMode);
             if (_cardMode.boolValue)

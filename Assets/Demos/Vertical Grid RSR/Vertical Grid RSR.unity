@@ -252,7 +252,6 @@ MonoBehaviour:
   _prototypeItems:
   - {fileID: 1638117046129563386, guid: 7d07dc272788b4bc9a294d5f0345009a, type: 3}
   - {fileID: 1638117046129563386, guid: 18e652532342b4488814228ed812aff2, type: 3}
-  _extraRowsColumnsVisible: 0
   _itemsToReloadTo: 75
 --- !u!1 &1362537419
 GameObject:
@@ -597,7 +596,6 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
-  _reverseDirection: 0
   _childForceExpand: 0
   _pullToRefreshThreshold: 150
   _pushToCloseThreshold: 150
@@ -614,7 +612,8 @@ MonoBehaviour:
   _gridStartAxis: 1
   _gridConstraint: 0
   _gridConstraintCount: 2
-  _gridStartCorner: 3
+  _gridStartCorner: 0
+  _extraRowsColumnsVisible: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

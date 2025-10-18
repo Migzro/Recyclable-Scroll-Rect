@@ -1,20 +1,17 @@
 using System.Collections.Generic;
 using RecyclableSR;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public class VerticalPagingRSRDemo : MonoBehaviour, IPageSource
 {
     [SerializeField] private int _itemsCount;
     [SerializeField] private RSRPages _scrollRect;
     [SerializeField] private GameObject[] _prototypeItems;
-    [SerializeField] private int _extraItemsVisible;
         
     private List<string> _dataSource;
     private int _itemCount;
     
     public int ItemsCount => _itemsCount;
-    public int ExtraItemsVisible => _extraItemsVisible;
     public bool IsItemSizeKnown => true;
     public bool IsSetVisibleUsingCanvasGroupAlpha => false;
     public GameObject[] PrototypeItems => _prototypeItems;
