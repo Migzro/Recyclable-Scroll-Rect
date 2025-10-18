@@ -219,6 +219,36 @@ namespace RecyclableSR
             base.ReloadData(reloadAllItems);
             RefreshAfterReload(reloadAllItems);
         }
+                
+        /// <summary>
+        /// this removes all items that are not needed after item reload if _itemsCount has been reduced
+        /// </summary>
+        /// <param name="itemDiff">the amount of items that have been deleted</param>
+        protected override void RemoveExtraItems(int itemDiff)
+        {
+            base.RemoveExtraItems(itemDiff);
+
+            var lastItem2dIndex = _grid.To2dIndex(_itemsCount - 1);
+            var lastItemFlatIndex = lastItem2dIndex[_axis] * _gridConstraintCount;
+            if (lastItemFlatIndex < _maxVisibleRowColumnInViewPort)
+            {
+                _maxVisibleRowColumnInViewPort = lastItemFlatIndex;
+            }
+            
+            if (lastItemFlatIndex < _maxExtraVisibleRowColumnInViewPort)
+            {
+                // get the amount of extra rows/columns possible based on the new item count
+                var extraRowsColumnsPossible = Mathf.Min((lastItemFlatIndex - _maxVisibleRowColumnInViewPort) / _gridConstraintCount, _extraRowsColumnsVisible);
+                if (vertical)
+                {
+                    _maxExtraVisibleRowColumnInViewPort = _maxVisibleRowColumnInViewPort + (extraRowsColumnsPossible * _gridConstraintCount);
+                }
+                else
+                {
+                    _maxExtraVisibleRowColumnInViewPort = _maxVisibleRowColumnInViewPort + extraRowsColumnsPossible;
+                }
+            }
+        }
 
         /// <summary>
         /// we need to check all the visible items, and hide the ones that currently have an actual index (not -1)
@@ -361,36 +391,6 @@ namespace RecyclableSR
                 {
                     _minExtraVisibleRowColumnInViewPort = itemToShow;
                     ShowHideRowsColumnsAtIndex(itemToShow, true);
-                }
-            }
-        }
-        
-        /// <summary>
-        /// this removes all items that are not needed after item reload if _itemsCount has been reduced
-        /// </summary>
-        /// <param name="itemDiff">the amount of items that have been deleted</param>
-        protected override void RemoveExtraItems(int itemDiff)
-        {
-            base.RemoveExtraItems(itemDiff);
-
-            var lastItem2dIndex = _grid.To2dIndex(_itemsCount - 1);
-            var lastItemFlatIndex = lastItem2dIndex[_axis] * _gridConstraintCount;
-            if (lastItemFlatIndex < _maxVisibleRowColumnInViewPort)
-            {
-                _maxVisibleRowColumnInViewPort = lastItemFlatIndex;
-            }
-            
-            if (lastItemFlatIndex < _maxExtraVisibleRowColumnInViewPort)
-            {
-                // get the amount of extra rows/columns possible based on the new item count
-                var extraRowsColumnsPossible = Mathf.Min((lastItemFlatIndex - _maxVisibleRowColumnInViewPort) / _gridConstraintCount, _extraRowsColumnsVisible);
-                if (vertical)
-                {
-                    _maxExtraVisibleRowColumnInViewPort = _maxVisibleRowColumnInViewPort + (extraRowsColumnsPossible * _gridConstraintCount);
-                }
-                else
-                {
-                    _maxExtraVisibleRowColumnInViewPort = _maxVisibleRowColumnInViewPort + extraRowsColumnsPossible;
                 }
             }
         }

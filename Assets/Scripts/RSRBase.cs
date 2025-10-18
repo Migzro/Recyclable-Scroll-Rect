@@ -13,9 +13,6 @@ namespace RecyclableSR
         // TODO: Rework cards behaviours
         // TODO: remove _manuallyHandleCardAnimations
         
-        // TODO: Check bug when reloading when at bottom of the grid
-        
-        // TODO: different start axes for grid layout
         // TODO: FixedColumnCount with Vertical Grids & FixedRowCount with Horizontal Grids (remaining _maxExtraVisibleItemInViewPort needs to be / _maxGridsItemsInAxis
         // TODO: Fix all behaviours for gridLayout and make sure _reverseDirection is working properly
         // TODO: Add support for start corners
@@ -856,11 +853,7 @@ namespace RecyclableSR
             if (oldItemsCount > _itemsCount)
             {
                 var itemDiff = oldItemsCount - _itemsCount;
-                if (_visibleItems.Count > _itemsCount)
-                {
-                    RemoveExtraItems(itemDiff);
-                }
-
+                RemoveExtraItems(itemDiff);
                 _itemPositions.RemoveRange(_itemsCount, itemDiff);
                 _prototypeNames.RemoveRange(_itemsCount, itemDiff);
                 _staticItems.RemoveRange(_itemsCount, itemDiff);
