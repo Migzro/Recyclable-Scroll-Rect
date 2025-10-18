@@ -51,6 +51,7 @@ namespace RecyclableSR
             _grid = new Grid(_itemsCount, _gridConstraintCount, vertical, _gridStartAxis, _gridStartCorner);
             // set the items count to the fill the entire grid with items
             _itemsCount = _grid.width * _grid.height;
+            CalculateGridPadding();
         }
 
         /// <summary>
@@ -60,8 +61,6 @@ namespace RecyclableSR
         /// </summary>
         protected override void CalculateContentSize()
         {
-            base.CalculateContentSize();
-
             var contentSizeDelta = viewport.sizeDelta;
             contentSizeDelta[_axis] = (_grid.maxGridItemsInAxis * _gridItemSize[_axis]) + (_spacing[_axis] * (_grid.maxGridItemsInAxis - 1));
 
@@ -96,10 +95,8 @@ namespace RecyclableSR
         /// <summary>
         /// Calculates the grid layout padding which offsets each element in the grid based on the padding and anchors set in GridLayout
         /// </summary>
-        protected override void CalculatePadding()
+        private void CalculateGridPadding()
         {
-            base.CalculatePadding();
-            
             _gridLayoutPadding = Vector2.zero;
             
             // get content size without padding
@@ -150,8 +147,6 @@ namespace RecyclableSR
         /// <param name="newIndex">index of the item that needs its position set</param>
         protected override void SetItemAxisPosition(RectTransform rect, int newIndex)
         {
-            base.SetItemAxisPosition(rect, newIndex);
-            
             var newItemPosition = rect.anchoredPosition;
             var gridIndex = _grid.To2dIndex(newIndex);
             newItemPosition.x = _gridLayoutPadding.x + gridIndex.x * _itemPositions[newIndex].itemSize[0] + _spacing[0] * gridIndex.x;
@@ -167,7 +162,6 @@ namespace RecyclableSR
         /// <param name="index">item index which the size will be calculated for</param>
         protected override void CalculateItemAxisSize(RectTransform rect, int index)
         {
-            base.CalculateItemAxisSize(rect, index);
             rect.sizeDelta = _gridItemSize;
         }
         
@@ -180,8 +174,6 @@ namespace RecyclableSR
         /// <param name="startIndex">the starting item index on which we want initialized</param>
         protected override void InitializeItems(int startIndex = 0)
         {
-            base.InitializeItems(startIndex);
-
             // use the current starting row or column index since we base all our calculations on the top or left indices
             var current2DIndex = _grid.To2dIndex(startIndex);
             var currentStartItemInRowColumn = current2DIndex[_axis] * _gridConstraintCount;
@@ -327,8 +319,6 @@ namespace RecyclableSR
         
         protected override void HideItemsAtTopLeft()
         {
-            base.HideItemsAtTopLeft();
-            
             if (_minVisibleRowColumnInViewPort < _itemsCount - _gridConstraintCount - 1 && _contentTopLeftCorner[_axis] >= _itemPositions[_minVisibleRowColumnInViewPort].absBottomRightPosition[_axis])
             {
                 var itemToHide = _minVisibleRowColumnInViewPort - (_extraRowsColumnsVisible * _gridConstraintCount);
@@ -343,8 +333,6 @@ namespace RecyclableSR
         
         protected override void ShowItemsAtBottomRight()
         {
-            base.ShowItemsAtBottomRight();
-            
             if (_maxVisibleRowColumnInViewPort < _itemsCount - _gridConstraintCount - 1 && _contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleRowColumnInViewPort].absBottomRightPosition[_axis] + _spacing[_axis])
             {
                 _maxVisibleRowColumnInViewPort += _gridConstraintCount;
@@ -359,8 +347,6 @@ namespace RecyclableSR
 
         protected override void HideItemsAtBottomRight()
         {
-            base.HideItemsAtBottomRight();
-            
             if (_maxVisibleRowColumnInViewPort > 0 && _contentBottomRightCorner[_axis] <= _itemPositions[_maxVisibleRowColumnInViewPort].absTopLeftPosition[_axis])
             {
                 var itemToHide = _maxVisibleRowColumnInViewPort + (_extraRowsColumnsVisible * _gridConstraintCount);
@@ -375,8 +361,6 @@ namespace RecyclableSR
         
         protected override void ShowItemsAtTopLeft()
         {
-            base.ShowItemsAtTopLeft();
-            
             if (_minVisibleRowColumnInViewPort > 0 && _contentTopLeftCorner[_axis] < _itemPositions[_minVisibleRowColumnInViewPort].absTopLeftPosition[_axis] - _spacing[_axis])
             {
                 _minVisibleRowColumnInViewPort -= _gridConstraintCount;

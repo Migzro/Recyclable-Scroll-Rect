@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 namespace RecyclableSR
 {
-    public class RSRBase : ScrollRect
+    public abstract class RSRBase : ScrollRect
     {
         // TODO: reverse direction for cards
         // TODO: Remove SetCardsZIndices from RSRPages and put it in RSRCards and change it to SetIndices
@@ -15,8 +15,7 @@ namespace RecyclableSR
         
         // TODO: check alignment
         // TODO: check lastItemVisible in IDataSource, what should it do in RSRGrid?
-        // TODO: make this class abstract
-        // TODO: consider removing IRSRSource and IGridSource
+        // TODO: consider removing IRsrSource and IGridSource
         
         // TODO: Separate Scrolling animation
         // TODO: Redo Scrolling animation
@@ -65,10 +64,10 @@ namespace RecyclableSR
         private bool _isApplicationQuitting;
 
         protected SortedDictionary<int, Item> _visibleItems;
-        protected HashSet<int> _ignoreSetItemDataIndices;
-        private HashSet<int> _itemsMarkedForReload;
         private Dictionary<string, List<Item>> _pooledItems;
         private Dictionary<int, HashSet<string>> _reloadTags;
+        protected HashSet<int> _ignoreSetItemDataIndices;
+        private HashSet<int> _itemsMarkedForReload;
         
         protected Vector2 _dragStartingPosition;
         protected Vector2 _contentTopLeftCorner;
@@ -79,8 +78,17 @@ namespace RecyclableSR
         private MovementType _initialMovementType;
 
         public bool IsInitialized => _init;
-        protected virtual bool ReachedMinItemInViewPort => false;
-        protected virtual bool ReachedMaxItemInViewPort => false;
+        protected abstract bool ReachedMinItemInViewPort { get; }
+        protected abstract bool ReachedMaxItemInViewPort { get; }
+        protected abstract void InitializeItems(int startIndex = 0);
+        protected abstract void SetItemAxisPosition(RectTransform rect, int newIndex);
+        protected abstract void CalculateItemAxisSize(RectTransform rect, int index);
+        protected abstract int GetActualItemIndex(int itemIndex);
+        protected abstract void CalculateContentSize();
+        protected abstract void HideItemsAtTopLeft();
+        protected abstract void ShowItemsAtBottomRight();
+        protected abstract void HideItemsAtBottomRight();
+        protected abstract void ShowItemsAtTopLeft();
 
         public void Initialize(IDataSource dataSource)
         {
@@ -184,7 +192,6 @@ namespace RecyclableSR
             SetContentAnchorsPivot();
             InitializeItemPositions();
             CalculateContentSize();
-            CalculatePadding();
             SetStaticItems();
             HideStaticItems();
             SetPrototypeNames();
@@ -241,31 +248,6 @@ namespace RecyclableSR
         private void UpdateContentLayouts()
         {
             ReloadData(true);
-        }
-
-        /// <summary>
-        /// get the index of the item
-        /// </summary>
-        /// <returns></returns>
-        protected virtual int GetActualItemIndex(int itemIndex)
-        {
-            return itemIndex;
-        }
-
-        /// <summary>
-        /// Calculate the content size in their respective direction based on the scrolling direction
-        /// If the item size is know we simply add all the item sizes, spacing and padding
-        /// If not we set the item size as -1 as it will be calculated once the item comes into view
-        /// </summary>
-        protected virtual void CalculateContentSize()
-        {
-        }
-
-        /// <summary>
-        /// used to calculate the padding in grid layout, it's a separate function because it needs to be called in a certain order when initializing everything
-        /// </summary>
-        protected virtual void CalculatePadding()
-        {
         }
         
         /// <summary>
@@ -369,17 +351,7 @@ namespace RecyclableSR
             for (var i = _itemPositions.Count; i < _itemsCount; i++)
                 _itemPositions.Add(new ItemPosition());
         }
-
-        /// <summary>
-        /// Initialize all items needed until the view port is filled
-        /// extra visible items is an additional amount of items that can be shown to prevent showing an empty view port if the scrolling is too fast and the update function didn't show all the items
-        /// that need to be shown
-        /// </summary>
-        /// <param name="startIndex">the starting item index on which we want initialized</param>
-        protected virtual void InitializeItems(int startIndex = 0)
-        {
-        }
-
+        
         /// <summary>
         /// Initialize the items
         /// Its only called when there are no pooled items available and the RecyclableScrollRect needs to show an item
@@ -548,27 +520,6 @@ namespace RecyclableSR
         }
 
         /// <summary>
-        /// This function sets the position of the item whether its new or retrieved from pool based on its index and the previous item index
-        /// The current index position is the previous item position + previous item height
-        /// or the previous item position - current item height
-        /// </summary>
-        /// <param name="rect">rect of the item which position will be set</param>
-        /// <param name="newIndex">index of the item that needs its position set</param>
-        protected virtual void SetItemAxisPosition(RectTransform rect, int newIndex)
-        {
-        }
-
-        /// <summary>
-        /// This function calculates the item size if its unknown by forcing a Layout rebuild
-        /// if it is known we just get the item size
-        /// </summary>
-        /// <param name="rect">rect of the item which the size will be calculated for</param>
-        /// <param name="index">item index which the size will be calculated for</param>
-        protected virtual void CalculateItemAxisSize(RectTransform rect, int index)
-        {
-        }
-
-        /// <summary>
         /// The function in which we calculate which items need to be shown and which items need to hide
         /// </summary>
         protected override void LateUpdate()
@@ -670,34 +621,6 @@ namespace RecyclableSR
             }
         }
         
-        /// <summary>
-        /// hide items at top left 
-        /// </summary>
-        protected virtual void HideItemsAtTopLeft()
-        {
-        }
-        
-        /// <summary>
-        ///  show items at bottom right
-        /// </summary>
-        protected virtual void ShowItemsAtBottomRight()
-        {
-        }
-
-        /// <summary>
-        /// hide items at bottom right
-        /// </summary>
-        protected virtual void HideItemsAtBottomRight()
-        {
-        }
-        
-        /// <summary>
-        /// show items at top left
-        /// </summary>
-        protected virtual void ShowItemsAtTopLeft()
-        {
-        }
-
         /// <summary>
         /// User has scrolled, and we need to show an item
         /// If there is a pooled item available, we get it and set its position, sibling index, and remove it from the pool
@@ -835,7 +758,6 @@ namespace RecyclableSR
             SetContentAnchorsPivot();
             InitializeItemPositions();
             CalculateContentSize();
-            CalculatePadding();
             SetStaticItems();
             SetPrototypeNames();
 

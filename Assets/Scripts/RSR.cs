@@ -39,8 +39,6 @@ namespace RecyclableSR
         /// <param name="startIndex">the starting item index on which we want initialized</param>
         protected override void InitializeItems(int startIndex = 0)
         {
-            base.InitializeItems(startIndex);
-            
             GetContentBounds();
             var contentHasSpace = startIndex == 0 || _itemPositions[startIndex - 1].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
             var extraItemsInitialized = contentHasSpace ? 0 : _maxExtraVisibleRowColumnInViewPort - _maxVisibleRowColumnInViewPort;
@@ -66,8 +64,6 @@ namespace RecyclableSR
         /// </summary>
         protected override void CalculateContentSize()
         {
-            base.CalculateContentSize();
-            
             var contentSizeDelta = viewport.sizeDelta;
             contentSizeDelta[_axis] = 0;
 
@@ -111,8 +107,6 @@ namespace RecyclableSR
         /// <param name="newIndex">index of the item that needs its position set</param>
         protected override void SetItemAxisPosition(RectTransform rect, int newIndex)
         {
-            base.SetItemAxisPosition(rect, newIndex);
-            
             var newItemPosition = rect.anchoredPosition;
             // figure out where the prev item position was
             if (newIndex == 0)
@@ -144,8 +138,6 @@ namespace RecyclableSR
         /// <param name="index">item index which the size will be calculated for</param>
         protected override void CalculateItemAxisSize(RectTransform rect, int index)
         {
-            base.CalculateItemAxisSize(rect, index);
-            
             var newItemSize = _itemPositions[index].itemSize;
             var oldItemSize = newItemSize[_axis];
 
@@ -447,8 +439,6 @@ namespace RecyclableSR
 
         protected override void HideItemsAtTopLeft()
         {
-            base.HideItemsAtTopLeft();
-            
             if (_minVisibleRowColumnInViewPort < _itemsCount - 1 && _contentTopLeftCorner[_axis] >= _itemPositions[_minVisibleRowColumnInViewPort].absBottomRightPosition[_axis])
             {
                 var itemToHide = _minVisibleRowColumnInViewPort - _extraItemsVisible;
@@ -463,8 +453,6 @@ namespace RecyclableSR
         
         protected override void ShowItemsAtBottomRight()
         {
-            base.ShowItemsAtBottomRight();
-            
             if (_maxVisibleRowColumnInViewPort < _itemsCount - 1 && _contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleRowColumnInViewPort].absBottomRightPosition[_axis] + _spacing[_axis])
             {
                 _maxVisibleRowColumnInViewPort++;
@@ -479,8 +467,6 @@ namespace RecyclableSR
 
         protected override void HideItemsAtBottomRight()
         {
-            base.HideItemsAtBottomRight();
-            
             if (_maxVisibleRowColumnInViewPort > 0 && _contentBottomRightCorner[_axis] <= _itemPositions[_maxVisibleRowColumnInViewPort].absTopLeftPosition[_axis])
             {
                 var itemToHide = _maxVisibleRowColumnInViewPort + _extraItemsVisible;
@@ -495,8 +481,6 @@ namespace RecyclableSR
         
         protected override void ShowItemsAtTopLeft()
         {
-            base.ShowItemsAtTopLeft();
-            
             if (_minVisibleRowColumnInViewPort > 0 && _contentTopLeftCorner[_axis] < _itemPositions[_minVisibleRowColumnInViewPort].absTopLeftPosition[_axis] - _spacing[_axis])
             {
                 _minVisibleRowColumnInViewPort--;
