@@ -79,7 +79,7 @@ public class VerticalPagingRSRDemo : MonoBehaviour, IPageSource
     {
     }
 
-    public void LastItemInScrollIsVisible()
+    public void LastItemIsVisible()
     {
     }
 

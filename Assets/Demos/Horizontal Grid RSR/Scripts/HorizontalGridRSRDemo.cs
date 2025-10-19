@@ -88,7 +88,7 @@ public class HorizontalGridRSRDemo : MonoBehaviour, IGridSource
     {
     }
 
-    public void LastItemInScrollIsVisible()
+    public void LastItemIsVisible()
     {
     }
 }

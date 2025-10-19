@@ -18,8 +18,8 @@ namespace RecyclableSR
         private Vector2 _gridLayoutPadding;
         private int _originalItemsCount;
 
-        protected override bool ReachedMinItemInViewPort => _minVisibleRowColumnInViewPort == 0;
-        protected override bool ReachedMaxItemInViewPort => _maxVisibleRowColumnInViewPort == (_grid.maxGridItemsInAxis - 1) * _gridConstraintCount;
+        protected override bool ReachedMinRowColumnInViewPort => _minVisibleRowColumnInViewPort == 0;
+        protected override bool ReachedMaxRowColumnInViewPort => _maxVisibleRowColumnInViewPort == (_grid.maxGridItemsInAxis - 1) * _gridConstraintCount;
 
         protected override void Initialize()
         {
@@ -144,27 +144,32 @@ namespace RecyclableSR
         /// it just sets the position of the grid items one after the other regardless of the data in each item
         /// </summary>
         /// <param name="rect">rect of the item which position will be set</param>
-        /// <param name="newIndex">index of the item that needs its position set</param>
-        protected override void SetItemAxisPosition(RectTransform rect, int newIndex)
+        /// <param name="itemIndex">index of the item that needs its position set</param>
+        protected override void SetItemAxisPosition(RectTransform rect, int itemIndex)
         {
             var newItemPosition = rect.anchoredPosition;
-            var gridIndex = _grid.To2dIndex(newIndex);
-            newItemPosition.x = _gridLayoutPadding.x + gridIndex.x * _itemPositions[newIndex].itemSize[0] + _spacing[0] * gridIndex.x;
-            newItemPosition.y = -_gridLayoutPadding.y - gridIndex.y * _itemPositions[newIndex].itemSize[1] - _spacing[1] * gridIndex.y;
+            var gridIndex = _grid.To2dIndex(itemIndex);
+            newItemPosition.x = _gridLayoutPadding.x + gridIndex.x * _itemPositions[itemIndex].itemSize[0] + _spacing[0] * gridIndex.x;
+            newItemPosition.y = -_gridLayoutPadding.y - gridIndex.y * _itemPositions[itemIndex].itemSize[1] - _spacing[1] * gridIndex.y;
             rect.anchoredPosition = newItemPosition;
-            _itemPositions[newIndex].SetPosition(newItemPosition);
+            _itemPositions[itemIndex].SetPosition(newItemPosition);
         }
         
         /// <summary>
         /// This function just sets the rect.sizeDelta of the grid
         /// </summary>
         /// <param name="rect">rect of the item which the size will be calculated for</param>
-        /// <param name="index">item index which the size will be calculated for</param>
-        protected override void CalculateItemAxisSize(RectTransform rect, int index)
+        /// <param name="itemIndex">item index which the size will be calculated for</param>
+        protected override void CalculateItemAxisSize(RectTransform rect, int itemIndex)
         {
             rect.sizeDelta = _gridItemSize;
         }
-        
+
+        protected override bool IsLastRowColumn(int itemIndex)
+        {
+            return itemIndex == (_grid.maxGridItemsInAxis - 1) * _gridConstraintCount;
+        }
+
         /// <summary>
         /// We consider each starting item in the row/column the only one that needs to be initialized.
         /// this is because we do not care about the following items, they are initialized by ShowHideItemsAtIndex, which just completes the row/column.
@@ -288,14 +293,14 @@ namespace RecyclableSR
         /// <summary>
         /// Used to determine which items will be shown or hidden in case it's a grid layout since we need to show more than one item depending on the grid configuration
         /// </summary>
-        /// <param name="newIndex">current index of item we need to show</param>
+        /// <param name="itemIndex">current index of item we need to show</param>
         /// <param name="show">show or hide current item</param>
-        private void ShowHideRowsColumnsAtIndex(int newIndex, bool show)
+        private void ShowHideRowsColumnsAtIndex(int itemIndex, bool show)
         {
             var indices = new List<int>(_gridConstraintCount);
             for (var i = 0; i < _gridConstraintCount; i++)
             {
-                var currentFlatIndex = newIndex + i;
+                var currentFlatIndex = itemIndex + i;
                 var indexValue = _grid.GetActualItemIndex(currentFlatIndex);
                 if (indexValue != -1)
                 {

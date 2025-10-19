@@ -79,7 +79,7 @@ public class HorizontalPagingRSRDemo : MonoBehaviour, IPageSource
     {
     }
 
-    public void LastItemInScrollIsVisible()
+    public void LastItemIsVisible()
     {
     }
 

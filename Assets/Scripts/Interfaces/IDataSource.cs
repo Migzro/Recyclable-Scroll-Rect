@@ -19,6 +19,6 @@ namespace RecyclableSR
         void PushToClose();
         void ReachedScrollStart();
         void ReachedScrollEnd();
-        void LastItemInScrollIsVisible();
+        void LastItemIsVisible();
     }
 }

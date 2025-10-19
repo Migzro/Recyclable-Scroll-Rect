@@ -82,7 +82,7 @@ public class HorizontalCardsRSRDemo : MonoBehaviour, IPageSource
     {
     }
 
-    public void LastItemInScrollIsVisible()
+    public void LastItemIsVisible()
     {
     }
 

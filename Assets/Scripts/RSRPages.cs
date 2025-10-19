@@ -234,7 +234,7 @@ namespace RecyclableSR
             }
             else if (Input.GetKeyUp( KeyCode.DownArrow))
             {
-                ScrollToItem(Mathf.Min(_currentPage + 1, _itemsCount-1), false);
+                ScrollToItem(Mathf.Min(_currentPage + 1, _itemsCount - 1), false);
             }
         }
 #endif

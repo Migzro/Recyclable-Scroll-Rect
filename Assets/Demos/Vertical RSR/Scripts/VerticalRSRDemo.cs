@@ -88,7 +88,7 @@ public class VerticalRSRDemo : MonoBehaviour, IRSRSource
     {
     }
 
-    public void LastItemInScrollIsVisible()
+    public void LastItemIsVisible()
     {
     }
 }

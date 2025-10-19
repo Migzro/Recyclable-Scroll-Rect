@@ -9,8 +9,8 @@ namespace RecyclableSR
         
         private IRSRSource _rsrSource;
         
-        protected override bool ReachedMinItemInViewPort => _minVisibleRowColumnInViewPort == 0;
-        protected override bool ReachedMaxItemInViewPort => _maxVisibleRowColumnInViewPort == _itemsCount - 1;
+        protected override bool ReachedMinRowColumnInViewPort => _minVisibleRowColumnInViewPort == 0;
+        protected override bool ReachedMaxRowColumnInViewPort => _maxVisibleRowColumnInViewPort == _itemsCount - 1;
         
         protected override void Initialize()
         {
@@ -29,6 +29,11 @@ namespace RecyclableSR
                 return _itemsCount - 1 - itemIndex;
             }
             return itemIndex;
+        }
+
+        protected override bool IsLastRowColumn(int itemIndex)
+        {
+            return itemIndex == _itemsCount - 1;
         }
 
         /// <summary>
@@ -104,12 +109,12 @@ namespace RecyclableSR
         /// or the previous item position - current item height
         /// </summary>
         /// <param name="rect">rect of the item which position will be set</param>
-        /// <param name="newIndex">index of the item that needs its position set</param>
-        protected override void SetItemAxisPosition(RectTransform rect, int newIndex)
+        /// <param name="itemIndex">index of the item that needs its position set</param>
+        protected override void SetItemAxisPosition(RectTransform rect, int itemIndex)
         {
             var newItemPosition = rect.anchoredPosition;
             // figure out where the prev item position was
-            if (newIndex == 0)
+            if (itemIndex == 0)
             {
                 if (vertical)
                 {
@@ -123,11 +128,11 @@ namespace RecyclableSR
             else
             {
                 var verticalSign = vertical ? -1 : 1;
-                newItemPosition[_axis] = verticalSign * _itemPositions[newIndex - 1].absBottomRightPosition[_axis] + verticalSign * _spacing[_axis];
+                newItemPosition[_axis] = verticalSign * _itemPositions[itemIndex - 1].absBottomRightPosition[_axis] + verticalSign * _spacing[_axis];
             }
 
             rect.anchoredPosition = newItemPosition;
-            _itemPositions[newIndex].SetPosition(newItemPosition);
+            _itemPositions[itemIndex].SetPosition(newItemPosition);
         }
         
         /// <summary>
@@ -135,15 +140,15 @@ namespace RecyclableSR
         /// if it is known we just get the item size
         /// </summary>
         /// <param name="rect">rect of the item which the size will be calculated for</param>
-        /// <param name="index">item index which the size will be calculated for</param>
-        protected override void CalculateItemAxisSize(RectTransform rect, int index)
+        /// <param name="itemIndex">item index which the size will be calculated for</param>
+        protected override void CalculateItemAxisSize(RectTransform rect, int itemIndex)
         {
-            var newItemSize = _itemPositions[index].itemSize;
+            var newItemSize = _itemPositions[itemIndex].itemSize;
             var oldItemSize = newItemSize[_axis];
 
             if (!_dataSource.IsItemSizeKnown)
             {
-                ForceLayoutRebuild(index);
+                ForceLayoutRebuild(itemIndex);
                 newItemSize[_axis] = rect.rect.size[_axis];
                 
                 // set the content size since items size was not known at the time of the initialization
@@ -162,10 +167,10 @@ namespace RecyclableSR
             }
             else
             {
-                newItemSize[_axis] = _dataSource.GetItemSize(index);
+                newItemSize[_axis] = _dataSource.GetItemSize(itemIndex);
             }
 
-            _itemPositions[index].SetSize(newItemSize);
+            _itemPositions[itemIndex].SetSize(newItemSize);
         }
 
         protected override void CalculateNonAxisSizePosition(RectTransform rect, int itemIndex)

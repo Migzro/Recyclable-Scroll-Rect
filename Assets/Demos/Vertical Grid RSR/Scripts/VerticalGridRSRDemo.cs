@@ -88,7 +88,7 @@ public class VerticalGridRSRDemo : MonoBehaviour, IGridSource
     {
     }
 
-    public void LastItemInScrollIsVisible()
+    public void LastItemIsVisible()
     {
     }
 }

@@ -8,24 +8,6 @@ namespace RecyclableSR
 {
     public abstract class RSRBase : ScrollRect
     {
-        // TODO: reverse direction for cards
-        // TODO: Remove SetCardsZIndices from RSRPages and put it in RSRCards and change it to SetIndices
-        // TODO: Rework cards behaviours
-        // TODO: remove _manuallyHandleCardAnimations
-        
-        // TODO: check alignment
-        // TODO: check lastItemVisible in IDataSource, what should it do in RSRGrid?
-        // TODO: consider removing IRsrSource and IGridSource
-        
-        // TODO: Separate Scrolling animation
-        // TODO: Redo Scrolling animation
-        
-        // TODO: Maybe remove ScrolledToItem event call in pages?
-        // TODO: check todos in RSRPages
-        // TODO: check todos in this class
-        // TODO: Add headers, footers, sections
-        // TODO: i don't like static items?
-        
         [SerializeField] private bool _showUsingCanvasGroupAlpha;
         [SerializeField] protected bool _childForceExpand;
         [SerializeField] private float _pullToRefreshThreshold = 150;
@@ -78,11 +60,12 @@ namespace RecyclableSR
         private MovementType _initialMovementType;
 
         public bool IsInitialized => _init;
-        protected abstract bool ReachedMinItemInViewPort { get; }
-        protected abstract bool ReachedMaxItemInViewPort { get; }
+        protected abstract bool ReachedMinRowColumnInViewPort { get; }
+        protected abstract bool ReachedMaxRowColumnInViewPort { get; }
+        protected abstract bool IsLastRowColumn(int itemIndex);
         protected abstract void InitializeItems(int startIndex = 0);
-        protected abstract void SetItemAxisPosition(RectTransform rect, int newIndex);
-        protected abstract void CalculateItemAxisSize(RectTransform rect, int index);
+        protected abstract void SetItemAxisPosition(RectTransform rect, int itemIndex);
+        protected abstract void CalculateItemAxisSize(RectTransform rect, int itemIndex);
         protected abstract int GetActualItemIndex(int itemIndex);
         protected abstract void CalculateContentSize();
         protected abstract void HideItemsAtTopLeft();
@@ -561,7 +544,7 @@ namespace RecyclableSR
             // if content position is bigger than the position of _maxVisibleItemInViewPort, this means we need to show items in bottom right
             var reachedLimits = false;
             var atStart = _contentTopLeftCorner[_axis] <= 0;
-            var atEnd = _contentBottomRightCorner[_axis] >= content.rect.size[_axis] && ReachedMaxItemInViewPort;
+            var atEnd = _contentBottomRightCorner[_axis] >= content.rect.size[_axis] && ReachedMaxRowColumnInViewPort;
             if (atStart || atEnd)
             {
                 movementType = _movementType;
@@ -591,15 +574,15 @@ namespace RecyclableSR
 
             var topLeftPadding = vertical ? _padding.top : _padding.left;
             var bottomLeftPadding = vertical ? _padding.bottom : _padding.right;
-            var topLeftMinClearance = 0.1f + topLeftPadding * (ReachedMinItemInViewPort ? 1 : 0) + _spacing[_axis] * (ReachedMinItemInViewPort ? 0 : 1);
-            var bottomRightMinClearance = 0.1f + bottomLeftPadding * (ReachedMaxItemInViewPort ? 1 : 0) + _spacing[_axis] * (ReachedMaxItemInViewPort ? 0 : 1);
+            var topLeftMinClearance = 0.1f + topLeftPadding * (ReachedMinRowColumnInViewPort ? 1 : 0) + _spacing[_axis] * (ReachedMinRowColumnInViewPort ? 0 : 1);
+            var bottomRightMinClearance = 0.1f + bottomLeftPadding * (ReachedMaxRowColumnInViewPort ? 1 : 0) + _spacing[_axis] * (ReachedMaxRowColumnInViewPort ? 0 : 1);
             
-            if (_itemPositions[_minVisibleRowColumnInViewPort].absTopLeftPosition[_axis] - _contentTopLeftCorner[_axis] > topLeftMinClearance && !ReachedMinItemInViewPort)
+            if (_itemPositions[_minVisibleRowColumnInViewPort].absTopLeftPosition[_axis] - _contentTopLeftCorner[_axis] > topLeftMinClearance && !ReachedMinRowColumnInViewPort)
             {
                 showBottomRight = false;
                 _needsClearance = true;
             }
-            else if (_itemPositions[_maxVisibleRowColumnInViewPort].absBottomRightPosition[_axis] - _contentBottomRightCorner[_axis] < -bottomRightMinClearance && !ReachedMaxItemInViewPort)
+            else if (_itemPositions[_maxVisibleRowColumnInViewPort].absBottomRightPosition[_axis] - _contentBottomRightCorner[_axis] < -bottomRightMinClearance && !ReachedMaxRowColumnInViewPort)
             {
                 showBottomRight = true;
                 _needsClearance = true;
@@ -626,11 +609,11 @@ namespace RecyclableSR
         /// If there is a pooled item available, we get it and set its position, sibling index, and remove it from the pool
         /// If there is no pooled item available, we create a new one
         /// </summary>
-        /// <param name="newIndex">current index of item we need to show</param>
-        protected void ShowItemAtIndex(int newIndex)
+        /// <param name="itemIndex">current index of item we need to show</param>
+        protected void ShowItemAtIndex(int itemIndex)
         {
             // Get empty item and adjust its position and size, else just create a new an item
-            var itemPrototypeName = _prototypeNames[newIndex];
+            var itemPrototypeName = _prototypeNames[itemIndex];
             if (_pooledItems[itemPrototypeName].Count > 0)
             {
                 var item = _pooledItems[itemPrototypeName][0];
@@ -649,44 +632,44 @@ namespace RecyclableSR
 
                 SetVisibilityInHierarchy(item.transform, true);
 
-                _visibleItems.Add(newIndex, item);
-                item.item.ItemIndex = newIndex;
+                _visibleItems.Add(itemIndex, item);
+                item.item.ItemIndex = itemIndex;
                 
-                SetItemAxisPosition(item.transform, newIndex);
-                if (_ignoreSetItemDataIndices.Count <= 0 || _ignoreSetItemDataIndices.Count > 0 && !_ignoreSetItemDataIndices.Contains(newIndex))
+                SetItemAxisPosition(item.transform, itemIndex);
+                if (_ignoreSetItemDataIndices.Count <= 0 || _ignoreSetItemDataIndices.Count > 0 && !_ignoreSetItemDataIndices.Contains(itemIndex))
                 {
-                    var actualItemIndex = GetActualItemIndex(newIndex);
+                    var actualItemIndex = GetActualItemIndex(itemIndex);
                     _dataSource.SetItemData(item.item, actualItemIndex);
                 }
 
-                CalculateItemAxisSize(item.transform, newIndex);
+                CalculateItemAxisSize(item.transform, itemIndex);
                 
-                if (_itemsMarkedForReload.Contains(newIndex))
+                if (_itemsMarkedForReload.Contains(itemIndex))
                 {
                     // item needs to be reloaded
-                    ReloadItem(newIndex);
-                    _itemsMarkedForReload.Remove(newIndex);
+                    ReloadItem(itemIndex);
+                    _itemsMarkedForReload.Remove(itemIndex);
                 }
                 
-                if (!_staticItems[newIndex])
-                    item.transform.name = itemPrototypeName + " " + newIndex;
+                if (!_staticItems[itemIndex])
+                    item.transform.name = itemPrototypeName + " " + itemIndex;
             }
             else
             {
-                InitializeItem(newIndex);
+                InitializeItem(itemIndex);
             }
 
-            if (_queuedScrollToItem != -1 && _queuedScrollToItem == newIndex)
+            if (_queuedScrollToItem != -1 && _queuedScrollToItem == itemIndex)
             {
-                var actualItemIndex = GetActualItemIndex(newIndex);
-                _dataSource.ScrolledToItem(_visibleItems[newIndex].item, actualItemIndex);
+                var actualItemIndex = GetActualItemIndex(itemIndex);
+                _dataSource.ScrolledToItem(_visibleItems[itemIndex].item, actualItemIndex);
                 _queuedScrollToItem = -1;
             }
 
             SetSiblingIndices();
             
-            if (newIndex == _itemsCount - 1)
-                _dataSource.LastItemInScrollIsVisible();
+            if (IsLastRowColumn(itemIndex))
+                _dataSource.LastItemIsVisible();
         }
 
         /// <summary>
@@ -946,7 +929,7 @@ namespace RecyclableSR
                     }
 
                     // reached bottom or right
-                    else if (_maxExtraVisibleRowColumnInViewPort == _itemsCount - 1 && Mathf.Abs(contentBottomRightCorner[_axis]) >= content.sizeDelta[_axis])
+                    else if (IsLastRowColumn(_maxExtraVisibleRowColumnInViewPort) && Mathf.Abs(contentBottomRightCorner[_axis]) >= content.sizeDelta[_axis])
                     {
                         contentTopLeftCorner[_axis] = (content.rect.size[_axis] - _viewPortSize[_axis]) * (vertical ? 1 : -1);
                         reachedItem = true;
