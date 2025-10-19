@@ -13,19 +13,12 @@ namespace RecyclableSR
         [SerializeField] private GridLayoutGroup.Corner _gridStartCorner;
         [SerializeField] private int _extraRowsColumnsVisible;
 
-        private IGridSource _gridSource;
         private Grid _grid;
         private Vector2 _gridLayoutPadding;
         private int _originalItemsCount;
 
         protected override bool ReachedMinRowColumnInViewPort => _minVisibleRowColumnInViewPort == 0;
         protected override bool ReachedMaxRowColumnInViewPort => _maxVisibleRowColumnInViewPort == (_grid.maxGridItemsInAxis - 1) * _gridConstraintCount;
-
-        protected override void Initialize()
-        {
-            _gridSource = (IGridSource)_dataSource;
-            base.Initialize();
-        }
 
         protected override void ResetVariables()
         {

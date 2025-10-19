@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using RecyclableSR;
 using UnityEngine;
 
-public class VerticalGridRSRDemo : MonoBehaviour, IGridSource
+public class VerticalGridRSRDemo : MonoBehaviour, IDataSource
 {
     [SerializeField] private int _itemsCount;
     [SerializeField] private RSRGrid _scrollRect;

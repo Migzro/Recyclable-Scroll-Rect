@@ -7,16 +7,8 @@ namespace RecyclableSR
         [SerializeField] protected bool _reverseArrangement;
         [SerializeField] protected int _extraItemsVisible;
         
-        private IRSRSource _rsrSource;
-        
         protected override bool ReachedMinRowColumnInViewPort => _minVisibleRowColumnInViewPort == 0;
         protected override bool ReachedMaxRowColumnInViewPort => _maxVisibleRowColumnInViewPort == _itemsCount - 1;
-        
-        protected override void Initialize()
-        {
-            _rsrSource = (IRSRSource)_dataSource;
-            base.Initialize();
-        }
         
         /// <summary>
         /// get the index of the item
