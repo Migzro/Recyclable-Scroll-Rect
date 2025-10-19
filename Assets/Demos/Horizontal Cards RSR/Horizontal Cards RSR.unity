@@ -226,7 +226,7 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
-  _reverseDirection: 0
+  _showUsingCanvasGroupAlpha: 1
   _childForceExpand: 1
   _pullToRefreshThreshold: 150
   _pushToCloseThreshold: 150
@@ -239,6 +239,8 @@ MonoBehaviour:
     m_Top: 50
     m_Bottom: 50
   _childAlignment: 4
+  _reverseArrangement: 0
+  _extraItemsVisible: 0
   _swipeThreshold: 200
   _cardZMultiplier: 0
   _cardMode: 1
@@ -281,7 +283,6 @@ MonoBehaviour:
   _prototypeItems:
   - {fileID: 1638117046129563386, guid: a4f2df383637342e4acaa0e1abfd76e5, type: 3}
   - {fileID: 1638117046129563386, guid: 65cc41dbd9459498e925ff519e3573f4, type: 3}
-  _extraItemsVisible: 0
   _animationTime: 0.5
   _animationEase: 1
 --- !u!114 &53697654

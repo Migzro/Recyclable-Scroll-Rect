@@ -252,7 +252,6 @@ MonoBehaviour:
   _prototypeItems:
   - {fileID: 1638117046129563386, guid: 6f5a79cc83c584f2a830072105911c5e, type: 3}
   - {fileID: 1638117046129563386, guid: e758246e7c6a24c7ca434ced3bde404c, type: 3}
-  _extraItemsVisible: 0
 --- !u!1 &1362537419
 GameObject:
   m_ObjectHideFlags: 0
@@ -553,8 +552,8 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
-  _reverseDirection: 0
-  _childForceExpand: 0
+  _showUsingCanvasGroupAlpha: 1
+  _childForceExpand: 1
   _pullToRefreshThreshold: 150
   _pushToCloseThreshold: 150
   _useConstantScrollingSpeed: 0
@@ -566,6 +565,8 @@ MonoBehaviour:
     m_Top: 0
     m_Bottom: 0
   _childAlignment: 0
+  _reverseArrangement: 0
+  _extraItemsVisible: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -262,8 +262,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1362537420}
-  - component: {fileID: 1362537422}
-  - component: {fileID: 1362537421}
   m_Layer: 5
   m_Name: Content
   m_TagString: Untagged
@@ -290,47 +288,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 1334}
   m_Pivot: {x: 0, y: 1}
---- !u!114 &1362537421
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1362537419}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4741d17c4bb48434cbaab7b061ba530a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PrefabInitializer
-  count: 100
-  content: {fileID: 1362537420}
-  prefab: {fileID: 1638117046129563386, guid: 0c30a6e67b4844996b03285bc0c3817f, type: 3}
-  update: 0
-  delete: 0
---- !u!114 &1362537422
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1362537419}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8a8695521f0d02e499659fee002a26c2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GridLayoutGroup
-  m_Padding:
-    m_Left: 0
-    m_Right: 0
-    m_Top: 0
-    m_Bottom: 0
-  m_ChildAlignment: 0
-  m_StartCorner: 0
-  m_StartAxis: 0
-  m_CellSize: {x: 100, y: 100}
-  m_Spacing: {x: 10, y: 10}
-  m_Constraint: 0
-  m_ConstraintCount: 2
 --- !u!1 &1413815494
 GameObject:
   m_ObjectHideFlags: 0
@@ -596,6 +553,7 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+  _showUsingCanvasGroupAlpha: 1
   _childForceExpand: 0
   _pullToRefreshThreshold: 150
   _pushToCloseThreshold: 150
@@ -607,9 +565,9 @@ MonoBehaviour:
     m_Right: 0
     m_Top: 0
     m_Bottom: 0
-  _childAlignment: 6
+  _childAlignment: 0
   _gridItemSize: {x: 100, y: 100}
-  _gridStartAxis: 1
+  _gridStartAxis: 0
   _gridConstraint: 0
   _gridConstraintCount: 2
   _gridStartCorner: 0
