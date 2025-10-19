@@ -289,7 +289,7 @@ namespace RecyclableSR
         }
         
         /// <summary>
-        /// Checks if items need to be hidden, shown, instantiated after a item is reloaded and its size changes
+        /// Checks if items need to be hidden, shown, instantiated after an item is reloaded and its size changes
         /// </summary>
         private void CalculateNewMinMaxItemsAfterReloadItem()
         {
@@ -382,7 +382,7 @@ namespace RecyclableSR
         
         /// <summary>
         /// Sets the positions of all items of index + 1
-        /// Persists content position to avoid sudden jumps if a item size changes
+        /// Persists content position to avoid sudden jumps if an item size changes
         /// </summary>
         /// <param name="itemIndex">index of item to start calculate following items from</param>
         /// <param name="oldSize">old item size used to offset content position with</param>

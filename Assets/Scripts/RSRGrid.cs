@@ -142,7 +142,8 @@ namespace RecyclableSR
         {
             var newItemPosition = rect.anchoredPosition;
             var gridIndex = _grid.To2dIndex(itemIndex);
-            newItemPosition.x = _gridLayoutPadding.x + gridIndex.x * _itemPositions[itemIndex].itemSize[0] + _spacing[0] * gridIndex.x;
+            var isRightBased = _childAlignment == TextAnchor.UpperRight || _childAlignment == TextAnchor.MiddleRight ||  _childAlignment == TextAnchor.LowerRight ? -1 : 1;
+            newItemPosition.x = _gridLayoutPadding.x + (gridIndex.x * _itemPositions[itemIndex].itemSize[0] * isRightBased) + (_spacing[0] * gridIndex.x * isRightBased);
             newItemPosition.y = -_gridLayoutPadding.y - gridIndex.y * _itemPositions[itemIndex].itemSize[1] - _spacing[1] * gridIndex.y;
             rect.anchoredPosition = newItemPosition;
             _itemPositions[itemIndex].SetPosition(newItemPosition);
