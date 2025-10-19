@@ -553,7 +553,6 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   _showUsingCanvasGroupAlpha: 1
-  _childForceExpand: 1
   _pullToRefreshThreshold: 150
   _pushToCloseThreshold: 150
   _useConstantScrollingSpeed: 0
@@ -564,7 +563,8 @@ MonoBehaviour:
     m_Right: 0
     m_Top: 20
     m_Bottom: 20
-  _childAlignment: 1
+  _itemsAlignment: 0
+  _childForceExpand: 1
   _reverseArrangement: 0
   _extraItemsVisible: 0
 --- !u!1660057539 &9223372036854775807
