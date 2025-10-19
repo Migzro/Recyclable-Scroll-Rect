@@ -224,11 +224,11 @@ namespace RecyclableSR
                         leftPadding = 0;
                     }
 
-                    if (_childAlignment == TextAnchor.LowerCenter || _childAlignment == TextAnchor.MiddleCenter || _childAlignment == TextAnchor.UpperCenter)
+                    if (_itemsAlignment == ItemsAlignment.Center)
                     {
                         itemPosition.x = (leftPadding + (contentSize.x - rectSize.x) - rightPadding) / 2f;
                     }
-                    else if (_childAlignment == TextAnchor.LowerRight || _childAlignment == TextAnchor.MiddleRight || _childAlignment == TextAnchor.UpperRight)
+                    else if (_itemsAlignment == ItemsAlignment.RightOrDown)
                     {
                         itemPosition.x = contentSize.x - rectSize.x - rightPadding;
                     }
@@ -247,11 +247,11 @@ namespace RecyclableSR
                         bottomPadding = 0;
                     }
                     
-                    if (_childAlignment == TextAnchor.MiddleLeft || _childAlignment == TextAnchor.MiddleCenter || _childAlignment == TextAnchor.MiddleRight)
+                    if (_itemsAlignment == ItemsAlignment.Center)
                     {
                         itemPosition.y = -(topPadding + (contentSize.y - rectSize.y) - bottomPadding) / 2f;
                     }
-                    else if (_childAlignment == TextAnchor.LowerLeft || _childAlignment == TextAnchor.LowerCenter || _childAlignment == TextAnchor.LowerRight)
+                    else if (_itemsAlignment == ItemsAlignment.RightOrDown)
                     {
                         itemPosition.y = -(contentSize.y - rectSize.y - bottomPadding);
                     }

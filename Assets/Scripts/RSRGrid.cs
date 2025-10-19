@@ -14,7 +14,7 @@ namespace RecyclableSR
         [SerializeField] private int _extraRowsColumnsVisible;
 
         private Grid _grid;
-        private Vector2 _gridLayoutPadding;
+        private Vector2 _gridLayoutItemsOffset;
         private int _originalItemsCount;
 
         protected override bool ReachedMinRowColumnInViewPort => _minVisibleRowColumnInViewPort == 0;
@@ -90,46 +90,42 @@ namespace RecyclableSR
         /// </summary>
         private void CalculateGridPadding()
         {
-            _gridLayoutPadding = Vector2.zero;
-            
-            // get content size without padding
+            _gridLayoutItemsOffset = Vector2.zero;
             var contentSize = content.rect.size;
-            var contentSizeWithoutPadding = contentSize;
-            contentSizeWithoutPadding.x -= _padding.right + _padding.left;
-            contentSizeWithoutPadding.y -= _padding.top + _padding.bottom;
-            
+            var totalGridItemsSize = (_gridItemSize[1 -_axis] * _gridConstraintCount) + (_spacing[1 - _axis] * (_gridConstraintCount - 1));
             if (vertical)
             {
-                if (_childAlignment == TextAnchor.LowerCenter || _childAlignment == TextAnchor.MiddleCenter || _childAlignment == TextAnchor.UpperCenter)
+                if (_itemsAlignment == ItemsAlignment.Center)
                 {
-                    _gridLayoutPadding.x = _padding.left + (contentSize.x - (_gridItemSize.x * _gridConstraintCount) - (_spacing.x * (_gridConstraintCount - 1))) / 2 - _padding.right;
+                    _gridLayoutItemsOffset.x = _padding.left + (contentSize.x - (_gridItemSize.x * _gridConstraintCount) - (_spacing.x * (_gridConstraintCount - 1))) / 2 - _padding.right;
                 }
-                else if (_childAlignment == TextAnchor.LowerRight || _childAlignment == TextAnchor.MiddleRight || _childAlignment == TextAnchor.UpperRight)
+                else if (_itemsAlignment == ItemsAlignment.RightOrDown)
                 {
-                    _gridLayoutPadding.x = contentSize.x - _gridItemSize.x - _padding.right;
+                    _gridLayoutItemsOffset.x = contentSize.x - totalGridItemsSize - _padding.right;
                 }
                 else
                 {
-                    _gridLayoutPadding.x = _padding.left;
+                    _gridLayoutItemsOffset.x = _padding.left;
                 }
-                _gridLayoutPadding.y = _padding.top;
+                _gridLayoutItemsOffset.y = _padding.top;
             }
             else
             {
-                if (_childAlignment == TextAnchor.MiddleLeft || _childAlignment == TextAnchor.MiddleCenter || _childAlignment == TextAnchor.MiddleRight)
+                if (_itemsAlignment == ItemsAlignment.Center)
                 {
-                    _gridLayoutPadding.y = _padding.top + (contentSize.y - (_gridItemSize.y * _gridConstraintCount) - (_spacing.y * (_gridConstraintCount - 1))) / 2 - _padding.bottom;
+                    _gridLayoutItemsOffset.y = _padding.top + (contentSize.y - (_gridItemSize.y * _gridConstraintCount) - (_spacing.y * (_gridConstraintCount - 1))) / 2 - _padding.bottom;
                 }
-                else if (_childAlignment == TextAnchor.LowerLeft || _childAlignment == TextAnchor.LowerCenter || _childAlignment == TextAnchor.LowerRight)
+                else if (_itemsAlignment == ItemsAlignment.RightOrDown)
                 {
-                    _gridLayoutPadding.y = contentSize.y - _gridItemSize.y - _padding.bottom;
+                    _gridLayoutItemsOffset.y = contentSize.y - totalGridItemsSize - _padding.bottom;
                 }
                 else
                 {
-                    _gridLayoutPadding.y = _padding.top;
+                    _gridLayoutItemsOffset.y = _padding.top;
                 }
-                _gridLayoutPadding.x = _padding.left;
+                _gridLayoutItemsOffset.x = _padding.left;
             }
+            Debug.LogError(_gridLayoutItemsOffset);
         }
         
         /// <summary>
@@ -142,9 +138,8 @@ namespace RecyclableSR
         {
             var newItemPosition = rect.anchoredPosition;
             var gridIndex = _grid.To2dIndex(itemIndex);
-            var isRightBased = _childAlignment == TextAnchor.UpperRight || _childAlignment == TextAnchor.MiddleRight ||  _childAlignment == TextAnchor.LowerRight ? -1 : 1;
-            newItemPosition.x = _gridLayoutPadding.x + (gridIndex.x * _itemPositions[itemIndex].itemSize[0] * isRightBased) + (_spacing[0] * gridIndex.x * isRightBased);
-            newItemPosition.y = -_gridLayoutPadding.y - gridIndex.y * _itemPositions[itemIndex].itemSize[1] - _spacing[1] * gridIndex.y;
+            newItemPosition.x = _gridLayoutItemsOffset.x + gridIndex.x * _itemPositions[itemIndex].itemSize[0] + _spacing[0] * gridIndex.x;
+            newItemPosition.y = -_gridLayoutItemsOffset.y - gridIndex.y * _itemPositions[itemIndex].itemSize[1] - _spacing[1] * gridIndex.y;
             rect.anchoredPosition = newItemPosition;
             _itemPositions[itemIndex].SetPosition(newItemPosition);
         }

@@ -13,7 +13,7 @@ namespace RecyclableSR
         private SerializedProperty _constantScrollingSpeed;
         private SerializedProperty _padding;
         private SerializedProperty _spacing;
-        private SerializedProperty _childAlignment;
+        private SerializedProperty _itemsAlignment;
 
         protected override void OnEnable()
         {
@@ -25,7 +25,7 @@ namespace RecyclableSR
             _constantScrollingSpeed = serializedObject.FindProperty(nameof(_constantScrollingSpeed));
             _padding = serializedObject.FindProperty(nameof(_padding));
             _spacing = serializedObject.FindProperty(nameof(_spacing));
-            _childAlignment = serializedObject.FindProperty(nameof(_childAlignment));
+            _itemsAlignment = serializedObject.FindProperty(nameof(_itemsAlignment));
         }
 
         public override void OnInspectorGUI()
@@ -44,7 +44,7 @@ namespace RecyclableSR
             EditorGUILayout.Space();
             EditorGUILayout.PropertyField(_padding);
             EditorGUILayout.PropertyField(_spacing);
-            EditorGUILayout.PropertyField(_childAlignment);
+            EditorGUILayout.PropertyField(_itemsAlignment);
             serializedObject.ApplyModifiedProperties();
         }
     }

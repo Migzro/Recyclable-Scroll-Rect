@@ -597,18 +597,17 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   _showUsingCanvasGroupAlpha: 1
-  _childForceExpand: 0
   _pullToRefreshThreshold: 150
   _pushToCloseThreshold: 150
   _useConstantScrollingSpeed: 0
   _constantScrollingSpeed: 0
   _spacing: {x: 20, y: 40}
   _padding:
-    m_Left: 50
-    m_Right: 50
-    m_Top: 50
-    m_Bottom: 50
-  _childAlignment: 0
+    m_Left: 0
+    m_Right: 0
+    m_Top: 0
+    m_Bottom: 0
+  _itemsAlignment: 2
   _gridItemSize: {x: 400, y: 385}
   _gridStartAxis: 0
   _gridConstraint: 2

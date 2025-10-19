@@ -554,7 +554,6 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   _showUsingCanvasGroupAlpha: 1
-  _childForceExpand: 0
   _pullToRefreshThreshold: 150
   _pushToCloseThreshold: 150
   _useConstantScrollingSpeed: 0
@@ -565,7 +564,7 @@ MonoBehaviour:
     m_Right: 0
     m_Top: 0
     m_Bottom: 0
-  _childAlignment: 0
+  _itemsAlignment: 0
   _gridItemSize: {x: 100, y: 100}
   _gridStartAxis: 0
   _gridConstraint: 0

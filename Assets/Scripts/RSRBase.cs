@@ -16,7 +16,7 @@ namespace RecyclableSR
         
         [SerializeField] protected Vector2 _spacing;
         [SerializeField] protected RectOffset _padding;
-        [SerializeField] protected TextAnchor _childAlignment;
+        [SerializeField] protected ItemsAlignment _itemsAlignment;
         
         protected IDataSource _dataSource;
 

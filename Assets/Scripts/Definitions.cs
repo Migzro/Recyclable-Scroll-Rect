@@ -4,6 +4,13 @@ using UnityEngine.UI;
 
 namespace RecyclableSR
 {
+    public enum ItemsAlignment
+    {
+        LeftOrUp = 0,
+        Center,
+        RightOrDown
+    }
+    
     public readonly struct Item
     {
         public IItem item { get; }
