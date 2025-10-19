@@ -553,24 +553,21 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   _showUsingCanvasGroupAlpha: 1
-  _childForceExpand: 1
   _pullToRefreshThreshold: 150
   _pushToCloseThreshold: 150
-  _useConstantScrollingSpeed: 0
-  _constantScrollingSpeed: 0
+  _useConstantScrollingSpeed: 1
+  _constantScrollingSpeed: 100
   _spacing: {x: 0, y: 0}
   _padding:
     m_Left: 0
     m_Right: 0
     m_Top: 0
     m_Bottom: 0
-  _childAlignment: 0
+  _itemsAlignment: 0
+  _childForceExpand: 1
   _reverseArrangement: 0
   _extraItemsVisible: 0
   _swipeThreshold: 200
-  _cardZMultiplier: 0
-  _cardMode: 0
-  _manuallyHandleCardAnimations: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
