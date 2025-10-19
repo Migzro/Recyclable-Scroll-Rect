@@ -9,7 +9,6 @@ namespace RecyclableSR
     public abstract class RSRBase : ScrollRect
     {
         [SerializeField] private bool _showUsingCanvasGroupAlpha;
-        [SerializeField] protected bool _childForceExpand;
         [SerializeField] private float _pullToRefreshThreshold = 150;
         [SerializeField] private float _pushToCloseThreshold = 150;
         [SerializeField] private bool _useConstantScrollingSpeed;

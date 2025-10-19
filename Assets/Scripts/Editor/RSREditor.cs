@@ -5,12 +5,14 @@ namespace RecyclableSR
     [CustomEditor(typeof(RSR), true)]
     public class RSREditor : RSRBaseEditor
     {
+        private SerializedProperty _childForceExpand; 
         private SerializedProperty _reverseArrangement; 
         private SerializedProperty _extraItemsVisible;
 
         protected override void OnEnable()
         {
             base.OnEnable();
+            _childForceExpand = serializedObject.FindProperty(nameof(_childForceExpand));
             _reverseArrangement = serializedObject.FindProperty(nameof(_reverseArrangement));
             _extraItemsVisible = serializedObject.FindProperty(nameof(_extraItemsVisible));
         }
@@ -19,6 +21,7 @@ namespace RecyclableSR
         {
             base.OnInspectorGUI();
             EditorGUILayout.Space();
+            EditorGUILayout.PropertyField(_childForceExpand);
             EditorGUILayout.PropertyField(_reverseArrangement);
             EditorGUILayout.PropertyField(_extraItemsVisible);
             serializedObject.ApplyModifiedProperties();

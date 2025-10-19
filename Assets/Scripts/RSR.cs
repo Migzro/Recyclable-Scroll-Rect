@@ -4,7 +4,8 @@ namespace RecyclableSR
 {
     public class RSR : RSRBase
     {
-        [SerializeField] protected bool _reverseArrangement;
+        [SerializeField] private bool _childForceExpand;
+        [SerializeField] private bool _reverseArrangement;
         [SerializeField] protected int _extraItemsVisible;
         
         protected override bool ReachedMinRowColumnInViewPort => _minVisibleRowColumnInViewPort == 0;

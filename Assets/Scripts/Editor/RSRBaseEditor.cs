@@ -7,7 +7,6 @@ namespace RecyclableSR
     public class RSRBaseEditor : ScrollRectEditor
     {
         private SerializedProperty _showUsingCanvasGroupAlpha;
-        private SerializedProperty _childForceExpand;
         private SerializedProperty _pullToRefreshThreshold;
         private SerializedProperty _pushToCloseThreshold;
         private SerializedProperty _useConstantScrollingSpeed;
@@ -20,7 +19,6 @@ namespace RecyclableSR
         {
             base.OnEnable();
             _showUsingCanvasGroupAlpha = serializedObject.FindProperty(nameof(_showUsingCanvasGroupAlpha));
-            _childForceExpand = serializedObject.FindProperty(nameof(_childForceExpand));
             _pullToRefreshThreshold = serializedObject.FindProperty(nameof(_pullToRefreshThreshold));
             _pushToCloseThreshold = serializedObject.FindProperty(nameof(_pushToCloseThreshold));
             _useConstantScrollingSpeed = serializedObject.FindProperty(nameof(_useConstantScrollingSpeed));
@@ -35,7 +33,6 @@ namespace RecyclableSR
             base.OnInspectorGUI();
             EditorGUILayout.Space();
             EditorGUILayout.PropertyField(_showUsingCanvasGroupAlpha);
-            EditorGUILayout.PropertyField(_childForceExpand);
             EditorGUILayout.PropertyField(_pullToRefreshThreshold);
             EditorGUILayout.PropertyField(_pushToCloseThreshold);
             EditorGUILayout.PropertyField(_useConstantScrollingSpeed);
