@@ -125,7 +125,6 @@ namespace RecyclableSR
                 }
                 _gridLayoutItemsOffset.x = _padding.left;
             }
-            Debug.LogError(_gridLayoutItemsOffset);
         }
         
         /// <summary>
