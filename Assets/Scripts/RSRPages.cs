@@ -3,7 +3,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace RecyclableSR
+namespace RSR
 {
     public class RSRPages : RSR
     {

@@ -3,7 +3,7 @@
 using UnityEditor;
 using UnityEngine.UI;
 
-namespace RecyclableSR
+namespace RSR
 {
     [CustomEditor(typeof(RSRGrid), true)]
     [CanEditMultipleObjects]

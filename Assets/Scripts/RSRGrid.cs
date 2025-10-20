@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace RecyclableSR
+namespace RSR
 {
     public class RSRGrid : RSRBase
     {

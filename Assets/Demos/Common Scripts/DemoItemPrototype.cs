@@ -1,32 +1,36 @@
 // Copyright (c) 2025 Maged Farid
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
-using RecyclableSR;
 using TMPro;
 using UnityEngine;
 
-public class DemoItemPrototype : MonoBehaviour, IItem
+namespace RSR
 {
-    [SerializeField] private TextMeshProUGUI _text;
-    [SerializeField] private CanvasGroup _canvasGroup; 
-    public int ItemIndex { get; set; }
-    public RSRBase RSRBase { get; set; }
-    public RectTransform[] ItemsNeededForVisualUpdate => null;
-    public CanvasGroup CanvasGroup {
-        get
-        {
-            if (_canvasGroup == null)
-            {
-                _canvasGroup = gameObject.GetComponent<CanvasGroup>();
-                if (_canvasGroup == null)
-                    _canvasGroup = gameObject.AddComponent<CanvasGroup>();
-            }
-
-            return _canvasGroup;
-        }
-    }
-
-    public void Initialize(string text)
+    public class DemoItemPrototype : MonoBehaviour, IItem
     {
-        _text.text = text;
+        [SerializeField] private TextMeshProUGUI _text;
+        [SerializeField] private CanvasGroup _canvasGroup;
+        public int ItemIndex { get; set; }
+        public RSRBase RSRBase { get; set; }
+        public RectTransform[] ItemsNeededForVisualUpdate => null;
+
+        public CanvasGroup CanvasGroup
+        {
+            get
+            {
+                if (_canvasGroup == null)
+                {
+                    _canvasGroup = gameObject.GetComponent<CanvasGroup>();
+                    if (_canvasGroup == null)
+                        _canvasGroup = gameObject.AddComponent<CanvasGroup>();
+                }
+
+                return _canvasGroup;
+            }
+        }
+
+        public void Initialize(string text)
+        {
+            _text.text = text;
+        }
     }
 }
