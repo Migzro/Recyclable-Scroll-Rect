@@ -22,7 +22,7 @@ namespace RecyclableScrollRect
         {
             _dataSource = new List<string>();
             for (var i = 0; i < _itemsCount; i++)
-                _dataSource.Add(i + " " + HelperFunctions.RandomString(Random.Range(0, 200)));
+                _dataSource.Add(i + " " + Helpers.RandomString(Random.Range(0, 200)));
             _scrollRect.Initialize(this);
         }
 
