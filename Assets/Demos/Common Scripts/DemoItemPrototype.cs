@@ -3,7 +3,7 @@
 using TMPro;
 using UnityEngine;
 
-namespace RSR
+namespace RecyclableScrollRect
 {
     public class DemoItemPrototype : MonoBehaviour, IItem
     {

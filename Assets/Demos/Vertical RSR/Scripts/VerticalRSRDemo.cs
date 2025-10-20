@@ -3,7 +3,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace RSR
+namespace RecyclableScrollRect
 {
     public class VerticalRSRDemo : MonoBehaviour, IDataSource
     {

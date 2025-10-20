@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace RSR
+namespace RecyclableScrollRect
 {
     public abstract class RSRBase : ScrollRect
     {

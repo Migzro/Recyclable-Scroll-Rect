@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace RSR
+namespace RecyclableScrollRect
 {
     public enum ItemsAlignment
     {

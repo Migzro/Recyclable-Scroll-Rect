@@ -3,7 +3,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace RSR
+namespace RecyclableScrollRect
 {
     public class RSRPages : RSR
     {

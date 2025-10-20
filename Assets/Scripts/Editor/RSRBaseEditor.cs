@@ -3,7 +3,7 @@
 using UnityEditor;
 using UnityEditor.UI;
 
-namespace RSR
+namespace RecyclableScrollRect
 {
     [CustomEditor(typeof(RSRBase), true)]
     public class RSRBaseEditor : ScrollRectEditor
