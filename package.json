@@ -25,5 +25,12 @@
     "name": "Maged Farid",
     "email": "magedf.90@gmail.com"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "samples": [
+    {
+      "displayName": "Vertical RSR",
+      "description": "Contains a normal simple recyclable scroll rect setup with vertical scrolling",
+      "path": "Samples~/Vertical RSR"
+    }
+  ]
 }
