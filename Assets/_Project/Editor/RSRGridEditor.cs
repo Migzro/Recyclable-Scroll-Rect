@@ -3,7 +3,7 @@
 using UnityEditor;
 using UnityEngine.UI;
 
-namespace RecyclableScrollRect
+namespace RecyclableScrollRect.Editor
 {
     [CustomEditor(typeof(RSRGrid), true)]
     [CanEditMultipleObjects]

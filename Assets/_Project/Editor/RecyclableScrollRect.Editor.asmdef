@@ -1,0 +1,16 @@
+{
+    "name": "RecyclableScrollRect.Editor",
+    "rootNamespace": "RecyclableScrollRect.Editor",
+    "references": [
+        "GUID:11e3698e072d141ae9ece71f545a5b8a"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,1 +1,28 @@
-
+{
+  "name": "com.migzro.recyclablescrollrect",
+  "version": "1.0.0",
+  "displayName": "Recyclable Scroll Rect",
+  "description": "An infinite scroll rect implementation for Unity UI that recycles item views to improve performance with large data sets.",
+  "unity": "2019.1",
+  "keywords": [
+    "ScollRect",
+    "UnityUI",
+    "InfiniteScroll",
+    "Recycling",
+    "Performance",
+    "UI",
+    "ListView",
+    "DataBinding",
+    "Virtualization",
+    "C#",
+    "GameDevelopment",
+    "MobileOptimization",
+    "UserInterface",
+    "UX",
+    "UnityPackage"
+  ],
+  "author": {
+    "name": "Maged Farid",
+    "email": "magedf.90@gmail.com"
+  }
+}
