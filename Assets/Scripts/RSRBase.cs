@@ -278,9 +278,10 @@ namespace RecyclableSR
                     if (_showUsingCanvasGroupAlpha)
                     {
                         var item = itemRect.GetComponent<IItem>() ?? itemRect.gameObject.AddComponent<BaseItem>();
-                        item.CanvasGroup.alpha = 0;
-                        item.CanvasGroup.interactable = false;
-                        item.CanvasGroup.blocksRaycasts = false;
+                        var canvasGroup = item.CanvasGroup;
+                        canvasGroup.alpha = 0;
+                        canvasGroup.interactable = false;
+                        canvasGroup.blocksRaycasts = false;
                     }
                     else
                     {
@@ -306,7 +307,7 @@ namespace RecyclableSR
                     if (newPrototypeName != _prototypeNames[i] && actualItemIndex != -1)
                     {
                         // hide the item if its visible, remove the old prototype name from the pool, show the cell again with the new prototype name
-                        var isVisible = _visibleItems.ContainsKey(i);
+                        var isVisible = _visibleItems.TryGetValue(i, out _);
                         if (isVisible)
                         {
                             HideItemAtIndex(i);
@@ -352,7 +353,7 @@ namespace RecyclableSR
                 itemImpl = itemGo.GetComponent<IItem>();
                 itemImpl.RSRBase = this;
                 itemImpl.ItemIndex = index;
-                itemGo.name = itemPrototypeItem.name + " " + index;
+                itemGo.name = $"{itemPrototypeItem.name} {index}";
             }
             else
             {
@@ -365,9 +366,10 @@ namespace RecyclableSR
                 itemGo.SetActive(true);
                 if (_showUsingCanvasGroupAlpha)
                 {
-                    itemImpl.CanvasGroup.alpha = 1;
-                    itemImpl.CanvasGroup.interactable = true;
-                    itemImpl.CanvasGroup.blocksRaycasts = true;
+                    var canvasGroup = itemImpl.CanvasGroup; 
+                    canvasGroup.alpha = 1;
+                    canvasGroup.interactable = true;
+                    canvasGroup.blocksRaycasts = true;
                 }
             }
 
@@ -429,7 +431,7 @@ namespace RecyclableSR
             // No need to reload item at index {itemIndex} as its currently not visible and everything will be automatically handled when it appears
             // it's ok to return here after setting the tag, as if an item gets marked for reload with multiple tags, it only needs to reload once its visible
             // reloading the item multiple times with different tags is needed when multiple changes happen to an item over the course of some frames when its visible
-            if (!_visibleItems.ContainsKey(itemIndex))
+            if (!_visibleItems.TryGetValue(itemIndex, out var visibleItem))
             {
                 _itemsMarkedForReload.Add(itemIndex);
                 return;
@@ -439,7 +441,6 @@ namespace RecyclableSR
             if (itemIndex >= _itemsCount)
                 return;
             
-            var visibleItem = _visibleItems[itemIndex];
             if (reloadItemData)
             {
                 var actualItemIndex = GetActualItemIndex(itemIndex);
@@ -456,18 +457,18 @@ namespace RecyclableSR
         /// <returns></returns>
         protected void ForceLayoutRebuild(int itemIndex)
         {
-            if (_visibleItems.ContainsKey(itemIndex))
+            if (_visibleItems.TryGetValue(itemIndex, out var visibleItem))
             {
                 RectTransform[] rects = null;
                 if (!_staticItems[itemIndex])
-                    rects = _visibleItems[itemIndex].item.ItemsNeededForVisualUpdate;
+                    rects = visibleItem.item.ItemsNeededForVisualUpdate;
 
                 if (rects != null)
                 {
                     foreach (var rect in rects)
                         LayoutRebuilder.ForceRebuildLayoutImmediate(rect);
                 }
-                LayoutRebuilder.ForceRebuildLayoutImmediate(_visibleItems[itemIndex].transform);
+                LayoutRebuilder.ForceRebuildLayoutImmediate(visibleItem.transform);
             }
         }
 
@@ -613,16 +614,22 @@ namespace RecyclableSR
         {
             // Get empty item and adjust its position and size, else just create a new an item
             var itemPrototypeName = _prototypeNames[itemIndex];
-            if (_pooledItems[itemPrototypeName].Count > 0)
+
+            if (!_pooledItems.TryGetValue(itemPrototypeName, out var pool) || pool.Count == 0)
             {
-                var item = _pooledItems[itemPrototypeName][0];
-                _pooledItems[itemPrototypeName].RemoveAt(0);
+                InitializeItem(itemIndex);
+            }
+            else
+            {
+                var item = pool[0];
+                pool.RemoveAt(0);
 
                 if (_showUsingCanvasGroupAlpha)
                 {
-                    item.item.CanvasGroup.alpha = 1;
-                    item.item.CanvasGroup.interactable = true;
-                    item.item.CanvasGroup.blocksRaycasts = true;
+                    var canvasGroup = item.item.CanvasGroup; 
+                    canvasGroup.alpha = 1;
+                    canvasGroup.interactable = true;
+                    canvasGroup.blocksRaycasts = true;
                 }
                 else
                 {
@@ -635,7 +642,7 @@ namespace RecyclableSR
                 item.item.ItemIndex = itemIndex;
                 
                 SetItemAxisPosition(item.transform, itemIndex);
-                if (_ignoreSetItemDataIndices.Count <= 0 || _ignoreSetItemDataIndices.Count > 0 && !_ignoreSetItemDataIndices.Contains(itemIndex))
+                if (_ignoreSetItemDataIndices.Count == 0 || !_ignoreSetItemDataIndices.Contains(itemIndex))
                 {
                     var actualItemIndex = GetActualItemIndex(itemIndex);
                     _dataSource.SetItemData(item.item, actualItemIndex);
@@ -651,18 +658,17 @@ namespace RecyclableSR
                 }
                 
                 if (!_staticItems[itemIndex])
-                    item.transform.name = itemPrototypeName + " " + itemIndex;
-            }
-            else
-            {
-                InitializeItem(itemIndex);
+                    item.transform.name = $"{itemPrototypeName} {itemIndex}";
             }
 
-            if (_queuedScrollToItem != -1 && _queuedScrollToItem == itemIndex)
+            if (_visibleItems.TryGetValue(itemIndex, out var visibleAfter))
             {
-                var actualItemIndex = GetActualItemIndex(itemIndex);
-                _dataSource.ScrolledToItem(_visibleItems[itemIndex].item, actualItemIndex);
-                _queuedScrollToItem = -1;
+                if (_queuedScrollToItem != -1 && _queuedScrollToItem == itemIndex)
+                {
+                    var actualItemIndex = GetActualItemIndex(itemIndex);
+                    _dataSource.ScrolledToItem(visibleAfter.item, actualItemIndex);
+                    _queuedScrollToItem = -1;
+                }
             }
 
             SetSiblingIndices();
@@ -688,21 +694,30 @@ namespace RecyclableSR
         /// <param name="itemIndex">itemIndex which will be hidden</param>
         protected void HideItemAtIndex(int itemIndex)
         {
+            _visibleItems.TryGetValue(itemIndex, out var visibleItem);
             if (_showUsingCanvasGroupAlpha)
             {
-                _visibleItems[itemIndex].item.CanvasGroup.alpha = 0;
-                _visibleItems[itemIndex].item.CanvasGroup.interactable = false;
-                _visibleItems[itemIndex].item.CanvasGroup.blocksRaycasts = false;
+                var canvasGroup = visibleItem.item.CanvasGroup;
+                canvasGroup.alpha = 0;
+                canvasGroup.interactable = false;
+                canvasGroup.blocksRaycasts = false;
             }
             else
             {
-                _visibleItems[itemIndex].transform.gameObject.SetActive(false);
+                visibleItem.transform.gameObject.SetActive(false);
             }
 
             var actualItemIndex = GetActualItemIndex(itemIndex);
-            SetVisibilityInHierarchy(_visibleItems[itemIndex].transform, false);
-            _dataSource.ItemHidden(_visibleItems[itemIndex].item, actualItemIndex);
-            _pooledItems[_prototypeNames[itemIndex]].Add(_visibleItems[itemIndex]);
+            SetVisibilityInHierarchy(visibleItem.transform, false);
+            _dataSource.ItemHidden(visibleItem.item, actualItemIndex);
+
+            var protoName = _prototypeNames[itemIndex];
+            if (!_pooledItems.TryGetValue(protoName, out var pool))
+            {
+                pool = new List<Item>();
+                _pooledItems[protoName] = pool;
+            }
+            pool.Add(visibleItem);
             _visibleItems.Remove(itemIndex);
         }
 
@@ -826,7 +841,7 @@ namespace RecyclableSR
         {
             StopMovement();
             var direction = itemIndex > _currentPage ? 1 : -1;
-            PreformPreScrollingActions(itemIndex, direction);
+            PerformPreScrollingActions(itemIndex, direction);
             
             var itemVisiblePositionKnown = _itemPositions[itemIndex].positionSet && _visibleItems.ContainsKey(itemIndex);
             if (itemVisiblePositionKnown && instant)
@@ -841,7 +856,7 @@ namespace RecyclableSR
                     _dataSource.ScrolledToItem(_visibleItems[itemIndex].item, actualItemIndex);
                 }
 
-                PreformPostScrollingActions(itemIndex, true);
+                PerformPostScrollingActions(itemIndex, true);
                 _isAnimating = false;
             }
             else
@@ -977,18 +992,18 @@ namespace RecyclableSR
                     }
                 }
 
-                PreformPostScrollingActions(itemIndex, false);
+                PerformPostScrollingActions(itemIndex, false);
                 _isAnimating = false;
                 _ignoreSetItemDataIndices.Clear();
             }
         }
 
-        protected virtual void PreformPreScrollingActions(int itemIndex, int direction)
+        protected virtual void PerformPreScrollingActions(int itemIndex, int direction)
         {
         }
         
 
-        protected virtual void PreformPostScrollingActions(int itemIndex, bool instant)
+        protected virtual void PerformPostScrollingActions(int itemIndex, bool instant)
         {
         }
 
