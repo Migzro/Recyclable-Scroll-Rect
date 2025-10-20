@@ -30,7 +30,7 @@
     {
       "displayName": "Vertical RSR",
       "description": "Contains a normal simple recyclable scroll rect setup with vertical scrolling",
-      "path": "Samples/Vertical RSR"
+      "path": "Samples~/Vertical RSR"
     }
   ]
 }
