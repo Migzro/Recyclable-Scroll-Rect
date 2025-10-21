@@ -42,7 +42,7 @@ Download the latest Unity package from the [Releases](v1.0.1)
 ### Importing from Unity Package Manager
 After installing via Package Manager, go to `Window > Package Manager`, select `Recyclable Scroll Rect`, and click `Samples` tab to import any demo.
 
-![Unity Package Manager](Images~/Unity Package Manager Samples.png)
+![Unity Package Manager](Images~/Unity%20Package%20Manager%20Samples.png)
 
 ### Importing from Unity Package
 Open the sample scenes located in `Assets/Recyclable Scroll Rect/Samples` to see examples of vertical, horizontal, grid, and paged layouts.
