@@ -356,7 +356,10 @@ namespace RecyclableScrollRect
         protected override void ReloadItemInternal(int itemIndex, string reloadTag = "", bool reloadItemData = false, bool isReloadingAllData = false)
         {
             base.ReloadItemInternal(itemIndex, reloadTag, reloadItemData, isReloadingAllData);
-            SetItemSizeWithPositionAfterReload(_visibleItems[itemIndex], itemIndex, isReloadingAllData);
+            if (_visibleItems.TryGetValue(itemIndex, out var visibleItem))
+            {
+                SetItemSizeWithPositionAfterReload(visibleItem, itemIndex, isReloadingAllData);
+            }
         }
 
         /// <summary>
