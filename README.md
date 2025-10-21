@@ -36,7 +36,6 @@ Import from git url in Unity Package Manager using this link:
    ```
 ### Method 2
 Download the latest Unity package from the [Releases](v1.0.1)
-[Link text](https://github.com/Migzro/Recyclable-Scroll-Rect/releases)
 
 ## 🧩 Samples
 ### Importing from Unity Package Manager
@@ -98,9 +97,9 @@ public class VerticalRSRDemo : MonoBehaviour, IDataSource
 
 ## 🔮 Coming Soon
 Here’s what’s planned for upcoming releases of **Recyclable Scroll Rect**:
-- 🧩 Sections with headers and footers
-- ⚙️ Support for carousel mode
-- 📐 Smoother scrolling with Dotween integration
+- Sections with headers and footers
+- Support for carousel mode
+- Smoother scrolling with Dotween integration
 
 ## 🧪 Why Use This?
 For large lists or grids (hundreds/thousands of items), regular UI instantiation is heavy.  
