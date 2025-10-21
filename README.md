@@ -35,7 +35,7 @@ Import from git url in Unity Package Manager using this link:
    https://github.com/Migzro/Recyclable-Scroll-Rect.git
    ```
 ### Method 2
-Download the latest Unity package from the [Releases](https://github.com/Migzro/Recyclable-Scroll-Rect/releases/tag/1.0.1)
+Download the latest Unity package from the [Releases](https://github.com/Migzro/Recyclable-Scroll-Rect/releases/tag/1.0.1) page.
 
 ## 🧩 Samples
 ### Importing from Unity Package Manager
