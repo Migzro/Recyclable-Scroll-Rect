@@ -1,71 +1,76 @@
 {
-  "name": "com.migzro.recyclablescrollrect",
-  "version": "1.0.0",
-  "displayName": "Recyclable Scroll Rect",
-  "description": "An infinite scroll rect implementation for Unity UI that recycles item views to improve performance with large data sets.",
-  "unity": "2019.1",
-  "keywords": [
-    "ScollRect",
-    "UnityUI",
-    "InfiniteScroll",
-    "Recycling",
-    "Performance",
-    "UI",
-    "ListView",
-    "DataBinding",
-    "Virtualization",
-    "C#",
-    "GameDevelopment",
-    "MobileOptimization",
-    "UserInterface",
-    "UX",
-    "UnityPackage"
-  ],
-  "author": {
-    "name": "Maged Farid",
-    "email": "magedf.90@gmail.com"
-  },
-  "license": "MIT",
-  "samples": [
+    "name": "com.migzro.recyclablescrollrect",
+    "version": "1.0.1",
+    "displayName": "Recyclable Scroll Rect",
+    "description": "An infinite scroll rect implementation for Unity UI that recycles item views to improve performance with large data sets.",
+    "unity": "2019.1",
+    "keywords":
+    [
+        "ScollRect",
+        "UnityUI",
+        "InfiniteScroll",
+        "Recycling",
+        "Performance",
+        "UI",
+        "ListView",
+        "TableView",
+        "DataBinding",
+        "Virtualization",
+        "C#",
+        "GameDevelopment",
+        "MobileOptimization",
+        "UserInterface",
+        "UX",
+        "UnityPackage"
+    ],
+    "author":
     {
-      "displayName": "Vertical RSR",
-      "description": "Contains a normal vertical recyclable scroll rect setup",
-      "path": "Samples~/Vertical RSR"
+        "name": "Maged Farid",
+        "email": "magedf.90@gmail.com",
+        "url": "https://github.com/Migzro"
     },
-    {
-      "displayName": "Vertical Paging RSR",
-      "description": "Contains a vertical paging recyclable scroll rect setup",
-      "path": "Samples~/Vertical Paging RSR"
-    },
-    {
-      "displayName": "Vertical Grid RSR",
-      "description": "Contains a vertical grid recyclable scroll rect setup",
-      "path": "Samples~/Vertical Grid RSR"
-    },
-    {
-      "displayName": "Vertical Dynamic RSR",
-      "description": "Contains a normal vertical recyclable scroll rect setup that has items with unknown sizes before runtime",
-      "path": "Samples~/Vertical Dynamic RSR"
-    },
-    {
-      "displayName": "Horizontal RSR",
-      "description": "Contains a normal horizontal recyclable scroll rect setup",
-      "path": "Samples~/Horizontal RSR"
-    },
-    {
-      "displayName": "Horizontal Paging RSR",
-      "description": "Contains a horizontal paging recyclable scroll rect setup",
-      "path": "Samples~/Horizontal Paging RSR"
-    },
-    {
-      "displayName": "Horizontal Grid RSR",
-      "description": "Contains a horizontal grid recyclable scroll rect setup",
-      "path": "Samples~/Horizontal Grid RSR"
-    },
-    {
-      "displayName": "Horizontal Dynamic RSR",
-      "description": "Contains a normal horizontal recyclable scroll rect setup that has items with unknown sizes before runtime",
-      "path": "Samples~/Horizontal Dynamic RSR"
-    }
-  ]
+    "license": "MIT",
+    "samples":
+    [
+        {
+            "displayName": "Vertical RSR",
+            "description": "Contains a normal vertical recyclable scroll rect setup",
+            "path": "Samples~/Vertical RSR"
+        },
+        {
+            "displayName": "Vertical Paging RSR",
+            "description": "Contains a vertical paging recyclable scroll rect setup",
+            "path": "Samples~/Vertical Paging RSR"
+        },
+        {
+            "displayName": "Vertical Grid RSR",
+            "description": "Contains a vertical grid recyclable scroll rect setup",
+            "path": "Samples~/Vertical Grid RSR"
+        },
+        {
+            "displayName": "Vertical Dynamic RSR",
+            "description": "Contains a normal vertical recyclable scroll rect setup that has items with unknown sizes before runtime",
+            "path": "Samples~/Vertical Dynamic RSR"
+        },
+        {
+            "displayName": "Horizontal RSR",
+            "description": "Contains a normal horizontal recyclable scroll rect setup",
+            "path": "Samples~/Horizontal RSR"
+        },
+        {
+            "displayName": "Horizontal Paging RSR",
+            "description": "Contains a horizontal paging recyclable scroll rect setup",
+            "path": "Samples~/Horizontal Paging RSR"
+        },
+        {
+            "displayName": "Horizontal Grid RSR",
+            "description": "Contains a horizontal grid recyclable scroll rect setup",
+            "path": "Samples~/Horizontal Grid RSR"
+        },
+        {
+            "displayName": "Horizontal Dynamic RSR",
+            "description": "Contains a normal horizontal recyclable scroll rect setup that has items with unknown sizes before runtime",
+            "path": "Samples~/Horizontal Dynamic RSR"
+        }
+    ]
 }
