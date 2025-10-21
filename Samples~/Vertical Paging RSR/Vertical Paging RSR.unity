@@ -234,7 +234,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5b16be8a8a1fc489db8997c77a2e7e47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _itemsCount: 5
+  _itemsCount: 10
   _scrollRect: {fileID: 1904557393}
   _prototypeItems:
   - {fileID: 1638117046129563386, guid: 4fd4597b061924e918bc6e7e119fad53, type: 3}
@@ -553,7 +553,7 @@ MonoBehaviour:
   _itemsAlignment: 0
   _childForceExpand: 1
   _reverseArrangement: 0
-  _extraItemsVisible: 0
+  _extraItemsVisible: 1
   _swipeThreshold: 200
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
