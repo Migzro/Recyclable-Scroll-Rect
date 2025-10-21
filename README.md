@@ -121,6 +121,9 @@ MIT License — see `LICENSE.md`.
 ## 🙋 Support
 Open an issue on GitHub for help or feature requests.
 
----
+## ☕ Support Me
+If this tool helped you, consider buying me a coffee:
 
+<a href="https://www.buymeacoffee.com/migzro" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+---
 Thanks for using **Recyclable Scroll Rect** — happy scrolling! 🎉
