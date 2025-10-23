@@ -6,21 +6,11 @@ namespace RecyclableScrollRect
 {
     public class BasicScroll : IScroll
     {
-        private readonly int _axis;
-
-        public BasicScroll(int axis)
-        {
-            _axis = axis;
-        }
-        
         public void ScrollToNormalizedPosition(RSRBase scrollRect, float targetNormalizedPos, float speed, bool isTime, bool instant, Action onFinished)
         {
             if (instant)
             {
-                var normalizedPosition = scrollRect.normalizedPosition;
-                normalizedPosition[_axis] = Mathf.Clamp01(targetNormalizedPos);
-                scrollRect.normalizedPosition = normalizedPosition;
-                onFinished?.Invoke();
+                FinishAnimation(scrollRect, targetNormalizedPos, onFinished);
             }
             else
             {
@@ -31,14 +21,12 @@ namespace RecyclableScrollRect
         private IEnumerator ScrollToNormalizedPositionInternal(RSRBase scrollRect, float targetNormalizedPos, float speed, bool isTime, Action onFinished)
         {
             var normalizedPosition = scrollRect.normalizedPosition;
-            var current = Mathf.Clamp01(normalizedPosition[_axis]);
+            var current = Mathf.Clamp01(normalizedPosition[scrollRect.Axis]);
             targetNormalizedPos = Mathf.Clamp01(targetNormalizedPos);
 
             if (Mathf.Abs(targetNormalizedPos - current) <= 0.001f)
             {
-                normalizedPosition[_axis] = targetNormalizedPos;
-                scrollRect.normalizedPosition = normalizedPosition;
-                onFinished?.Invoke();
+                FinishAnimation(scrollRect, targetNormalizedPos, onFinished);
                 yield break;
             }
 
@@ -52,7 +40,7 @@ namespace RecyclableScrollRect
                     var t = Mathf.Clamp01(elapsed / speed);
                     var easedT = Mathf.SmoothStep(0f, 1f, t);
                     current = Mathf.Lerp(start, targetNormalizedPos, easedT);
-                    normalizedPosition[_axis] = current;
+                    normalizedPosition[scrollRect.Axis] = current;
                     scrollRect.normalizedPosition = normalizedPosition;
                     yield return null;
                 }
@@ -62,13 +50,19 @@ namespace RecyclableScrollRect
                 while (Mathf.Abs(targetNormalizedPos - current) > 0.001f)
                 {
                     current = Mathf.MoveTowards(current, targetNormalizedPos, speed * Time.deltaTime);
-                    normalizedPosition[_axis] = current;
+                    normalizedPosition[scrollRect.Axis] = current;
                     scrollRect.normalizedPosition = normalizedPosition;
                     yield return null;
                 }
             }
 
-            normalizedPosition[_axis] = targetNormalizedPos;
+            FinishAnimation(scrollRect, targetNormalizedPos, onFinished);
+        }
+        
+        private void FinishAnimation(RSRBase scrollRect, float targetNormalizedPos, Action onFinished)
+        {
+            var normalizedPosition = scrollRect.normalizedPosition;
+            normalizedPosition[scrollRect.Axis] = Mathf.Clamp01(targetNormalizedPos);
             scrollRect.normalizedPosition = normalizedPosition;
             onFinished?.Invoke();
         }

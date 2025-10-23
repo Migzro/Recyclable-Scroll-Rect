@@ -62,6 +62,7 @@ namespace RecyclableScrollRect
         private MovementType _initialMovementType;
 
         public bool IsInitialized => _init;
+        public int Axis => _axis;
         protected abstract bool ReachedMinRowColumnInViewPort { get; }
         protected abstract bool ReachedMaxRowColumnInViewPort { get; }
         protected abstract bool IsLastRowColumn(int itemIndex);
@@ -110,9 +111,11 @@ namespace RecyclableScrollRect
             _initialMovementType = movementType;
             
             InitializeData();
-            _scroll = new BasicScroll(_axis);
+            _scroll = gameObject.GetComponent<DoTweenScroll>();
+            _scroll ??= gameObject.GetComponent<DoTweenScroll>();
+            _scroll ??= new BasicScroll();
         }
-        
+
         /// <summary>
         /// Reload the data in case the content of the RecyclableScrollRect has changed
         /// </summary>
@@ -811,7 +814,6 @@ namespace RecyclableScrollRect
                 Debug.LogWarning("Cannot scroll to top right with speed of less than 0 while instant is false, setting speed to 1");
                 speed = 1;
             }
-
             ScrollToNormalisedPosition(vertical ? 1 : 0, speed, isTime, instant);
         }
 
