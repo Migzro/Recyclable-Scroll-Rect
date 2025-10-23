@@ -495,11 +495,5 @@ namespace RecyclableScrollRect
                 }
             }
         }
-
-        public override void ScrollToTopRight()
-        {
-            base.ScrollToTopRight();
-            StartCoroutine(ScrollToTargetNormalisedPosition(vertical ? 1 : 0));
-        }
     }
 }

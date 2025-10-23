@@ -558,7 +558,7 @@ MonoBehaviour:
   _itemsAlignment: 0
   _childForceExpand: 1
   _reverseArrangement: 0
-  _extraItemsVisible: 5
+  _extraItemsVisible: 20
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

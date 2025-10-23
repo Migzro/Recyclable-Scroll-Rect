@@ -21,6 +21,7 @@ namespace RecyclableScrollRect
         [SerializeField] protected ItemsAlignment _itemsAlignment;
         
         protected IDataSource _dataSource;
+        private IScroll _scroll;
 
         protected LayoutElement _layoutElement;
         private ScreenResolutionDetector _screenResolutionDetector;
@@ -109,6 +110,7 @@ namespace RecyclableScrollRect
             _initialMovementType = movementType;
             
             InitializeData();
+            _scroll = new BasicScroll(_axis);
         }
         
         /// <summary>
@@ -797,36 +799,38 @@ namespace RecyclableScrollRect
         }
         
         /// <summary>
-        /// Scrolls to top of scrollRect
+        /// Scroll to top right
         /// </summary>
-        public virtual void ScrollToTopRight()
+        /// <param name="speed">speed/time to scroll with</param>
+        /// <param name="isTime">scrolls to top right using speed value as time</param>
+        /// <param name="instant">instant scroll</param>
+        public void ScrollToTopRight(float speed = -1, bool isTime = false, bool instant = false)
         {
-            StopMovement();
+            if (speed <= 0 && !instant)
+            {
+                Debug.LogWarning("Cannot scroll to top right with speed of less than 0 while instant is false, setting speed to 1");
+                speed = 1;
+            }
+
+            ScrollToNormalisedPosition(vertical ? 1 : 0, speed, isTime, instant);
         }
 
         /// <summary>
         /// A loop for animating to a desired NormalisedPosition
         /// </summary>
         /// <param name="targetNormalisedPos">required normalisedPosition</param>
+        /// <param name="speed">speed/time to scroll with</param>
+        /// <param name="isTime">scrolls to top right using speed value as time</param>
+        /// <param name="instant">instant scroll</param>
         /// <returns></returns>
-        protected IEnumerator ScrollToTargetNormalisedPosition(float targetNormalisedPos)
+        private void ScrollToNormalisedPosition(float targetNormalisedPos, float speed, bool isTime, bool instant)
         {
+            StopMovement();
             _isAnimating = true;
-            var currentNormalisedPosition = Mathf.Clamp01(normalizedPosition[_axis]);
-            var increment = 1f / _itemsCount;
-            if (Mathf.Abs(currentNormalisedPosition - targetNormalisedPos) <= increment || currentNormalisedPosition > 1 || currentNormalisedPosition < 0)
+            _scroll.ScrollToNormalizedPosition(this, targetNormalisedPos, speed, isTime, instant, () =>
             {
-                SetNormalizedPosition(targetNormalisedPos, _axis);
                 _isAnimating = false;
-            }
-            else
-            {
-                var sign = currentNormalisedPosition < targetNormalisedPos ? 1 : -1;
-                var newNormalisedPosition = currentNormalisedPosition + increment * sign;
-                SetNormalizedPosition(newNormalisedPosition, _axis);
-                yield return new WaitForEndOfFrame();
-                StartCoroutine(ScrollToTargetNormalisedPosition(targetNormalisedPos));
-            }
+            });
         }
 
         /// <summary>

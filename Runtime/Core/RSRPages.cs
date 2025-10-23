@@ -40,12 +40,6 @@ namespace RecyclableScrollRect
                 _pageSource?.PageFocused(_currentPage, true, _visibleItems[_currentPage].item);
             }
         }
-
-        public override void ScrollToTopRight()
-        {
-            base.ScrollToTopRight();
-            ScrollToItem(0, instant:true);
-        }
         
         protected override void PerformPreScrollingActions(int itemIndex, int direction)
         {
