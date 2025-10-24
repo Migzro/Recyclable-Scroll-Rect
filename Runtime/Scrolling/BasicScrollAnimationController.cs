@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace RecyclableScrollRect
 {
-    public class BasicScroll : IScroll
+    public class BasicScrollAnimationController : IScrollAnimationController
     {
         public void ScrollToNormalizedPosition(RSRBase scrollRect, float targetNormalizedPos, float time, bool isSpeed, bool instant, Action onFinished)
         {

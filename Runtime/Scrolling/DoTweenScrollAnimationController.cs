@@ -6,7 +6,7 @@ using DG.Tweening;
 
 namespace RecyclableScrollRect
 {
-    public class DoTweenScroll : MonoBehaviour, IScroll
+    public class DoTweenScrollAnimationController : MonoBehaviour, IScrollAnimationController
     {
 #if DOTWEEN
         public Ease ease;

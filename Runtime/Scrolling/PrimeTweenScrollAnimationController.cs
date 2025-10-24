@@ -6,7 +6,7 @@ using PrimeTween;
 
 namespace RecyclableScrollRect
 {
-    public class PrimeTweenScroll : MonoBehaviour, IScroll
+    public class PrimeTweenScrollAnimationController : MonoBehaviour, IScrollAnimationController
     {
 #if PRIMETWEEN
         public Ease ease;

@@ -21,7 +21,6 @@ namespace RecyclableScrollRect
         [SerializeField] protected ItemsAlignment _itemsAlignment;
         
         protected IDataSource _dataSource;
-        private IScroll _scroll;
 
         protected LayoutElement _layoutElement;
         private ScreenResolutionDetector _screenResolutionDetector;
@@ -39,7 +38,6 @@ namespace RecyclableScrollRect
         protected int _maxExtraVisibleRowColumnInViewPort;
         private int _queuedScrollToItem;
         protected bool _isAnimating;
-        private bool _init;
         private bool _needsClearance;
         private bool _pullToRefresh;
         private bool _pushToClose;
@@ -61,8 +59,9 @@ namespace RecyclableScrollRect
         private MovementType _movementType;
         private MovementType _initialMovementType;
 
-        public bool IsInitialized => _init;
+        public bool IsInitialized { get; private set; }
         public int Axis => _axis;
+        public IScrollAnimationController ScrollAnimationController { get; private set; }
         protected abstract bool ReachedMinRowColumnInViewPort { get; }
         protected abstract bool ReachedMaxRowColumnInViewPort { get; }
         protected abstract bool IsLastRowColumn(int itemIndex);
@@ -111,9 +110,9 @@ namespace RecyclableScrollRect
             _initialMovementType = movementType;
             
             InitializeData();
-            _scroll = gameObject.GetComponent<DoTweenScroll>();
-            _scroll ??= gameObject.GetComponent<PrimeTweenScroll>();
-            _scroll ??= new BasicScroll();
+            ScrollAnimationController = gameObject.GetComponent<DoTweenScrollAnimationController>();
+            ScrollAnimationController ??= gameObject.GetComponent<PrimeTweenScrollAnimationController>();
+            ScrollAnimationController ??= new BasicScrollAnimationController();
         }
 
         /// <summary>
@@ -121,7 +120,7 @@ namespace RecyclableScrollRect
         /// </summary>
         private void InitializeData()
         {
-            _init = false;
+            IsInitialized = false;
             
             if (_visibleItems != null)
             {
@@ -187,7 +186,7 @@ namespace RecyclableScrollRect
             InitializeItems();
             RefreshAfterReload(false);
 
-            _init = true;
+            IsInitialized = true;
         }
 
         /// <summary>
@@ -515,7 +514,7 @@ namespace RecyclableScrollRect
         protected override void LateUpdate()
         {
             base.LateUpdate();
-            if (!_init)
+            if (!IsInitialized)
                 return;
             if (_visibleItems.Count <= 0)
                 return;
@@ -829,7 +828,7 @@ namespace RecyclableScrollRect
         {
             StopMovement();
             _isAnimating = true;
-            _scroll.ScrollToNormalizedPosition(this, targetNormalisedPos, speed, isTime, instant, () =>
+            ScrollAnimationController.ScrollToNormalizedPosition(this, targetNormalisedPos, speed, isTime, instant, () =>
             {
                 _isAnimating = false;
             });
