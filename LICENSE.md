@@ -12,12 +12,6 @@ furnished to do so, subject to the following conditions:
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
-**Anti-War Clause:**  
-The Software shall not be used by any person or organization for military,
-warfare, weapon development, or surveillance purposes, nor in any system
-designed or used to harm, oppress, or kill people.  
-By using the Software, you agree to these conditions.
-
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
