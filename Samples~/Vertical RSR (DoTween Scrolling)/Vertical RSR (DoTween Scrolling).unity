@@ -231,15 +231,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 658359679}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 030cc04c1433d4501a2c281164d3196f, type: 3}
+  m_Script: {fileID: 11500000, guid: 4d48a66ef2d3745599da22e642e8da6c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: Assembly-CSharp::RecyclableScrollRect.VerticalRSRDemoDoTweenScrolling
   _itemsCount: 200
   _scrollRect: {fileID: 1904557393}
   _prototypeItems:
   - {fileID: 1638117046129563386, guid: e71a2206129434ac9b60b1d7743a0f00, type: 3}
   - {fileID: 1638117046129563386, guid: a8fbeae1039cd4ea9bf358107f5e5c16, type: 3}
-  _itemsToReloadTo: 0
+  _timeToScroll: 2
+  _isSpeed: 0
+  _isInstant: 0
 --- !u!1 &1362537419
 GameObject:
   m_ObjectHideFlags: 0
@@ -449,6 +451,7 @@ GameObject:
   - component: {fileID: 1904557392}
   - component: {fileID: 1904557391}
   - component: {fileID: 1904557393}
+  - component: {fileID: 1904557394}
   m_Layer: 5
   m_Name: Scroll View
   m_TagString: Untagged
@@ -559,6 +562,19 @@ MonoBehaviour:
   _childForceExpand: 1
   _reverseArrangement: 0
   _extraItemsVisible: 20
+--- !u!114 &1904557394
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1904557388}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff1c9fdba8f514141b1a4bf36db4db2d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RecyclableScrollRect::RecyclableScrollRect.DoTweenScrollAnimationController
+  ease: 4
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -30,9 +30,6 @@
         "url": "https://github.com/Migzro"
     },
     "license": "MIT",
-    "optionalDependencies": {
-        "com.primetween": "1.3.5"
-    },
     "samples":
     [
         {
@@ -74,6 +71,16 @@
             "displayName": "Horizontal Dynamic RSR",
             "description": "Contains a normal horizontal recyclable scroll rect setup that has items with unknown sizes before runtime",
             "path": "Samples~/Horizontal Dynamic RSR"
+        },
+        {
+          "displayName": "Vertical RSR (DoTween Scrolling)",
+          "description": "Contains a normal vertical recyclable scroll rect setup that uses DoTween for smooth scrolling",
+          "path": "Samples~/Vertical RSR (DoTween Scrolling)"
+        },
+        {
+          "displayName": "Vertical RSR (PrimeTween Scrolling)",
+          "description": "Contains a normal vertical recyclable scroll rect setup that uses Prime Tween for smooth scrolling",
+          "path": "Samples~/Vertical RSR (PrimeTween Scrolling)"
         }
     ]
 }

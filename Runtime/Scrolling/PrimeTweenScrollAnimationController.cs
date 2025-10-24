@@ -25,8 +25,9 @@ namespace RecyclableScrollRect
             }
             else
             {
-                if (!isSpeed)
+                if (isSpeed)
                 {
+                    // calculate time from speed
                     time = Mathf.Abs(targetNormalizedPos - scrollRect.normalizedPosition[scrollRect.Axis]) / time;
                 }
                 Tween.Custom(

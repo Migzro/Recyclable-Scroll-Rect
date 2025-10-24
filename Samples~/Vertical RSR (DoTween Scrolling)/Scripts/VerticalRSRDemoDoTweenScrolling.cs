@@ -5,12 +5,11 @@ using UnityEngine;
 
 namespace RecyclableScrollRect
 {
-    public class VerticalRSRDemo : MonoBehaviour, IDataSource
+    public class VerticalRSRDemoDoTweenScrolling : MonoBehaviour, IDataSource
     {
         [SerializeField] private int _itemsCount;
         [SerializeField] private RSR _scrollRect;
         [SerializeField] private GameObject[] _prototypeItems;
-        [SerializeField] private int _itemsToReloadTo;
         [SerializeField] private float _timeToScroll;
         [SerializeField] private bool _isSpeed;
         [SerializeField] private bool _isInstant;
@@ -30,14 +29,6 @@ namespace RecyclableScrollRect
             _scrollRect.Initialize(this);
         }
 
-        [ContextMenu(nameof(ReloadData))]
-        public void ReloadData()
-        {
-            _dataSource.RemoveRange(_itemsToReloadTo, _itemsCount - _itemsToReloadTo);
-            _itemsCount = _itemsToReloadTo;
-            _scrollRect.ReloadData(true);
-        }
-        
         [ContextMenu(nameof(ScrollToTopRight))]
         public void ScrollToTopRight()
         {

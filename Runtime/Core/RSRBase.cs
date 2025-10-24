@@ -803,32 +803,32 @@ namespace RecyclableScrollRect
         /// <summary>
         /// Scroll to top right
         /// </summary>
-        /// <param name="speed">speed/time to scroll with</param>
-        /// <param name="isTime">scrolls to top right using speed value as time</param>
+        /// <param name="time">speed/time to scroll with</param>
+        /// <param name="isSpeed">scrolls to top right using time value as speed</param>
         /// <param name="instant">instant scroll</param>
-        public void ScrollToTopRight(float speed = -1, bool isTime = false, bool instant = false)
+        public void ScrollToTopRight(float time = -1, bool isSpeed = false, bool instant = false)
         {
-            if (speed <= 0 && !instant)
+            if (time <= 0 && !instant)
             {
-                Debug.LogWarning("Cannot scroll to top right with speed of less than 0 while instant is false, setting speed to 1");
-                speed = 1;
+                Debug.LogWarning("Cannot scroll to top right with time of less than 0 while instant is false, setting time to 1");
+                time = 1;
             }
-            ScrollToNormalisedPosition(vertical ? 1 : 0, speed, isTime, instant);
+            ScrollToNormalisedPosition(vertical ? 1 : 0, time, isSpeed, instant);
         }
 
         /// <summary>
         /// A loop for animating to a desired NormalisedPosition
         /// </summary>
         /// <param name="targetNormalisedPos">required normalisedPosition</param>
-        /// <param name="speed">speed/time to scroll with</param>
-        /// <param name="isTime">scrolls to top right using speed value as time</param>
+        /// <param name="time">speed/time to scroll with</param>
+        /// <param name="isSpeed">scrolls to top right using time value as speed</param>
         /// <param name="instant">instant scroll</param>
         /// <returns></returns>
-        private void ScrollToNormalisedPosition(float targetNormalisedPos, float speed, bool isTime, bool instant)
+        private void ScrollToNormalisedPosition(float targetNormalisedPos, float time, bool isSpeed, bool instant)
         {
             StopMovement();
             _isAnimating = true;
-            ScrollAnimationController.ScrollToNormalizedPosition(this, targetNormalisedPos, speed, isTime, instant, () =>
+            ScrollAnimationController.ScrollToNormalizedPosition(this, targetNormalisedPos, time, isSpeed, instant, () =>
             {
                 _isAnimating = false;
             });
