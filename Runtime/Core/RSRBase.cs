@@ -112,7 +112,7 @@ namespace RecyclableScrollRect
             
             InitializeData();
             _scroll = gameObject.GetComponent<DoTweenScroll>();
-            _scroll ??= gameObject.GetComponent<DoTweenScroll>();
+            _scroll ??= gameObject.GetComponent<PrimeTweenScroll>();
             _scroll ??= new BasicScroll();
         }
 

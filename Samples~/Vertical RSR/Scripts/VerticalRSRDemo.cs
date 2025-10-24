@@ -38,7 +38,7 @@ namespace RecyclableScrollRect
         [ContextMenu(nameof(ScrollToTopRight))]
         public void ScrollToTopRight()
         {
-            _scrollRect.ScrollToTopRight(5, instant:true);
+            _scrollRect.ScrollToTopRight(0.2f, isTime:false);
         }
 
         public float GetItemSize(int itemIndex)

@@ -30,6 +30,9 @@
         "url": "https://github.com/Migzro"
     },
     "license": "MIT",
+    "optionalDependencies": {
+        "com.primetween": "1.3.5"
+    },
     "samples":
     [
         {

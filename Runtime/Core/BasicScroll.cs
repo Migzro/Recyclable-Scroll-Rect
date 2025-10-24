@@ -6,7 +6,7 @@ namespace RecyclableScrollRect
 {
     public class BasicScroll : IScroll
     {
-        public void ScrollToNormalizedPosition(RSRBase scrollRect, float targetNormalizedPos, float speed, bool isTime, bool instant, Action onFinished)
+        public void ScrollToNormalizedPosition(RSRBase scrollRect, float targetNormalizedPos, float time, bool isSpeed, bool instant, Action onFinished)
         {
             if (instant)
             {
@@ -14,11 +14,11 @@ namespace RecyclableScrollRect
             }
             else
             {
-                scrollRect.StartCoroutine(ScrollToNormalizedPositionInternal(scrollRect, targetNormalizedPos, speed, isTime, onFinished));
+                scrollRect.StartCoroutine(ScrollToNormalizedPositionInternal(scrollRect, targetNormalizedPos, time, isSpeed, onFinished));
             }
         }
         
-        private IEnumerator ScrollToNormalizedPositionInternal(RSRBase scrollRect, float targetNormalizedPos, float speed, bool isTime, Action onFinished)
+        private IEnumerator ScrollToNormalizedPositionInternal(RSRBase scrollRect, float targetNormalizedPos, float time, bool isSpeed, Action onFinished)
         {
             var normalizedPosition = scrollRect.normalizedPosition;
             var current = Mathf.Clamp01(normalizedPosition[scrollRect.Axis]);
@@ -30,16 +30,11 @@ namespace RecyclableScrollRect
                 yield break;
             }
 
-            if (isTime)
+            if (isSpeed)
             {
-                var start = current;
-                var elapsed = 0f;
-                while (elapsed < speed)
+                while (Mathf.Abs(targetNormalizedPos - current) > 0.001f)
                 {
-                    elapsed += Time.deltaTime;
-                    var t = Mathf.Clamp01(elapsed / speed);
-                    var easedT = Mathf.SmoothStep(0f, 1f, t);
-                    current = Mathf.Lerp(start, targetNormalizedPos, easedT);
+                    current = Mathf.MoveTowards(current, targetNormalizedPos, time * Time.deltaTime);
                     normalizedPosition[scrollRect.Axis] = current;
                     scrollRect.normalizedPosition = normalizedPosition;
                     yield return null;
@@ -47,9 +42,14 @@ namespace RecyclableScrollRect
             }
             else
             {
-                while (Mathf.Abs(targetNormalizedPos - current) > 0.001f)
+                var start = current;
+                var elapsed = 0f;
+                while (elapsed < time)
                 {
-                    current = Mathf.MoveTowards(current, targetNormalizedPos, speed * Time.deltaTime);
+                    elapsed += Time.deltaTime;
+                    var t = Mathf.Clamp01(elapsed / time);
+                    var easedT = Mathf.SmoothStep(0f, 1f, t);
+                    current = Mathf.Lerp(start, targetNormalizedPos, easedT);
                     normalizedPosition[scrollRect.Axis] = current;
                     scrollRect.normalizedPosition = normalizedPosition;
                     yield return null;
