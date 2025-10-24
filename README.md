@@ -29,12 +29,40 @@ An ListView implementation for Unity’s UI that recycles item views, designed t
 ![Paged RSR](Images~/Vertical%20Dynamic%20RSR.gif)
 
 ## 🚀 Installation
-### Method 1
-Import from git url in Unity Package Manager using this link:
-   ```bash
-   https://github.com/Migzro/Recyclable-Scroll-Rect.git
-   ```
-### Method 2
+### 1 - OpenUPM
+#### Option 1 — Install via OpenUPM CLI
+
+If you have the [OpenUPM CLI](https://github.com/openupm/openupm-cli) installed, run this command in your Unity project root:
+
+```bash
+openupm add com.migzro.recyclablescrollrect
+```
+
+#### Option 2 — Install manually via Unity Package Manager
+
+- Open 'Edit / Project Settings / Package Manager'.
+- Add a new Scoped Registry with 
+  - Name: `OpenUPM` 
+  - URL: `https://package.openupm.com` 
+  - Scope(s): `com.migzro.recyclablescrollrect`.
+- Go to 'Window / Package Manager / Packages / My Registries'.
+- Install the Recyclable Scroll Rect package.
+
+You can also add it manually by editing your `manifest.json` file:
+
+```json
+"scopedRegistries": [
+    {
+        "name": "OpenUPM",
+        "url": "https://package.openupm.com",
+        "scopes": [
+          "com.migzro.recyclablescrollrect"
+        ]
+    }
+]
+```
+
+### 2 - Unity Package
 Download the latest Unity package from the [Releases](https://github.com/Migzro/Recyclable-Scroll-Rect/releases/tag/1.0.1) page.
 
 ## 🧩 Samples
