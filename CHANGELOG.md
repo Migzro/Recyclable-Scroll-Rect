@@ -1,6 +1,6 @@
 ## [1.0.2] - 24-10-2025
 ### Bug Fixes
-- Fixed an issue where editor scripts where being compiled when building the project.
+- Fixed an issue where editor scripts were being compiled when building the project.
 
 ## [1.0.1] - 21-10-2025
 ### Bug Fixes
