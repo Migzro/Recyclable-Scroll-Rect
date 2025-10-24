@@ -44,7 +44,7 @@ openupm add com.migzro.recyclablescrollrect
 - Add a new Scoped Registry with 
   - Name: `OpenUPM` 
   - URL: `https://package.openupm.com` 
-  - Scope(s): `com.migzro.recyclablescrollrect`.
+  - Scope(s): `com.migzro.recyclablescrollrect`
 - Go to 'Window / Package Manager / Packages / My Registries'.
 - Install the Recyclable Scroll Rect package.
 
