@@ -48,7 +48,6 @@ namespace RecyclableScrollRect
             // create a list that will stop ScrollTo method from calling SetItemData on items that will only be visible in the one frame while scrolling, this assumes
             // that the paging item is taking up the entire width or height
             var endingIndex = itemIndex;
-            _ignoreSetItemDataIndices.Clear();
             if (direction > 0)
             {
                 endingIndex -= _extraItemsVisible;

@@ -6,21 +6,21 @@ using PrimeTween;
 
 namespace RecyclableScrollRect
 {
-    public class PrimeTweenScrollAnimationController : MonoBehaviour, IScrollAnimationController
+    public class PrimeTweenScrollAnimationController : BaseScrollAnimationController
     {
 #if PRIMETWEEN
         public Ease ease;
 #endif
 
-        public void ScrollToNormalizedPosition(RSRBase scrollRect, float targetNormalizedPos, float time, bool isSpeed, bool instant, Action onFinished)
+        public override void ScrollToNormalizedPosition(float targetNormalizedPos, float time, bool isSpeed, bool instant, Action onFinished)
         {
 #if PRIMETWEEN
             targetNormalizedPos = Mathf.Clamp01(targetNormalizedPos);
             if (instant)
             {
-                var normalizedPosition = scrollRect.normalizedPosition;
-                normalizedPosition[scrollRect.Axis] = Mathf.Clamp01(targetNormalizedPos);
-                scrollRect.normalizedPosition = normalizedPosition;
+                var normalizedPosition = _scrollRect.normalizedPosition;
+                normalizedPosition[_scrollRect.Axis] = Mathf.Clamp01(targetNormalizedPos);
+                _scrollRect.normalizedPosition = normalizedPosition;
                 onFinished?.Invoke();
             }
             else
@@ -28,18 +28,18 @@ namespace RecyclableScrollRect
                 if (isSpeed)
                 {
                     // calculate time from speed
-                    time = Mathf.Abs(targetNormalizedPos - scrollRect.normalizedPosition[scrollRect.Axis]) / time;
+                    time = Mathf.Abs(targetNormalizedPos - _scrollRect.normalizedPosition[_scrollRect.Axis]) / time;
                 }
                 Tween.Custom(
-                        startValue: scrollRect.normalizedPosition[scrollRect.Axis],
+                        startValue: _scrollRect.normalizedPosition[_scrollRect.Axis],
                         endValue: targetNormalizedPos,
                         duration: time,
                         ease: ease,
                         onValueChange: val =>
                         {
-                            var normalizedPosition = scrollRect.normalizedPosition;
-                            normalizedPosition[scrollRect.Axis] = val;
-                            scrollRect.normalizedPosition = normalizedPosition;
+                            var normalizedPosition = _scrollRect.normalizedPosition;
+                            normalizedPosition[_scrollRect.Axis] = val;
+                            _scrollRect.normalizedPosition = normalizedPosition;
                         })
                     .OnComplete(() => onFinished?.Invoke());
             }
@@ -48,7 +48,7 @@ namespace RecyclableScrollRect
 #endif
         }
 
-        public void ScrollToItem(int itemIndex, bool callEvent = true, bool instant = false, float maxSpeedMultiplier = 1, float offset = 0)
+        public override void ScrollToItem(int itemIndex, bool callEvent = true, bool instant = false, float maxSpeedMultiplier = 1, float offset = 0)
         {
 #if PRIMETWEEN
 #else

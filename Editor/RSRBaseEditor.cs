@@ -16,6 +16,7 @@ namespace RecyclableScrollRect.Editor
         private SerializedProperty _padding;
         private SerializedProperty _spacing;
         private SerializedProperty _itemsAlignment;
+        private SerializedProperty _scrollAnimationController;
 
         protected override void OnEnable()
         {
@@ -28,6 +29,7 @@ namespace RecyclableScrollRect.Editor
             _padding = serializedObject.FindProperty(nameof(_padding));
             _spacing = serializedObject.FindProperty(nameof(_spacing));
             _itemsAlignment = serializedObject.FindProperty(nameof(_itemsAlignment));
+            _scrollAnimationController = serializedObject.FindProperty(nameof(_scrollAnimationController));
         }
 
         public override void OnInspectorGUI()
@@ -47,6 +49,7 @@ namespace RecyclableScrollRect.Editor
             EditorGUILayout.PropertyField(_padding);
             EditorGUILayout.PropertyField(_spacing);
             EditorGUILayout.PropertyField(_itemsAlignment);
+            EditorGUILayout.PropertyField(_scrollAnimationController);
             serializedObject.ApplyModifiedProperties();
         }
     }

@@ -19,6 +19,7 @@ namespace RecyclableScrollRect
         [SerializeField] protected Vector2 _spacing;
         [SerializeField] protected RectOffset _padding;
         [SerializeField] protected ItemsAlignment _itemsAlignment;
+        [SerializeField] private BaseScrollAnimationController _scrollAnimationController;
         
         protected IDataSource _dataSource;
 
@@ -61,7 +62,6 @@ namespace RecyclableScrollRect
 
         public bool IsInitialized { get; private set; }
         public int Axis => _axis;
-        public IScrollAnimationController ScrollAnimationController { get; private set; }
         protected abstract bool ReachedMinRowColumnInViewPort { get; }
         protected abstract bool ReachedMaxRowColumnInViewPort { get; }
         protected abstract bool IsLastRowColumn(int itemIndex);
@@ -110,9 +110,8 @@ namespace RecyclableScrollRect
             _initialMovementType = movementType;
             
             InitializeData();
-            ScrollAnimationController = gameObject.GetComponent<DoTweenScrollAnimationController>();
-            ScrollAnimationController ??= gameObject.GetComponent<PrimeTweenScrollAnimationController>();
-            ScrollAnimationController ??= new BasicScrollAnimationController();
+            _scrollAnimationController ??= gameObject.GetComponent<BaseScrollAnimationController>();
+            _scrollAnimationController ??= gameObject.AddComponent<ScrollAnimationController>();
         }
 
         /// <summary>
@@ -827,10 +826,10 @@ namespace RecyclableScrollRect
         private void ScrollToNormalisedPosition(float targetNormalisedPos, float time, bool isSpeed, bool instant)
         {
             StopMovement();
-            _isAnimating = true;
-            ScrollAnimationController.ScrollToNormalizedPosition(this, targetNormalisedPos, time, isSpeed, instant, () =>
+            PerformPreScrollingActions(0, targetNormalisedPos > normalizedPosition[_axis] ? 1 : -1);
+            _scrollAnimationController.ScrollToNormalizedPosition(targetNormalisedPos, time, isSpeed, instant, () =>
             {
-                _isAnimating = false;
+                PerformPostScrollingActions(0, instant);
             });
         }
 
@@ -864,7 +863,6 @@ namespace RecyclableScrollRect
                 }
 
                 PerformPostScrollingActions(itemIndex, true);
-                _isAnimating = false;
             }
             else
             {
@@ -911,7 +909,6 @@ namespace RecyclableScrollRect
                         speedToUse *= maxSpeedMultiplier;
                 }
 
-                _isAnimating = true;
                 var increment = speedToUse * direction * (vertical ? 1 : -1);
                 StartCoroutine(StartScrolling(increment, direction, itemIndex, callEvent, offset));
             }
@@ -1000,18 +997,20 @@ namespace RecyclableScrollRect
                 }
 
                 PerformPostScrollingActions(itemIndex, false);
-                _isAnimating = false;
-                _ignoreSetItemDataIndices.Clear();
             }
         }
 
         protected virtual void PerformPreScrollingActions(int itemIndex, int direction)
         {
+            _ignoreSetItemDataIndices.Clear();
+            _isAnimating = true;
         }
         
 
         protected virtual void PerformPostScrollingActions(int itemIndex, bool instant)
         {
+            _ignoreSetItemDataIndices.Clear();
+            _isAnimating = false;
         }
 
         /// <summary>
