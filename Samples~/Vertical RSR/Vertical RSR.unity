@@ -240,7 +240,7 @@ MonoBehaviour:
   - {fileID: 1638117046129563386, guid: e71a2206129434ac9b60b1d7743a0f00, type: 3}
   - {fileID: 1638117046129563386, guid: a8fbeae1039cd4ea9bf358107f5e5c16, type: 3}
   _itemsToReloadTo: 0
-  _timeToScroll: 0
+  _timeToScroll: 2
   _isSpeed: 0
   _isInstant: 0
 --- !u!1 &1362537419

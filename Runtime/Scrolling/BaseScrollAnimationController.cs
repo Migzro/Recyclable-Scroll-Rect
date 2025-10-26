@@ -36,4 +36,9 @@ namespace RecyclableScrollRect
             }
         }
     }
+    
+    public abstract class BaseScrollAnimationController<TEase> : BaseScrollAnimationController
+    {
+        public abstract void ScrollToNormalizedPosition(float targetNormalizedPos, float time, bool isSpeed, bool instant, TEase ease, Action onFinished);
+    }
 }

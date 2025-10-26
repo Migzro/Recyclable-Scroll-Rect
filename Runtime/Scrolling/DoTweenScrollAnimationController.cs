@@ -6,15 +6,14 @@ using DG.Tweening;
 
 namespace RecyclableScrollRect
 {
-    public class DoTweenScrollAnimationController : BaseScrollAnimationController
+#if DOTWEEN
+    public class DoTweenScrollAnimationController : BaseScrollAnimationController<Ease>
     {
-#if DOTWEEN
-        public Ease ease;
-#endif
-        
         public override void ScrollToNormalizedPosition(float targetNormalizedPos, float time, bool isSpeed, bool instant, Action onFinished)
+            => ScrollToNormalizedPosition(targetNormalizedPos, time, isSpeed, instant, Ease.Linear, onFinished);
+        
+        public override void ScrollToNormalizedPosition(float targetNormalizedPos, float time, bool isSpeed, bool instant, Ease ease, Action onFinished)
         {
-#if DOTWEEN
             targetNormalizedPos = Mathf.Clamp01(targetNormalizedPos);
             if (instant)
             {
@@ -38,17 +37,11 @@ namespace RecyclableScrollRect
                     )
                     .SetEase(ease).SetSpeedBased(isSpeed).OnComplete(() => { onFinished?.Invoke(); });
             }
-#else
-            Debug.LogError("DoTween is not present in the project. Please install DoTween from the Asset Store to use DoTweenScroll.");
-#endif
         }
 
         public override void ScrollToItem(int itemIndex, bool callEvent = true, bool instant = false, float maxSpeedMultiplier = 1, float offset = 0)
         {
-#if DOTWEEN
-#else
-            Debug.LogError("DoTween is not present in the project. Please install DoTween from the Asset Store to use DoTweenScroll.");
-#endif
         }
     }
+#endif
 }

@@ -86,9 +86,9 @@ namespace RecyclableScrollRect
             }
         }
 
-        protected override void PerformPostScrollingActions(int itemIndex, bool instant)
+        protected override void PerformPostScrollingActions(int itemIndex)
         {
-            base.PerformPostScrollingActions(itemIndex, instant);
+            base.PerformPostScrollingActions(itemIndex);
             
             if (_currentPage != itemIndex)
             {

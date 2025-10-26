@@ -805,14 +805,15 @@ namespace RecyclableScrollRect
         /// <param name="time">speed/time to scroll with</param>
         /// <param name="isSpeed">scrolls to top right using time value as speed</param>
         /// <param name="instant">instant scroll</param>
-        public void ScrollToTopRight(float time = -1, bool isSpeed = false, bool instant = false)
+        /// <param name="ease">Tweening ease if DoTween or PrimeTween are being used</param>
+        public void ScrollToTopRight(float time = -1, bool isSpeed = false, bool instant = false, object ease = null)
         {
             if (time <= 0 && !instant)
             {
                 Debug.LogWarning("Cannot scroll to top right with time of less than 0 while instant is false, setting time to 1");
                 time = 1;
             }
-            ScrollToNormalisedPosition(vertical ? 1 : 0, time, isSpeed, instant);
+            ScrollToNormalisedPosition(vertical ? 1 : 0, time, isSpeed, instant, ease);
         }
 
         /// <summary>
@@ -822,15 +823,33 @@ namespace RecyclableScrollRect
         /// <param name="time">speed/time to scroll with</param>
         /// <param name="isSpeed">scrolls to top right using time value as speed</param>
         /// <param name="instant">instant scroll</param>
+        /// <param name="ease">Tweening ease if DoTween or PrimeTween are being used</param>
         /// <returns></returns>
-        private void ScrollToNormalisedPosition(float targetNormalisedPos, float time, bool isSpeed, bool instant)
+        private void ScrollToNormalisedPosition(float targetNormalisedPos, float time, bool isSpeed, bool instant, object ease = null)
         {
-            StopMovement();
+            // TODO: check this condition in horizontal as well
             PerformPreScrollingActions(0, targetNormalisedPos > normalizedPosition[_axis] ? 1 : -1);
-            _scrollAnimationController.ScrollToNormalizedPosition(targetNormalisedPos, time, isSpeed, instant, () =>
+
+            switch (_scrollAnimationController)
             {
-                PerformPostScrollingActions(0, instant);
-            });
+#if DOTWEEN
+                case DoTweenScrollAnimationController doTween:
+                    var doEase = ease is DG.Tweening.Ease de ? de : DG.Tweening.Ease.Linear;
+                    doTween.ScrollToNormalizedPosition(targetNormalisedPos, time, isSpeed, instant, doEase, () => PerformPostScrollingActions(0));
+                    break;
+#endif
+
+#if PRIMETWEEN
+                case PrimeTweenScrollAnimationController primeTween:
+                    var primeEase = ease is PrimeTween.Ease pe ? pe : PrimeTween.Ease.Linear;
+                    primeTween.ScrollToNormalizedPosition(targetNormalisedPos, time, isSpeed, instant, primeEase, () => PerformPostScrollingActions(0));
+                    break;
+#endif
+
+                default:
+                    _scrollAnimationController.ScrollToNormalizedPosition(targetNormalisedPos, time, isSpeed, instant, () => PerformPostScrollingActions(0));
+                    break;
+            }
         }
 
         /// <summary>
@@ -845,7 +864,6 @@ namespace RecyclableScrollRect
         /// <param name="offset">value to offset target scroll position with</param>
         public void ScrollToItem(int itemIndex, bool callEvent = true, bool instant = false, float maxSpeedMultiplier = 1, float offset = 0)
         {
-            StopMovement();
             var direction = itemIndex > _currentPage ? 1 : -1;
             PerformPreScrollingActions(itemIndex, direction);
             
@@ -862,7 +880,7 @@ namespace RecyclableScrollRect
                     _dataSource.ScrolledToItem(_visibleItems[itemIndex].item, actualItemIndex);
                 }
 
-                PerformPostScrollingActions(itemIndex, true);
+                PerformPostScrollingActions(itemIndex);
             }
             else
             {
@@ -973,6 +991,7 @@ namespace RecyclableScrollRect
             content.anchoredPosition = contentTopLeftCorner;
             m_ContentStartPosition = contentTopLeftCorner;
 
+            // TODO why is this needed?
             if (reachedItem)
                 StopMovement();
 
@@ -996,18 +1015,18 @@ namespace RecyclableScrollRect
                     }
                 }
 
-                PerformPostScrollingActions(itemIndex, false);
+                PerformPostScrollingActions(itemIndex);
             }
         }
 
         protected virtual void PerformPreScrollingActions(int itemIndex, int direction)
         {
+            StopMovement();
             _ignoreSetItemDataIndices.Clear();
             _isAnimating = true;
         }
-        
 
-        protected virtual void PerformPostScrollingActions(int itemIndex, bool instant)
+        protected virtual void PerformPostScrollingActions(int itemIndex)
         {
             _ignoreSetItemDataIndices.Clear();
             _isAnimating = false;

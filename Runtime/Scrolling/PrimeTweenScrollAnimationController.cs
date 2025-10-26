@@ -6,15 +6,14 @@ using PrimeTween;
 
 namespace RecyclableScrollRect
 {
-    public class PrimeTweenScrollAnimationController : BaseScrollAnimationController
+#if PRIMETWEEN
+    public class PrimeTweenScrollAnimationController : BaseScrollAnimationController<Ease>
     {
-#if PRIMETWEEN
-        public Ease ease;
-#endif
-
         public override void ScrollToNormalizedPosition(float targetNormalizedPos, float time, bool isSpeed, bool instant, Action onFinished)
+            => ScrollToNormalizedPosition(targetNormalizedPos, time, isSpeed, instant, Ease.Linear, onFinished);
+        
+        public override void ScrollToNormalizedPosition(float targetNormalizedPos, float time, bool isSpeed, bool instant, Ease ease, Action onFinished)
         {
-#if PRIMETWEEN
             targetNormalizedPos = Mathf.Clamp01(targetNormalizedPos);
             if (instant)
             {
@@ -43,17 +42,11 @@ namespace RecyclableScrollRect
                         })
                     .OnComplete(() => onFinished?.Invoke());
             }
-#else
-            Debug.LogError("Prime Tween is not present in the project. Please install Prime Tween to use PrimeTweenScroll.");
-#endif
         }
 
         public override void ScrollToItem(int itemIndex, bool callEvent = true, bool instant = false, float maxSpeedMultiplier = 1, float offset = 0)
         {
-#if PRIMETWEEN
-#else
-            Debug.LogError("Prime Tween is not present in the project. Please install Prime Tween to use PrimeTweenScroll.");
-#endif
         }
     }
+#endif
 }
