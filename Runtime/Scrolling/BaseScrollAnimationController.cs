@@ -1,3 +1,5 @@
+// Copyright (c) 2025 Maged Farid
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 using System;
 using UnityEngine;
 
@@ -8,8 +10,7 @@ namespace RecyclableScrollRect
     {
         [SerializeField] protected RSRBase _scrollRect;
 
-        public abstract void ScrollToNormalizedPosition(float targetNormalizedPosition, float time, bool isSpeed, bool instant, Action onFinished);
-        public abstract void ScrollToContentPosition(float targetContentPosition, float time, bool isSpeed, bool instant, Action onFinished);
+        public abstract void ScrollToContentPosition(float targetContentPosition, float timeOrSpeed, bool isSpeed, Action onFinished);
         public abstract float StopCurrentAnimation();
         
         private void Start()
@@ -40,7 +41,6 @@ namespace RecyclableScrollRect
     
     public abstract class BaseScrollAnimationController<TEase> : BaseScrollAnimationController
     {
-        public abstract void ScrollToNormalizedPosition(float targetNormalizedPosition, float time, bool isSpeed, bool instant, TEase ease, Action onFinished);
-        public abstract void ScrollToContentPosition(float targetContentPosition, float time, bool isSpeed, bool instant, TEase ease, Action onFinished);
+        public abstract void ScrollToContentPosition(float targetContentPosition, float timeOrSpeed, bool isSpeed, TEase ease, Action onFinished);
     }
 }

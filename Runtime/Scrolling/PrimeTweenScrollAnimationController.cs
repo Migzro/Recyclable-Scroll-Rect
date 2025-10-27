@@ -1,3 +1,5 @@
+// Copyright (c) 2025 Maged Farid
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 using System;
 using UnityEngine;
 #if PRIMETWEEN
@@ -11,60 +13,23 @@ namespace RecyclableScrollRect
     {
         private Tween _currentTween;
 
-        public override void ScrollToNormalizedPosition(float targetNormalizedPosition, float time, bool isSpeed, bool instant, Action onFinished)
-            => ScrollToNormalizedPosition(targetNormalizedPosition, time, isSpeed, instant, Ease.Linear, onFinished);
+        public override void ScrollToContentPosition(float targetContentPosition, float timeOrSpeed, bool isSpeed, Action onFinished)
+            => ScrollToContentPosition(targetContentPosition, timeOrSpeed, isSpeed, Ease.Linear, onFinished);
 
-        public override void ScrollToContentPosition(float targetContentPosition, float time, bool isSpeed, bool instant, Action onFinished)
-            => ScrollToContentPosition(targetContentPosition, time, isSpeed, instant, Ease.Linear, onFinished);
-
-        public override void ScrollToNormalizedPosition(float targetNormalizedPosition, float time, bool isSpeed, bool instant, Ease ease, Action onFinished)
+        public override void ScrollToContentPosition(float targetContentPosition, float timeOrSpeed, bool isSpeed, Ease ease, Action onFinished)
         {
-            targetNormalizedPosition = Mathf.Clamp01(targetNormalizedPosition);
-            if (instant)
+            if (isSpeed)
             {
-                _scrollRect.SetNormalizedPosition(targetNormalizedPosition);
-                onFinished?.Invoke();
+                // calculate time from speed
+                timeOrSpeed = Mathf.Abs(targetContentPosition - _scrollRect.ContentPosition) / timeOrSpeed;
             }
-            else
-            {
-                if (isSpeed)
-                {
-                    // calculate time from speed
-                    time = Mathf.Abs(targetNormalizedPosition - _scrollRect.GetNormalizedPosition) / time;
-                }
-
-                _currentTween = Tween.Custom(
-                        startValue: _scrollRect.GetNormalizedPosition,
-                        endValue: targetNormalizedPosition,
-                        duration: time,
-                        ease: ease,
-                        onValueChange: val => _scrollRect.SetNormalizedPosition(val))
-                    .OnComplete(() => onFinished?.Invoke());
-            }
-        }
-
-        public override void ScrollToContentPosition(float targetContentPosition, float time, bool isSpeed, bool instant, Ease ease, Action onFinished)
-        {
-            if (instant)
-            {
-                _scrollRect.SetContentPosition(targetContentPosition);
-                onFinished?.Invoke();
-            }
-            else
-            {
-                if (isSpeed)
-                {
-                    // calculate time from speed
-                    time = Mathf.Abs(targetContentPosition - _scrollRect.GetContentPosition) / time;
-                }
-                _currentTween = Tween.Custom(
-                        startValue: _scrollRect.GetNormalizedPosition,
-                        endValue: targetContentPosition,
-                        duration: time,
-                        ease: ease,
-                        onValueChange: val => _scrollRect.SetContentPosition(val))
-                    .OnComplete(() => onFinished?.Invoke());
-            }
+            _currentTween = Tween.Custom(
+                    startValue: _scrollRect.ContentPosition,
+                    endValue: targetContentPosition,
+                    duration: timeOrSpeed,
+                    ease: ease,
+                    onValueChange: val => _scrollRect.ContentPosition = val)
+                .OnComplete(() => onFinished?.Invoke());
         }
 
         public override float StopCurrentAnimation()

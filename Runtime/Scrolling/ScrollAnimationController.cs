@@ -1,110 +1,65 @@
+// Copyright (c) 2025 Maged Farid
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 using System;
-using System.Collections;
 using UnityEngine;
 
 namespace RecyclableScrollRect
 {
     public class ScrollAnimationController : BaseScrollAnimationController
     {
-        private bool _stopAnimation;
-        private float _timeLeft;
-        
-        public override void ScrollToNormalizedPosition(float targetNormalizedPosition, float time, bool isSpeed, bool instant, Action onFinished)
+        private bool _animating;
+        private float _start;
+        private float _target;
+        private float _duration;
+        private float _elapsed;
+        private Action _onFinished;
+
+        public override void ScrollToContentPosition(float targetContentPosition, float timeOrSpeed, bool isSpeed, Action onFinished)
         {
-            if (instant)
+            _onFinished = onFinished;
+            _start = _scrollRect.ContentPosition;
+            _target = targetContentPosition;
+
+            var distance = Mathf.Abs(_target - _start);
+            _duration = Mathf.Max(0.0001f, isSpeed ? distance / timeOrSpeed : timeOrSpeed);
+            
+            _elapsed = 0f;
+            _animating = true;
+
+            Debug.LogError($"[ScrollAnimationController] Animation started (target={_target}, duration={_duration:0.00}s)");
+        }
+
+        private void LateUpdate()
+        {
+            if (!_animating)
             {
-                FinishNormalizedAnimation(targetNormalizedPosition, onFinished);
+                return;
             }
-            else
+
+            _elapsed += Time.smoothDeltaTime;
+            var t = Mathf.Clamp01(_elapsed / _duration);
+
+            _scrollRect.ContentPosition = Mathf.Lerp(_start, _target, t);
+
+            if (_elapsed >= _duration)
             {
-                StartCoroutine(ScrollToNormalizedPositionInternal(targetNormalizedPosition, time, isSpeed, onFinished));
+                _scrollRect.ContentPosition = _target;
+                StopCurrentAnimation();
             }
         }
 
-        public override void ScrollToContentPosition(float targetContentPosition, float time, bool isSpeed, bool instant, Action onFinished)
-        {
-            if (instant)
-            {
-                FinishContentAnimation(targetContentPosition, onFinished);
-            }
-            else
-            {
-                StartCoroutine(ScrollToContentPositionInternal(targetContentPosition, time, isSpeed, onFinished));
-            }
-        }
-
-        private IEnumerator ScrollToNormalizedPositionInternal(float targetNormalizedPosition, float time, bool isSpeed, Action onFinished)
-        {
-            var current = _scrollRect.GetNormalizedPosition;
-            var distance = Mathf.Abs(targetNormalizedPosition - current);
-            var duration = isSpeed ? (distance / Mathf.Max(time, 0.0001f)) : time;
-            var start = current;
-            var elapsed = 0f;
-
-            while (elapsed < duration)
-            {
-                if (_stopAnimation)
-                {
-                    _stopAnimation = false;
-                    yield break;
-                }
-
-                elapsed += Time.deltaTime;
-                _timeLeft = duration - elapsed;
-                var t = Mathf.Clamp01(elapsed / duration);
-                var easedT = isSpeed ? t : Mathf.SmoothStep(0f, 1f, t);
-                current = Mathf.Lerp(start, targetNormalizedPosition, easedT);
-                _scrollRect.SetNormalizedPosition(current);
-                yield return null;
-            }
-
-            FinishNormalizedAnimation(targetNormalizedPosition, onFinished);
-        }
-        
-        private IEnumerator ScrollToContentPositionInternal(float targetContentPosition, float time, bool isSpeed, Action onFinished)
-        {
-            var current = _scrollRect.GetContentPosition;
-            var distance = Mathf.Abs(targetContentPosition - current);
-            var duration = isSpeed ? (distance / Mathf.Max(time, 0.0001f)) : time;
-            var start = current;
-            var elapsed = 0f;
-
-            while (elapsed < duration)
-            {
-                if (_stopAnimation)
-                {
-                    _stopAnimation = false;
-                    yield break;
-                }
-
-                elapsed += Time.deltaTime;
-                _timeLeft = duration - elapsed;
-                var t = Mathf.Clamp01(elapsed / duration);
-                var easedT = isSpeed ? t : Mathf.SmoothStep(0f, 1f, t);
-                current = Mathf.Lerp(start, targetContentPosition, easedT);
-                _scrollRect.SetContentPosition(current);
-                yield return null;
-            }
-
-            FinishContentAnimation(targetContentPosition, onFinished);
-        }
-        
         public override float StopCurrentAnimation()
         {
-            _stopAnimation = true;
-            return _timeLeft;
-        }
-        
-        private void FinishNormalizedAnimation(float targetNormalizedPosition, Action onFinished)
-        {
-            _scrollRect.SetNormalizedPosition(targetNormalizedPosition);
-            onFinished?.Invoke();
-        }
-        
-        private void FinishContentAnimation(float targetContentPosition, Action onFinished)
-        {
-            _scrollRect.SetContentPosition(targetContentPosition);
-            onFinished?.Invoke();
+            if (!_animating)
+            {
+                return 0f;
+            }
+
+            Debug.LogError($"[ScrollAnimationController] Animation ended after {_elapsed:0.00}s");
+            _animating = false;
+            _onFinished?.Invoke();
+
+            return _duration - _elapsed;
         }
     }
 }
