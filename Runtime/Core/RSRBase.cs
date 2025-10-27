@@ -32,7 +32,6 @@ namespace RecyclableScrollRect
         
         protected int _axis;
         protected int _itemsCount;
-        protected int _currentPage;
         protected int _minVisibleRowColumnInViewPort;
         protected int _maxVisibleRowColumnInViewPort;
         protected int _minExtraVisibleRowColumnInViewPort;
@@ -61,7 +60,6 @@ namespace RecyclableScrollRect
         private MovementType _initialMovementType;
 
         public bool IsInitialized { get; private set; }
-        public int Axis => _axis;
         protected abstract bool ReachedMinRowColumnInViewPort { get; }
         protected abstract bool ReachedMaxRowColumnInViewPort { get; }
         protected abstract bool IsLastRowColumn(int itemIndex);
@@ -140,8 +138,6 @@ namespace RecyclableScrollRect
             _maxVisibleRowColumnInViewPort = 0;
             _maxExtraVisibleRowColumnInViewPort = 0;
             
-            _currentPage = 0;
-
             var zeroContentPosition = content.anchoredPosition;
             zeroContentPosition[_axis] = 0;
             m_ContentStartPosition = zeroContentPosition;
@@ -813,43 +809,142 @@ namespace RecyclableScrollRect
                 Debug.LogWarning("Cannot scroll to top right with time of less than 0 while instant is false, setting time to 1");
                 time = 1;
             }
-            ScrollToNormalisedPosition(vertical ? 1 : 0, time, isSpeed, instant, ease);
+            PerformPreScrollingActions(0);
+            ScrollToContentPosition(0, time, isSpeed, instant, ease, () => AnimationFinished(0, true));
+        }
+        
+        public void ScrollToItemIndex(int itemIndex, float time = -1, bool instant = false, bool callEvent = false, object ease = null)
+        {
+            StopCoroutine(nameof(ScrollToItemIndexRoutine));
+            StartCoroutine(ScrollToItemIndexRoutine(itemIndex, time, instant, callEvent, ease));
+        }
+        
+        private IEnumerator ScrollToItemIndexRoutine(int itemIndex, float time, bool instant, bool callEvent, object ease)
+        {
+            PerformPreScrollingActions(itemIndex);
+            var itemPosition = _itemPositions[itemIndex];
+            var finished = false;
+
+            var animationTime = time;
+            Debug.LogError(animationTime);
+            while (!itemPosition.positionSet)
+            {
+                Debug.Log($"Approximate scroll attempt");
+
+                finished = false; 
+                ScrollToApproximatePosition(itemIndex, animationTime, instant, ease, () =>
+                {
+                    Debug.LogError("Animation Finished");
+                    finished = true;
+                });
+
+                yield return new WaitUntil(() => finished || itemPosition.positionSet);
+
+                animationTime = 0;
+                if (itemPosition.positionSet)
+                {
+                    Debug.LogError("Position set");
+                    animationTime = _scrollAnimationController.StopCurrentAnimation();
+                    break;
+                }
+            }
+            
+            Debug.LogError($"Final scroll to known position {animationTime}");
+            ScrollToContentPosition(itemPosition.absTopLeftPosition[_axis], animationTime, instant, true, ease, () => AnimationFinished(itemIndex, callEvent));
         }
 
-        /// <summary>
-        /// A loop for animating to a desired NormalisedPosition
-        /// </summary>
-        /// <param name="targetNormalisedPos">required normalisedPosition</param>
-        /// <param name="time">speed/time to scroll with</param>
-        /// <param name="isSpeed">scrolls to top right using time value as speed</param>
-        /// <param name="instant">instant scroll</param>
-        /// <param name="ease">Tweening ease if DoTween or PrimeTween are being used</param>
-        /// <returns></returns>
-        private void ScrollToNormalisedPosition(float targetNormalisedPos, float time, bool isSpeed, bool instant, object ease = null)
+        private void ScrollToNormalisedPosition(float targetNormalizedPosition, float time, bool isSpeed, bool instant, object ease = null, Action animationFinished = null)
         {
-            // TODO: check this condition in horizontal as well
-            PerformPreScrollingActions(0, targetNormalisedPos > normalizedPosition[_axis] ? 1 : -1);
-
             switch (_scrollAnimationController)
             {
 #if DOTWEEN
                 case DoTweenScrollAnimationController doTween:
                     var doEase = ease is DG.Tweening.Ease de ? de : DG.Tweening.Ease.Linear;
-                    doTween.ScrollToNormalizedPosition(targetNormalisedPos, time, isSpeed, instant, doEase, () => PerformPostScrollingActions(0));
+                    doTween.ScrollToNormalizedPosition(targetNormalizedPosition, time, isSpeed, instant, doEase, () => animationFinished?.Invoke());
                     break;
 #endif
 
 #if PRIMETWEEN
                 case PrimeTweenScrollAnimationController primeTween:
                     var primeEase = ease is PrimeTween.Ease pe ? pe : PrimeTween.Ease.Linear;
-                    primeTween.ScrollToNormalizedPosition(targetNormalisedPos, time, isSpeed, instant, primeEase, () => PerformPostScrollingActions(0));
+                    primeTween.ScrollToNormalizedPosition(targetNormalizedPosition, time, isSpeed, instant, primeEase, () => animationFinished?.Invoke());
                     break;
 #endif
 
                 default:
-                    _scrollAnimationController.ScrollToNormalizedPosition(targetNormalisedPos, time, isSpeed, instant, () => PerformPostScrollingActions(0));
+                    _scrollAnimationController.ScrollToNormalizedPosition(targetNormalizedPosition, time, isSpeed, instant, () => animationFinished?.Invoke());
                     break;
             }
+        }
+        
+        private void ScrollToApproximatePosition(int itemIndex, float time = -1, bool instant = false, object ease = null, Action animationFinished = null)
+        {
+            var averageItemSize = 0f;
+            var totalItems = 0;
+            for (var i = 0; i < _itemsCount; i++)
+            {
+                if (_itemPositions[i].sizeSet)
+                {
+                    averageItemSize += _itemPositions[i].itemSize[_axis];
+                    totalItems++;
+                }
+            }
+            averageItemSize = averageItemSize / totalItems;
+                
+            var estimatedItemTop = itemIndex * (averageItemSize + _spacing[_axis]);
+            ScrollToContentPosition(estimatedItemTop, time, false, instant, ease, animationFinished);
+        }
+        
+        private void ScrollToContentPosition(float targetContentPosition, float time, bool isSpeed, bool instant, object ease = null, Action animationFinished = null)
+        {
+            switch (_scrollAnimationController)
+            {
+#if DOTWEEN
+                case DoTweenScrollAnimationController doTween:
+                    var doEase = ease is DG.Tweening.Ease de ? de : DG.Tweening.Ease.Linear;
+                    doTween.ScrollToContentPosition(targetContentPosition, time, isSpeed, instant, doEase, () => animationFinished?.Invoke());
+                    break;
+#endif
+
+#if PRIMETWEEN
+                case PrimeTweenScrollAnimationController primeTween:
+                    var primeEase = ease is PrimeTween.Ease pe ? pe : PrimeTween.Ease.Linear;
+                    primeTween.ScrollToContentPosition(targetContentPosition, time, isSpeed, instant, primeEase, () => animationFinished?.Invoke());
+                    break;
+#endif
+
+                default:
+                    _scrollAnimationController.ScrollToContentPosition(targetContentPosition, time, isSpeed, instant, () => animationFinished?.Invoke());
+                    break;
+            }
+        }
+
+        private void AnimationFinished(int itemIndex, bool callEvent)
+        {
+            PerformPostScrollingActions(itemIndex);
+            if (callEvent)
+            {
+                var actualItemIndex = GetActualItemIndex(itemIndex);
+                _dataSource.ScrolledToItem(_visibleItems[itemIndex].item, actualItemIndex);
+            }
+        }
+        
+        internal float GetContentPosition => content.anchoredPosition[_axis];
+        internal float GetNormalizedPosition => normalizedPosition[_axis];
+
+        internal void SetNormalizedPosition(float position)
+        {
+            var currentNormalizedPosition = normalizedPosition;  
+            currentNormalizedPosition[_axis] = position;
+            normalizedPosition = currentNormalizedPosition;
+        }
+        
+        internal void SetContentPosition (float position)
+        {
+            var currentAnchoredPosition = content.anchoredPosition;
+            currentAnchoredPosition[_axis] = position;
+            content.anchoredPosition = currentAnchoredPosition;
+            m_ContentStartPosition = currentAnchoredPosition;
         }
 
         /// <summary>
@@ -864,8 +959,7 @@ namespace RecyclableScrollRect
         /// <param name="offset">value to offset target scroll position with</param>
         public void ScrollToItem(int itemIndex, bool callEvent = true, bool instant = false, float maxSpeedMultiplier = 1, float offset = 0)
         {
-            var direction = itemIndex > _currentPage ? 1 : -1;
-            PerformPreScrollingActions(itemIndex, direction);
+            PerformPreScrollingActions(itemIndex);
             
             var itemVisiblePositionKnown = _itemPositions[itemIndex].positionSet && _visibleItems.ContainsKey(itemIndex);
             if (itemVisiblePositionKnown && instant)
@@ -927,6 +1021,7 @@ namespace RecyclableScrollRect
                         speedToUse *= maxSpeedMultiplier;
                 }
 
+                var direction = 1;
                 var increment = speedToUse * direction * (vertical ? 1 : -1);
                 StartCoroutine(StartScrolling(increment, direction, itemIndex, callEvent, offset));
             }
@@ -1019,7 +1114,7 @@ namespace RecyclableScrollRect
             }
         }
 
-        protected virtual void PerformPreScrollingActions(int itemIndex, int direction)
+        protected virtual void PerformPreScrollingActions(int itemIndex)
         {
             StopMovement();
             _ignoreSetItemDataIndices.Clear();

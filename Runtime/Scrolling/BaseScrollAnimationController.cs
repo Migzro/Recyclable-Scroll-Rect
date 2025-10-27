@@ -8,8 +8,9 @@ namespace RecyclableScrollRect
     {
         [SerializeField] protected RSRBase _scrollRect;
 
-        public abstract void ScrollToNormalizedPosition(float targetNormalizedPos, float time, bool isSpeed, bool instant, Action onFinished);
-        public abstract void ScrollToItem(int itemIndex, bool callEvent = true, bool instant = false, float maxSpeedMultiplier = 1, float offset = 0);
+        public abstract void ScrollToNormalizedPosition(float targetNormalizedPosition, float time, bool isSpeed, bool instant, Action onFinished);
+        public abstract void ScrollToContentPosition(float targetContentPosition, float time, bool isSpeed, bool instant, Action onFinished);
+        public abstract float StopCurrentAnimation();
         
         private void Start()
         {
@@ -39,6 +40,7 @@ namespace RecyclableScrollRect
     
     public abstract class BaseScrollAnimationController<TEase> : BaseScrollAnimationController
     {
-        public abstract void ScrollToNormalizedPosition(float targetNormalizedPos, float time, bool isSpeed, bool instant, TEase ease, Action onFinished);
+        public abstract void ScrollToNormalizedPosition(float targetNormalizedPosition, float time, bool isSpeed, bool instant, TEase ease, Action onFinished);
+        public abstract void ScrollToContentPosition(float targetContentPosition, float time, bool isSpeed, bool instant, TEase ease, Action onFinished);
     }
 }

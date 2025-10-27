@@ -6,69 +6,105 @@ namespace RecyclableScrollRect
 {
     public class ScrollAnimationController : BaseScrollAnimationController
     {
-        public override void ScrollToNormalizedPosition(float targetNormalizedPos, float time, bool isSpeed, bool instant, Action onFinished)
+        private bool _stopAnimation;
+        private float _timeLeft;
+        
+        public override void ScrollToNormalizedPosition(float targetNormalizedPosition, float time, bool isSpeed, bool instant, Action onFinished)
         {
             if (instant)
             {
-                FinishAnimation(targetNormalizedPos, onFinished);
+                FinishNormalizedAnimation(targetNormalizedPosition, onFinished);
             }
             else
             {
-                StartCoroutine(ScrollToNormalizedPositionInternal(targetNormalizedPos, time, isSpeed, onFinished));
+                StartCoroutine(ScrollToNormalizedPositionInternal(targetNormalizedPosition, time, isSpeed, onFinished));
             }
         }
-        
-        private IEnumerator ScrollToNormalizedPositionInternal(float targetNormalizedPos, float time, bool isSpeed, Action onFinished)
+
+        public override void ScrollToContentPosition(float targetContentPosition, float time, bool isSpeed, bool instant, Action onFinished)
         {
-            var normalizedPosition = _scrollRect.normalizedPosition;
-            var current = Mathf.Clamp01(normalizedPosition[_scrollRect.Axis]);
-            targetNormalizedPos = Mathf.Clamp01(targetNormalizedPos);
-
-            if (Mathf.Abs(targetNormalizedPos - current) <= 0.001f)
+            if (instant)
             {
-                FinishAnimation(targetNormalizedPos, onFinished);
-                yield break;
-            }
-
-            if (isSpeed)
-            {
-                while (Mathf.Abs(targetNormalizedPos - current) > 0.001f)
-                {
-                    current = Mathf.MoveTowards(current, targetNormalizedPos, time * Time.deltaTime);
-                    normalizedPosition[_scrollRect.Axis] = current;
-                    _scrollRect.normalizedPosition = normalizedPosition;
-                    yield return null;
-                }
+                FinishContentAnimation(targetContentPosition, onFinished);
             }
             else
             {
-                var start = current;
-                var elapsed = 0f;
-                while (elapsed < time)
+                StartCoroutine(ScrollToContentPositionInternal(targetContentPosition, time, isSpeed, onFinished));
+            }
+        }
+
+        private IEnumerator ScrollToNormalizedPositionInternal(float targetNormalizedPosition, float time, bool isSpeed, Action onFinished)
+        {
+            var current = _scrollRect.GetNormalizedPosition;
+            var distance = Mathf.Abs(targetNormalizedPosition - current);
+            var duration = isSpeed ? (distance / Mathf.Max(time, 0.0001f)) : time;
+            var start = current;
+            var elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                if (_stopAnimation)
                 {
-                    elapsed += Time.deltaTime;
-                    var t = Mathf.Clamp01(elapsed / time);
-                    var easedT = Mathf.SmoothStep(0f, 1f, t);
-                    current = Mathf.Lerp(start, targetNormalizedPos, easedT);
-                    normalizedPosition[_scrollRect.Axis] = current;
-                    _scrollRect.normalizedPosition = normalizedPosition;
-                    yield return null;
+                    _stopAnimation = false;
+                    yield break;
                 }
+
+                elapsed += Time.deltaTime;
+                _timeLeft = duration - elapsed;
+                var t = Mathf.Clamp01(elapsed / duration);
+                var easedT = isSpeed ? t : Mathf.SmoothStep(0f, 1f, t);
+                current = Mathf.Lerp(start, targetNormalizedPosition, easedT);
+                _scrollRect.SetNormalizedPosition(current);
+                yield return null;
             }
 
-            FinishAnimation(targetNormalizedPos, onFinished);
+            FinishNormalizedAnimation(targetNormalizedPosition, onFinished);
         }
         
-        private void FinishAnimation(float targetNormalizedPos, Action onFinished)
+        private IEnumerator ScrollToContentPositionInternal(float targetContentPosition, float time, bool isSpeed, Action onFinished)
         {
-            var normalizedPosition = _scrollRect.normalizedPosition;
-            normalizedPosition[_scrollRect.Axis] = Mathf.Clamp01(targetNormalizedPos);
-            _scrollRect.normalizedPosition = normalizedPosition;
+            var current = _scrollRect.GetContentPosition;
+            var distance = Mathf.Abs(targetContentPosition - current);
+            var duration = isSpeed ? (distance / Mathf.Max(time, 0.0001f)) : time;
+            var start = current;
+            var elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                if (_stopAnimation)
+                {
+                    _stopAnimation = false;
+                    yield break;
+                }
+
+                elapsed += Time.deltaTime;
+                _timeLeft = duration - elapsed;
+                var t = Mathf.Clamp01(elapsed / duration);
+                var easedT = isSpeed ? t : Mathf.SmoothStep(0f, 1f, t);
+                current = Mathf.Lerp(start, targetContentPosition, easedT);
+                _scrollRect.SetContentPosition(current);
+                yield return null;
+            }
+
+            FinishContentAnimation(targetContentPosition, onFinished);
+        }
+        
+        public override float StopCurrentAnimation()
+        {
+            _stopAnimation = true;
+            return _timeLeft;
+        }
+        
+        private void FinishNormalizedAnimation(float targetNormalizedPosition, Action onFinished)
+        {
+            _scrollRect.SetNormalizedPosition(targetNormalizedPosition);
             onFinished?.Invoke();
         }
-
-        public override void ScrollToItem(int itemIndex, bool callEvent = true, bool instant = false, float maxSpeedMultiplier = 1, float offset = 0)
+        
+        private void FinishContentAnimation(float targetContentPosition, Action onFinished)
         {
+            _scrollRect.SetContentPosition(targetContentPosition);
+            onFinished?.Invoke();
         }
     }
 }

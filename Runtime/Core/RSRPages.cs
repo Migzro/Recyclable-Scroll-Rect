@@ -10,12 +10,14 @@ namespace RecyclableScrollRect
         [SerializeField] protected float _swipeThreshold = 200;
 
         private IPageSource _pageSource;
+        private int _currentPage;
         private bool _isDragging;
         private bool _forceCallWillFocusAfterAnimation;
 
         protected override void Initialize()
         {
             _pageSource = (IPageSource)_dataSource;
+            _currentPage = 0;
             base.Initialize();
         }
 
@@ -41,12 +43,13 @@ namespace RecyclableScrollRect
             }
         }
         
-        protected override void PerformPreScrollingActions(int itemIndex, int direction)
+        protected override void PerformPreScrollingActions(int itemIndex)
         {
-            base.PerformPreScrollingActions(itemIndex, direction);
+            base.PerformPreScrollingActions(itemIndex);
             
             // create a list that will stop ScrollTo method from calling SetItemData on items that will only be visible in the one frame while scrolling, this assumes
             // that the paging item is taking up the entire width or height
+            var direction = itemIndex > _currentPage ? 1 : -1;
             var endingIndex = itemIndex;
             if (direction > 0)
             {
