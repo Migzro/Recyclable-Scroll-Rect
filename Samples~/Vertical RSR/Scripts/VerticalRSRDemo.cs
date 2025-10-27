@@ -11,10 +11,7 @@ namespace RecyclableScrollRect
         [SerializeField] private RSR _scrollRect;
         [SerializeField] private GameObject[] _prototypeItems;
         [SerializeField] private int _itemsToReloadTo;
-        [SerializeField] private float _timeToScroll;
-        [SerializeField] private bool _isSpeed;
-        [SerializeField] private bool _isInstant;
-
+        
         private List<string> _dataSource;
         private int _itemCount;
 
@@ -36,12 +33,6 @@ namespace RecyclableScrollRect
             _dataSource.RemoveRange(_itemsToReloadTo, _itemsCount - _itemsToReloadTo);
             _itemsCount = _itemsToReloadTo;
             _scrollRect.ReloadData(true);
-        }
-        
-        [ContextMenu(nameof(ScrollToTopRight))]
-        public void ScrollToTopRight()
-        {
-            _scrollRect.ScrollToTopRight(_timeToScroll, _isSpeed, _isInstant);
         }
 
         public float GetItemSize(int itemIndex)
