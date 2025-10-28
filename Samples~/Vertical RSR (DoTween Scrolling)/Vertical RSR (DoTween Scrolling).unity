@@ -257,7 +257,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: RecyclableScrollRect::RecyclableScrollRect.DemoScrollingHelper
   _scrollRect: {fileID: 1904557393}
   _itemToScrollTo: 50
-  _timeToScroll: 2
+  _timeToScroll: 5
   _targetNormalizedPosition: 0
   _isSpeed: 0
   _isInstant: 0
@@ -580,7 +580,7 @@ MonoBehaviour:
   _scrollAnimationController: {fileID: 1904557394}
   _childForceExpand: 1
   _reverseArrangement: 0
-  _extraItemsVisible: 20
+  _extraItemsVisible: 5
 --- !u!114 &1904557394
 MonoBehaviour:
   m_ObjectHideFlags: 0
