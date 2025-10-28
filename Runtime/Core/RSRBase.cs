@@ -845,7 +845,7 @@ namespace RecyclableScrollRect
         public void ScrollToNormalisedPosition(float targetNormalizedPosition, float timeOrSpeed = -1, bool isSpeed = false, bool instant = false, object ease = null)
         {
             targetNormalizedPosition = Mathf.Clamp01(targetNormalizedPosition);
-            var targetContentPosition = (content.rect.size[_axis] - _viewPortSize[_axis]) * targetNormalizedPosition;
+            var targetContentPosition = (content.rect.size[_axis] - _viewPortSize[_axis]) * targetNormalizedPosition * (vertical ? 1 : -1);
             ScrollToContentPosition(0, targetContentPosition, timeOrSpeed, isSpeed, instant, ease, state => PerformPostScrollingActions(false, state));
         }
         
@@ -870,7 +870,7 @@ namespace RecyclableScrollRect
             while (!itemPosition.positionSet)
             {
                 animationState = AnimationState.Animating; 
-                var estimatedItemTop = itemIndex * (AverageItemSize + _spacing[_axis]);
+                var estimatedItemTop = itemIndex * (AverageItemSize + _spacing[_axis]) * (vertical ? 1 : -1);
                 ScrollToContentPosition(itemIndex, estimatedItemTop, animationTimeLeft, isSpeed, instant, ease, state =>
                 {
                     animationState = state;
@@ -897,7 +897,7 @@ namespace RecyclableScrollRect
             }
             
             // if all item positions are known, we can clamp the content position to avoid over shooting
-            var itemPositionFinal = itemPosition.absTopLeftPosition[_axis];
+            var itemPositionFinal = itemPosition.absTopLeftPosition[_axis] * (vertical ? 1 : -1);
             if (AllItemsPositionsSet)
             {
                 itemPositionFinal = Mathf.Clamp(itemPosition.absTopLeftPosition[_axis], 0, content.rect.size[_axis] - _viewPortSize[_axis]);
