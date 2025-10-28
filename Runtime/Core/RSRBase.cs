@@ -852,11 +852,6 @@ namespace RecyclableScrollRect
         /// <param name="ease">Tweening ease if DoTween or PrimeTween are being used</param>
         public void ScrollToTopRight(float timeOrSpeed = -1, bool isSpeed = false, bool instant = false, object ease = null)
         {
-            if (timeOrSpeed <= 0 && !instant)
-            {
-                Debug.LogWarning("Cannot scroll to top right with time of less than 0 while instant is false, setting time to 1");
-                timeOrSpeed = 1;
-            }
             PerformPreScrollingActions(0);
             ScrollToContentPosition(0, timeOrSpeed, isSpeed, instant, ease, () => AnimationFinished(0, false));
         }
@@ -918,7 +913,9 @@ namespace RecyclableScrollRect
         
         private void ScrollToContentPosition(float targetContentPosition, float timeOrSpeed, bool isSpeed, bool instant, object ease = null, Action animationFinished = null)
         {
-            if (instant || timeOrSpeed == 0)
+            // late update handles setting the movementType back to _movementType
+            movementType = MovementType.Unrestricted;
+            if (instant || timeOrSpeed <= 0)
             {
                 ContentPosition = targetContentPosition;
                 animationFinished?.Invoke();

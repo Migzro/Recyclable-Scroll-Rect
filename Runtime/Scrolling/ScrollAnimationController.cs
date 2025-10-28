@@ -29,7 +29,7 @@ namespace RecyclableScrollRect
             Debug.LogError($"[ScrollAnimationController] Animation started (target={_target}, duration={_duration:0.00}s)");
         }
 
-        private void LateUpdate()
+        private void Update()
         {
             if (!_animating)
             {
@@ -43,7 +43,6 @@ namespace RecyclableScrollRect
 
             if (_elapsed >= _duration)
             {
-                _scrollRect.ContentPosition = _target;
                 StopCurrentAnimation();
             }
         }
