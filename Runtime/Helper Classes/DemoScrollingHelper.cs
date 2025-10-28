@@ -6,7 +6,7 @@ namespace RecyclableScrollRect
 {
     public class DemoScrollingHelper : MonoBehaviour
     {
-        [SerializeField] private RSR _scrollRect;
+        [SerializeField] private RSRBase _scrollRect;
         [SerializeField] private int _itemToScrollTo;
         [SerializeField] private float _timeToScroll;
         [SerializeField] private float _targetNormalizedPosition;

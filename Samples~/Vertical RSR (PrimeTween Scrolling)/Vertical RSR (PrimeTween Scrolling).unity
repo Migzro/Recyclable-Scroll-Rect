@@ -132,6 +132,7 @@ GameObject:
   - component: {fileID: 658359681}
   - component: {fileID: 658359680}
   - component: {fileID: 658359684}
+  - component: {fileID: 658359685}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -242,6 +243,25 @@ MonoBehaviour:
   _timeToScroll: 2
   _isSpeed: 0
   _isInstant: 0
+--- !u!114 &658359685
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 658359679}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eaccc040569cd4426b12b2a2bfdfa0d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RecyclableScrollRect::RecyclableScrollRect.DemoScrollingHelper
+  _scrollRect: {fileID: 1904557393}
+  _itemToScrollTo: 50
+  _timeToScroll: 2
+  _targetNormalizedPosition: 0
+  _isSpeed: 0
+  _isInstant: 0
+  _callEvent: 1
 --- !u!1 &1362537419
 GameObject:
   m_ObjectHideFlags: 0
@@ -550,8 +570,6 @@ MonoBehaviour:
   _showUsingCanvasGroupAlpha: 1
   _pullToRefreshThreshold: 150
   _pushToCloseThreshold: 150
-  _useConstantScrollingSpeed: 0
-  _constantScrollingSpeed: 0
   _spacing: {x: 0, y: 10}
   _padding:
     m_Left: 0
@@ -576,7 +594,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: RecyclableScrollRect::RecyclableScrollRect.PrimeTweenScrollAnimationController
   _scrollRect: {fileID: 1904557393}
-  ease: 4
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

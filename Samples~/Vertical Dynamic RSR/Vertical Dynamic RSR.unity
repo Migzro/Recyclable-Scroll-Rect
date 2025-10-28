@@ -254,7 +254,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: RecyclableScrollRect::RecyclableScrollRect.DemoScrollingHelper
   _scrollRect: {fileID: 1904557393}
   _itemToScrollTo: 50
-  _timeToScroll: 2
+  _timeToScroll: 20
   _targetNormalizedPosition: 0.25
   _isSpeed: 0
   _isInstant: 0
@@ -562,8 +562,6 @@ MonoBehaviour:
   _showUsingCanvasGroupAlpha: 1
   _pullToRefreshThreshold: 150
   _pushToCloseThreshold: 150
-  _useConstantScrollingSpeed: 0
-  _constantScrollingSpeed: 0
   _spacing: {x: 0, y: 10}
   _padding:
     m_Left: 0
@@ -574,7 +572,7 @@ MonoBehaviour:
   _scrollAnimationController: {fileID: 0}
   _childForceExpand: 1
   _reverseArrangement: 0
-  _extraItemsVisible: 5
+  _extraItemsVisible: 30
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
