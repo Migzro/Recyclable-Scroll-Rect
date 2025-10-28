@@ -900,7 +900,9 @@ namespace RecyclableScrollRect
             var itemPositionFinal = itemPosition.absTopLeftPosition[_axis] * (vertical ? 1 : -1);
             if (AllItemsPositionsSet)
             {
-                itemPositionFinal = Mathf.Clamp(itemPosition.absTopLeftPosition[_axis], 0, content.rect.size[_axis] - _viewPortSize[_axis]);
+                var minContentPosition = vertical ? 0 : (content.rect.size[_axis] - _viewPortSize[_axis]) * (vertical ? 1 : -1);
+                var maxContentPosition = vertical ? content.rect.size[_axis] - _viewPortSize[_axis] : 0;
+                itemPositionFinal = Mathf.Clamp(itemPositionFinal, minContentPosition, maxContentPosition);
             }
             ScrollToContentPosition(itemIndex, itemPositionFinal, animationTimeLeft, isSpeed, instant, ease, state => PerformPostScrollingActions(callEvent, state, itemIndex));
         }
