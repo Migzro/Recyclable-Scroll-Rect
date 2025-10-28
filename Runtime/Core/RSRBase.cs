@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace RecyclableScrollRect
@@ -949,6 +950,15 @@ namespace RecyclableScrollRect
                 Debug.LogError("Calling event to item index: " + itemIndex);
                 _dataSource.ScrolledToItem(_visibleItems[itemIndex].item, actualItemIndex);
             }
+        }
+        
+        public override void OnBeginDrag(PointerEventData eventData)
+        {
+            if (_isAnimating)
+            {
+                return;
+            }
+            base.OnBeginDrag(eventData);
         }
 
         /// <summary>

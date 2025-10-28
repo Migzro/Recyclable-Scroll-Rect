@@ -110,6 +110,10 @@ namespace RecyclableScrollRect
 
         public override void OnBeginDrag(PointerEventData eventData)
         {
+            if (_isAnimating)
+            {
+                return;
+            }
             base.OnBeginDrag(eventData);
             _isDragging = true;
             _dragStartingPosition = content.anchoredPosition * (vertical ? 1 : -1);
@@ -118,10 +122,10 @@ namespace RecyclableScrollRect
         public override void OnEndDrag(PointerEventData eventData)
         {
             base.OnEndDrag(eventData);
-            
             if (!_isDragging)
+            {
                 return;
-            
+            }
             _isDragging = false;
             var newPageIndex = CalculateNextPageAfterDrag();
             ScrollToItemIndex(newPageIndex, _scrollingDuration);
