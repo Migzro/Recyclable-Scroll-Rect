@@ -941,6 +941,7 @@ namespace RecyclableScrollRect
             Debug.LogError("Post");
             _ignoreSetItemDataIndices.Clear();
             _isAnimating = false;
+            StopMovement();
             
             if (callEvent)
             {
