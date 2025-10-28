@@ -218,4 +218,12 @@ namespace RecyclableScrollRect
             return _grid2dIndices[index];
         }
     }
+    
+    public enum AnimationState
+    {
+        Idle,
+        Animating,
+        Finished,
+        Canceled,
+    }
 }

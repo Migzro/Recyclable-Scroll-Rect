@@ -1,10 +1,10 @@
 // Copyright (c) 2025 Maged Farid
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
-using System;
-using UnityEngine;
 #if PRIMETWEEN
 using PrimeTween;
 #endif
+using System;
+using UnityEngine;
 
 namespace RecyclableScrollRect
 {
@@ -13,11 +13,12 @@ namespace RecyclableScrollRect
     {
         private Tween _currentTween;
 
-        public override void ScrollToContentPosition(float targetContentPosition, float timeOrSpeed, bool isSpeed, Action onFinished)
+        public override void ScrollToContentPosition(float targetContentPosition, float timeOrSpeed, bool isSpeed, Action<AnimationState> onFinished)
             => ScrollToContentPosition(targetContentPosition, timeOrSpeed, isSpeed, Ease.Linear, onFinished);
 
-        public override void ScrollToContentPosition(float targetContentPosition, float timeOrSpeed, bool isSpeed, Ease ease, Action onFinished)
+        public override void ScrollToContentPosition(float targetContentPosition, float timeOrSpeed, bool isSpeed, Ease ease, Action<AnimationState> onFinished)
         {
+            base.ScrollToContentPosition(targetContentPosition, timeOrSpeed, isSpeed, onFinished);
             if (isSpeed)
             {
                 // calculate time from speed
@@ -29,17 +30,25 @@ namespace RecyclableScrollRect
                     duration: timeOrSpeed,
                     ease: ease,
                     onValueChange: val => _scrollRect.ContentPosition = val)
-                .OnComplete(() => onFinished?.Invoke());
+                .OnComplete(FinishCurrentAnimation);
         }
 
-        public override float StopCurrentAnimation()
+        public override float GetAnimationRemainingTime()
+        {
+            if (_animationState == AnimationState.Animating && _currentTween.isAlive)
+            {
+                return _currentTween.durationTotal - _currentTween.elapsedTimeTotal;
+            }
+            return 0;
+        }
+
+        public override void CancelCurrentAnimation()
         {
             if (_currentTween.isAlive)
             {
                 _currentTween.Stop();
-                return _currentTween.durationTotal - _currentTween.elapsedTimeTotal;
             }
-            return 0;
+            base.CancelCurrentAnimation();
         }
     }
 #endif

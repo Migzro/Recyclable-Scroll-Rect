@@ -839,16 +839,14 @@ namespace RecyclableScrollRect
         /// <param name="ease">Tweening ease if DoTween or PrimeTween are being used</param>
         public void ScrollToTopRight(float timeOrSpeed = -1, bool isSpeed = false, bool instant = false, object ease = null)
         {
-            PerformPreScrollingActions(0);
-            ScrollToContentPosition(0, timeOrSpeed, isSpeed, instant, ease, () => PerformPostScrollingActions(false));
+            ScrollToContentPosition(0, 0, timeOrSpeed, isSpeed, instant, ease, state => PerformPostScrollingActions(false, state));
         }
         
         public void ScrollToNormalisedPosition(float targetNormalizedPosition, float timeOrSpeed = -1, bool isSpeed = false, bool instant = false, object ease = null)
         {
             targetNormalizedPosition = Mathf.Clamp01(targetNormalizedPosition);
             var targetContentPosition = (content.rect.size[_axis] - _viewPortSize[_axis]) * targetNormalizedPosition;
-            PerformPreScrollingActions(0);
-            ScrollToContentPosition(targetContentPosition, timeOrSpeed, isSpeed, instant, ease, () => PerformPostScrollingActions(false));
+            ScrollToContentPosition(0, targetContentPosition, timeOrSpeed, isSpeed, instant, ease, state => PerformPostScrollingActions(false, state));
         }
         
         public void ScrollToItemIndex(int itemIndex, float timeOrSpeed = -1, bool isSpeed = false, bool instant = false, bool callEvent = false, object ease = null)
@@ -859,7 +857,6 @@ namespace RecyclableScrollRect
                 return;
             }
             
-            PerformPreScrollingActions(itemIndex);
             StopCoroutine(nameof(ScrollToItemIndexRoutine));
             StartCoroutine(ScrollToItemIndexRoutine(itemIndex, timeOrSpeed, isSpeed, instant, callEvent, ease));
         }
@@ -868,18 +865,30 @@ namespace RecyclableScrollRect
         {
             var itemPosition = _itemPositions[itemIndex];
             var animationTimeLeft = timeOrSpeed;
-            var finished = false;
+            AnimationState animationState;
             
             while (!itemPosition.positionSet)
             {
-                finished = false; 
+                animationState = AnimationState.Animating; 
                 var estimatedItemTop = itemIndex * (AverageItemSize + _spacing[_axis]);
-                ScrollToContentPosition(estimatedItemTop, timeOrSpeed, isSpeed, instant, ease, () => finished = true);
-                yield return new WaitUntil(() => finished || itemPosition.positionSet);
+                ScrollToContentPosition(itemIndex, estimatedItemTop, animationTimeLeft, isSpeed, instant, ease, state =>
+                {
+                    animationState = state;
+                    // The reason this condition is here and not after the yield return is that if we cancel the animation, we want to call PerformPostScrollingActions immediately and not wait until the next frame
+                    if (animationState == AnimationState.Canceled)
+                    {
+                        PerformPostScrollingActions(false, state, itemIndex);
+                    }
+                });
+                yield return new WaitUntil(() => animationState == AnimationState.Finished || animationState == AnimationState.Canceled || itemPosition.positionSet);
+                if (animationState == AnimationState.Canceled)
+                {
+                    yield break;
+                }
                 
                 if (itemPosition.positionSet)
                 {
-                    animationTimeLeft = _scrollAnimationController.StopCurrentAnimation();
+                    animationTimeLeft = _scrollAnimationController.GetAnimationRemainingTime(); 
                 }
                 else
                 {
@@ -893,17 +902,16 @@ namespace RecyclableScrollRect
             {
                 itemPositionFinal = Mathf.Clamp(itemPosition.absTopLeftPosition[_axis], 0, content.rect.size[_axis] - _viewPortSize[_axis]);
             }
-            ScrollToContentPosition(itemPositionFinal, animationTimeLeft, isSpeed, instant, ease, () => PerformPostScrollingActions(callEvent, itemIndex));
+            ScrollToContentPosition(itemIndex, itemPositionFinal, animationTimeLeft, isSpeed, instant, ease, state => PerformPostScrollingActions(callEvent, state, itemIndex));
         }
         
-        private void ScrollToContentPosition(float targetContentPosition, float timeOrSpeed, bool isSpeed, bool instant, object ease = null, Action animationFinished = null)
+        private void ScrollToContentPosition(int itemIndex, float targetContentPosition, float timeOrSpeed, bool isSpeed, bool instant, object ease = null, Action<AnimationState> animationFinished = null)
         {
-            // late update handles setting the movementType back to _movementType
-            movementType = MovementType.Unrestricted;
+            PerformPreScrollingActions(itemIndex);
             if (instant || timeOrSpeed <= 0)
             {
                 ContentPosition = targetContentPosition;
-                animationFinished?.Invoke();
+                animationFinished?.Invoke(AnimationState.Finished);
                 return;
             }
             
@@ -912,42 +920,42 @@ namespace RecyclableScrollRect
 #if DOTWEEN
                 case DoTweenScrollAnimationController doTween:
                     var doEase = ease is DG.Tweening.Ease de ? de : DG.Tweening.Ease.Linear;
-                    doTween.ScrollToContentPosition(targetContentPosition, timeOrSpeed, isSpeed, doEase, () => animationFinished?.Invoke());
+                    doTween.ScrollToContentPosition(targetContentPosition, timeOrSpeed, isSpeed, doEase, state => animationFinished?.Invoke(state)); 
                     break;
 #endif
 
 #if PRIMETWEEN
                 case PrimeTweenScrollAnimationController primeTween:
                     var primeEase = ease is PrimeTween.Ease pe ? pe : PrimeTween.Ease.Linear;
-                    primeTween.ScrollToContentPosition(targetContentPosition, timeOrSpeed, isSpeed, primeEase, () => animationFinished?.Invoke());
+                    primeTween.ScrollToContentPosition(targetContentPosition, timeOrSpeed, isSpeed, primeEase, state => animationFinished?.Invoke(state));
                     break;
 #endif
 
                 default:
-                    _scrollAnimationController.ScrollToContentPosition(targetContentPosition, timeOrSpeed, isSpeed, () => animationFinished?.Invoke());
+                    _scrollAnimationController.ScrollToContentPosition(targetContentPosition, timeOrSpeed, isSpeed, state => animationFinished?.Invoke(state));
                     break;
             }
         }
 
         protected virtual void PerformPreScrollingActions(int itemIndex)
         {
-            Debug.LogError("Pre");
+            _scrollAnimationController.CancelCurrentAnimation();
+            // late update handles setting the movementType back to _movementType
+            movementType = MovementType.Unrestricted;
             StopMovement();
             _ignoreSetItemDataIndices.Clear();
             _isAnimating = true;
         }
 
-        protected virtual void PerformPostScrollingActions(bool callEvent, int itemIndex = -1)
+        protected virtual void PerformPostScrollingActions(bool callEvent, AnimationState animationState, int itemIndex = -1)
         {
-            Debug.LogError("Post");
             _ignoreSetItemDataIndices.Clear();
             _isAnimating = false;
             StopMovement();
             
-            if (callEvent)
+            if (animationState == AnimationState.Finished && callEvent)
             {
                 var actualItemIndex = GetActualItemIndex(itemIndex);
-                Debug.LogError("Calling event to item index: " + itemIndex);
                 _dataSource.ScrolledToItem(_visibleItems[itemIndex].item, actualItemIndex);
             }
         }

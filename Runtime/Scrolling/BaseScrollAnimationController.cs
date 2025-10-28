@@ -9,9 +9,11 @@ namespace RecyclableScrollRect
     public abstract class BaseScrollAnimationController : MonoBehaviour
     {
         [SerializeField] protected RSRBase _scrollRect;
+        
+        protected AnimationState _animationState;
+        protected Action<AnimationState> _onFinished;
 
-        public abstract void ScrollToContentPosition(float targetContentPosition, float timeOrSpeed, bool isSpeed, Action onFinished);
-        public abstract float StopCurrentAnimation();
+        public abstract float GetAnimationRemainingTime();
         
         private void Start()
         {
@@ -37,10 +39,28 @@ namespace RecyclableScrollRect
 #endif
             }
         }
+        
+        public virtual void ScrollToContentPosition(float targetContentPosition, float timeOrSpeed, bool isSpeed, Action<AnimationState> onFinished)
+        {
+            _onFinished = onFinished;
+            _animationState = AnimationState.Animating;
+        }
+        
+        protected void FinishCurrentAnimation()
+        {
+            _animationState = AnimationState.Finished;
+            _onFinished?.Invoke(_animationState);
+        }
+        
+        public virtual void CancelCurrentAnimation()
+        {
+            _animationState = AnimationState.Canceled;
+            _onFinished?.Invoke(_animationState);
+        }
     }
     
     public abstract class BaseScrollAnimationController<TEase> : BaseScrollAnimationController
     {
-        public abstract void ScrollToContentPosition(float targetContentPosition, float timeOrSpeed, bool isSpeed, TEase ease, Action onFinished);
+        public abstract void ScrollToContentPosition(float targetContentPosition, float timeOrSpeed, bool isSpeed, TEase ease, Action<AnimationState> onFinished);
     }
 }

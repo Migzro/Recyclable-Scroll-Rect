@@ -7,31 +7,25 @@ namespace RecyclableScrollRect
 {
     public class ScrollAnimationController : BaseScrollAnimationController
     {
-        private bool _animating;
         private float _start;
         private float _target;
         private float _duration;
         private float _elapsed;
-        private Action _onFinished;
 
-        public override void ScrollToContentPosition(float targetContentPosition, float timeOrSpeed, bool isSpeed, Action onFinished)
+        public override void ScrollToContentPosition(float targetContentPosition, float timeOrSpeed, bool isSpeed, Action<AnimationState> onFinished)
         {
-            _onFinished = onFinished;
+            base.ScrollToContentPosition(targetContentPosition, timeOrSpeed, isSpeed, onFinished);
             _start = _scrollRect.ContentPosition;
             _target = targetContentPosition;
 
             var distance = Mathf.Abs(_target - _start);
             _duration = Mathf.Max(0.0001f, isSpeed ? distance / timeOrSpeed : timeOrSpeed);
-            
             _elapsed = 0f;
-            _animating = true;
-
-            Debug.LogError($"[ScrollAnimationController] Animation started (target={_target}, duration={_duration:0.00}s)");
         }
 
         private void Update()
         {
-            if (!_animating)
+            if (_animationState != AnimationState.Animating)
             {
                 return;
             }
@@ -43,22 +37,17 @@ namespace RecyclableScrollRect
 
             if (_elapsed >= _duration)
             {
-                StopCurrentAnimation();
+                FinishCurrentAnimation();
             }
         }
 
-        public override float StopCurrentAnimation()
+        public override float GetAnimationRemainingTime()
         {
-            if (!_animating)
+            if (_animationState == AnimationState.Animating)
             {
-                return 0f;
+                return Mathf.Max(0, _duration - _elapsed);
             }
-
-            Debug.LogError($"[ScrollAnimationController] Animation ended after {_elapsed:0.00}s");
-            _animating = false;
-            _onFinished?.Invoke();
-
-            return _duration - _elapsed;
+            return 0;
         }
     }
 }

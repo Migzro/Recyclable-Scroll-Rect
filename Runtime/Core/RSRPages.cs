@@ -90,11 +90,11 @@ namespace RecyclableScrollRect
             }
         }
 
-        protected override void PerformPostScrollingActions(bool callEvent, int itemIndex = -1)
+        protected override void PerformPostScrollingActions(bool callEvent, AnimationState animationState, int itemIndex = -1)
         {
-            base.PerformPostScrollingActions(callEvent, itemIndex);
+            base.PerformPostScrollingActions(callEvent, animationState, itemIndex);
             
-            if (_currentPage != itemIndex)
+            if (animationState == AnimationState.Finished && _currentPage != itemIndex)
             {
                 var isNextPage = itemIndex > _currentPage;
                 if (_visibleItems.TryGetValue(_currentPage, out var visibleItem))
