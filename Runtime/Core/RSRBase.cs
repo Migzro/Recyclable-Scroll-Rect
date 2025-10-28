@@ -13,8 +13,6 @@ namespace RecyclableScrollRect
         [SerializeField] private bool _showUsingCanvasGroupAlpha;
         [SerializeField] private float _pullToRefreshThreshold = 150;
         [SerializeField] private float _pushToCloseThreshold = 150;
-        [SerializeField] private bool _useConstantScrollingSpeed;
-        [SerializeField] private float _constantScrollingSpeed;
         
         [SerializeField] protected Vector2 _spacing;
         [SerializeField] protected RectOffset _padding;
@@ -36,7 +34,6 @@ namespace RecyclableScrollRect
         protected int _maxVisibleRowColumnInViewPort;
         protected int _minExtraVisibleRowColumnInViewPort;
         protected int _maxExtraVisibleRowColumnInViewPort;
-        private int _queuedScrollToItem;
         protected bool _isAnimating;
         private bool _needsClearance;
         private bool _pullToRefresh;
@@ -257,7 +254,6 @@ namespace RecyclableScrollRect
         protected virtual void ResetVariables()
         {
             _isAnimating = false;
-            _queuedScrollToItem = -1;
             _canCallReachedScrollStart = true;
             _canCallReachedScrollEnd = true;
         }
@@ -710,16 +706,6 @@ namespace RecyclableScrollRect
                     item.transform.name = $"{itemPrototypeName} {itemIndex}";
             }
 
-            if (_visibleItems.TryGetValue(itemIndex, out var visibleAfter))
-            {
-                if (_queuedScrollToItem != -1 && _queuedScrollToItem == itemIndex)
-                {
-                    var actualItemIndex = GetActualItemIndex(itemIndex);
-                    _dataSource.ScrolledToItem(visibleAfter.item, actualItemIndex);
-                    _queuedScrollToItem = -1;
-                }
-            }
-
             SetSiblingIndices();
             
             if (IsLastRowColumn(itemIndex))
@@ -853,7 +839,7 @@ namespace RecyclableScrollRect
         public void ScrollToTopRight(float timeOrSpeed = -1, bool isSpeed = false, bool instant = false, object ease = null)
         {
             PerformPreScrollingActions(0);
-            ScrollToContentPosition(0, timeOrSpeed, isSpeed, instant, ease, () => AnimationFinished(0, false));
+            ScrollToContentPosition(0, timeOrSpeed, isSpeed, instant, ease, () => PerformPostScrollingActions(false));
         }
         
         public void ScrollToNormalisedPosition(float targetNormalizedPosition, float timeOrSpeed = -1, bool isSpeed = false, bool instant = false, object ease = null)
@@ -861,7 +847,7 @@ namespace RecyclableScrollRect
             targetNormalizedPosition = Mathf.Clamp01(targetNormalizedPosition);
             var targetContentPosition = (content.rect.size[_axis] - _viewPortSize[_axis]) * targetNormalizedPosition;
             PerformPreScrollingActions(0);
-            ScrollToContentPosition(targetContentPosition, timeOrSpeed, isSpeed, instant, ease, () => AnimationFinished(0, false));
+            ScrollToContentPosition(targetContentPosition, timeOrSpeed, isSpeed, instant, ease, () => PerformPostScrollingActions(false));
         }
         
         public void ScrollToItemIndex(int itemIndex, float timeOrSpeed = -1, bool isSpeed = false, bool instant = false, bool callEvent = false, object ease = null)
@@ -904,11 +890,9 @@ namespace RecyclableScrollRect
             var itemPositionFinal = itemPosition.absTopLeftPosition[_axis];
             if (AllItemsPositionsSet)
             {
-                itemPositionFinal = Mathf.Clamp(0, itemPosition.absTopLeftPosition[_axis], content.rect.size[_axis] - _viewPortSize[_axis]);
-                Debug.LogError(itemPositionFinal + " " + itemPosition.absTopLeftPosition[_axis]);
-                Debug.LogError(content.rect.size[_axis] - _viewPortSize[_axis]);
+                itemPositionFinal = Mathf.Clamp(itemPosition.absTopLeftPosition[_axis], 0, content.rect.size[_axis] - _viewPortSize[_axis]);
             }
-            ScrollToContentPosition(itemPositionFinal, animationTimeLeft, isSpeed, instant, ease, () => AnimationFinished(itemIndex, callEvent));
+            ScrollToContentPosition(itemPositionFinal, animationTimeLeft, isSpeed, instant, ease, () => PerformPostScrollingActions(callEvent, itemIndex));
         }
         
         private void ScrollToContentPosition(float targetContentPosition, float timeOrSpeed, bool isSpeed, bool instant, object ease = null, Action animationFinished = null)
@@ -944,184 +928,6 @@ namespace RecyclableScrollRect
             }
         }
 
-        private void AnimationFinished(int itemIndex, bool callEvent)
-        {
-            PerformPostScrollingActions(itemIndex);
-            if (callEvent)
-            {
-                var actualItemIndex = GetActualItemIndex(itemIndex);
-                Debug.LogError("Calling event to item index: " + itemIndex);
-                _dataSource.ScrolledToItem(_visibleItems[itemIndex].item, actualItemIndex);
-            }
-        }
-
-        /// <summary>
-        /// Scroll to a certain item index
-        /// if the item position is known, go to it,
-        /// if not keep scrolling until its known
-        /// </summary>
-        /// <param name="itemIndex">item index needed to scroll to</param>
-        /// <param name="callEvent">call scroll to item event, usually not needed when calling ScrollToItem from OnEndDrag if RSR is paged</param>
-        /// <param name="instant">scroll instantly</param>
-        /// <param name="maxSpeedMultiplier">a multiplier that is used at max speed for scrolling</param>
-        /// <param name="offset">value to offset target scroll position with</param>
-        public void ScrollToItem(int itemIndex, bool callEvent = true, bool instant = false, float maxSpeedMultiplier = 1, float offset = 0)
-        {
-            PerformPreScrollingActions(itemIndex);
-            
-            var itemVisiblePositionKnown = _itemPositions[itemIndex].positionSet && _visibleItems.ContainsKey(itemIndex);
-            if (itemVisiblePositionKnown && instant)
-            {
-                var currentContentPosition = content.anchoredPosition;
-                currentContentPosition[_axis] = _itemPositions[itemIndex].absTopLeftPosition[_axis] * (vertical ? 1 : -1) + offset;
-                content.anchoredPosition = currentContentPosition;
-                m_ContentStartPosition = currentContentPosition;
-                if (callEvent)
-                {
-                    var actualItemIndex = GetActualItemIndex(itemIndex);
-                    _dataSource.ScrolledToItem(_visibleItems[itemIndex].item, actualItemIndex);
-                }
-
-                PerformPostScrollingActions(itemIndex);
-            }
-            else
-            {
-                float speedToUse;
-                if (_useConstantScrollingSpeed && !instant)
-                {
-                    speedToUse = _constantScrollingSpeed;
-                }
-                else
-                {
-                    var itemSizeAverage = 0f;
-                    int i;
-                    for (i = 0; i < _itemsCount; i++)
-                    {
-                        if (!_dataSource.IsItemSizeKnown && _itemPositions[i].sizeSet)
-                        {
-                            itemSizeAverage += _itemPositions[i].itemSize[_axis];
-                        }
-                        else if (_dataSource.IsItemSizeKnown)
-                        {
-                            var actualItemIndex = GetActualItemIndex(i);
-                            itemSizeAverage += _dataSource.GetItemSize(actualItemIndex);
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-
-                    itemSizeAverage /= i;
-                    if (instant)
-                    {
-                        speedToUse = itemSizeAverage;
-                    }
-                    else
-                    {
-                        var scrollingDistance = Mathf.Max(1, Mathf.Abs(_minVisibleRowColumnInViewPort - itemIndex));
-                        var scrollingDistancePercentage = Mathf.Clamp01((float)scrollingDistance / Mathf.Min(10, _itemsCount));
-                        var exponentialSpeed = (Mathf.Exp(scrollingDistancePercentage) - 1) * itemSizeAverage;
-                        speedToUse = Mathf.Min(itemSizeAverage, exponentialSpeed);
-                    }
-
-                    if (speedToUse >= itemSizeAverage)
-                        speedToUse *= maxSpeedMultiplier;
-                }
-
-                var direction = 1;
-                var increment = speedToUse * direction * (vertical ? 1 : -1);
-                StartCoroutine(StartScrolling(increment, direction, itemIndex, callEvent, offset));
-            }
-        }
-
-        /// <summary>
-        /// Coroutine that keeps scrolling until we find the designated scrollToTargetIndex which is set ShowItemAtIndex
-        /// </summary>
-        /// <param name="increment">increment in which we scroll by, based on direction, vertical or horizontal, instant scrolling or not</param>
-        /// <param name="direction">direction of scroll, 1 for down or right, -1 for up or left</param>
-        /// <param name="itemIndex">item index which we want to scroll to</param>
-        /// <param name="callEvent">call scroll to item event, usually not needed when calling ScrollToItem from OnEndDrag if RSR is paged</param>
-        /// <param name="offset">value to offset target scroll position with</param>
-        private IEnumerator StartScrolling(float increment, int direction, int itemIndex, bool callEvent, float offset)
-        {
-            var reachedItem = false;        
-            
-            var contentTopLeftCorner = content.anchoredPosition;
-            contentTopLeftCorner[_axis] += increment;
-
-            if ( contentTopLeftCorner[ _axis ] >= content.sizeDelta[ _axis ] )
-                contentTopLeftCorner[ _axis ] = content.sizeDelta[ _axis ] - _viewPortSize[_axis];
-            
-            var contentBottomRightCorner = contentTopLeftCorner;
-            contentBottomRightCorner[_axis] += _viewPortSize[_axis] * (vertical ? 1 : -1);
-            
-            if (_itemPositions[itemIndex].positionSet)
-            {
-                var itemTopLeftCorner = _itemPositions[itemIndex].absTopLeftPosition[_axis] + offset * (vertical ? 1 : -1);
-                if (direction == 1) 
-                {
-                    if (itemTopLeftCorner <= Mathf.Abs(contentTopLeftCorner[_axis]))
-                    {
-                        contentTopLeftCorner[_axis] = itemTopLeftCorner * (vertical ? 1 : -1);
-                        reachedItem = true;
-                    }
-
-                    // reached bottom or right
-                    else if (IsLastRowColumn(_maxExtraVisibleRowColumnInViewPort) && Mathf.Abs(contentBottomRightCorner[_axis]) >= content.sizeDelta[_axis])
-                    {
-                        contentTopLeftCorner[_axis] = (content.rect.size[_axis] - _viewPortSize[_axis]) * (vertical ? 1 : -1);
-                        reachedItem = true;
-                    }
-                }
-                else 
-                {
-                    if (itemTopLeftCorner >= Mathf.Abs(contentTopLeftCorner[_axis]))
-                    {
-                        contentTopLeftCorner[_axis] = itemTopLeftCorner * (vertical ? 1 : -1);
-                        reachedItem = true;
-                    }
-
-                    // reached top or left
-                    else if (vertical && contentTopLeftCorner[_axis] <= 0 || !vertical && contentTopLeftCorner[_axis] >= 0)
-                    {
-                        contentTopLeftCorner[_axis] = 0;
-                        reachedItem = true;
-                    }
-                }
-            }
-            
-            content.anchoredPosition = contentTopLeftCorner;
-            m_ContentStartPosition = contentTopLeftCorner;
-
-            // TODO why is this needed?
-            if (reachedItem)
-                StopMovement();
-
-            yield return new WaitForEndOfFrame();
-            if (!reachedItem)
-            {
-                StartCoroutine(StartScrolling(increment, direction, itemIndex, callEvent, offset));
-            }
-            else
-            {
-                if (callEvent)
-                {
-                    if (_visibleItems.TryGetValue(itemIndex, out var item))
-                    {
-                        var actualItemIndex = GetActualItemIndex(itemIndex);
-                        _dataSource.ScrolledToItem(item.item, actualItemIndex);
-                    }
-                    else
-                    {
-                        _queuedScrollToItem = itemIndex;
-                    }
-                }
-
-                PerformPostScrollingActions(itemIndex);
-            }
-        }
-
         protected virtual void PerformPreScrollingActions(int itemIndex)
         {
             Debug.LogError("Pre");
@@ -1130,11 +936,18 @@ namespace RecyclableScrollRect
             _isAnimating = true;
         }
 
-        protected virtual void PerformPostScrollingActions(int itemIndex)
+        protected virtual void PerformPostScrollingActions(bool callEvent, int itemIndex = -1)
         {
             Debug.LogError("Post");
             _ignoreSetItemDataIndices.Clear();
             _isAnimating = false;
+            
+            if (callEvent)
+            {
+                var actualItemIndex = GetActualItemIndex(itemIndex);
+                Debug.LogError("Calling event to item index: " + itemIndex);
+                _dataSource.ScrolledToItem(_visibleItems[itemIndex].item, actualItemIndex);
+            }
         }
 
         /// <summary>

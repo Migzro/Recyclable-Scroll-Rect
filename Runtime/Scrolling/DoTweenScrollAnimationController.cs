@@ -30,7 +30,7 @@ namespace RecyclableScrollRect
         
         public override float StopCurrentAnimation()
         {
-            if (_currentTween.IsPlaying())
+            if (_currentTween != null && _currentTween.IsPlaying())
             {
                 _currentTween.Kill();
                 return _currentTween.Duration() - _currentTween.Elapsed();

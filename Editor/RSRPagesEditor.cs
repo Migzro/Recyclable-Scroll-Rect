@@ -7,17 +7,20 @@ namespace RecyclableScrollRect.Editor
     [CustomEditor(typeof(RSRPages), true)]
     public class RSRPagesEditor : RSREditor
     {
+        private SerializedProperty _scrollingDuration;
         private SerializedProperty _swipeThreshold;
 
         protected override void OnEnable()
         {
             base.OnEnable();
+            _scrollingDuration = serializedObject.FindProperty(nameof(_scrollingDuration));
             _swipeThreshold = serializedObject.FindProperty(nameof(_swipeThreshold));
         }
         
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
+            EditorGUILayout.PropertyField(_scrollingDuration);
             EditorGUILayout.PropertyField(_swipeThreshold);
             serializedObject.ApplyModifiedProperties();
         }

@@ -7,6 +7,7 @@ namespace RecyclableScrollRect
 {
     public class RSRPages : RSR
     {
+        [SerializeField] private float _scrollingDuration = 0.15f;
         [SerializeField] protected float _swipeThreshold = 200;
 
         private IPageSource _pageSource;
@@ -34,7 +35,7 @@ namespace RecyclableScrollRect
             if (_currentPage >= _itemsCount)
             {
                 // scroll item will handle the focus
-                ScrollToItem(Mathf.Max(0, _currentPage - 1), instant:true);
+                ScrollToItemIndex(Mathf.Max(0, _currentPage - 1), instant:true);
             }
             else  if (_itemsCount > 0 && _visibleItems.ContainsKey(_currentPage))
             {
@@ -89,9 +90,9 @@ namespace RecyclableScrollRect
             }
         }
 
-        protected override void PerformPostScrollingActions(int itemIndex)
+        protected override void PerformPostScrollingActions(bool callEvent, int itemIndex = -1)
         {
-            base.PerformPostScrollingActions(itemIndex);
+            base.PerformPostScrollingActions(callEvent, itemIndex);
             
             if (_currentPage != itemIndex)
             {
@@ -123,7 +124,7 @@ namespace RecyclableScrollRect
             
             _isDragging = false;
             var newPageIndex = CalculateNextPageAfterDrag();
-            ScrollToItem(newPageIndex);
+            ScrollToItemIndex(newPageIndex, _scrollingDuration);
         }
 
         protected virtual int CalculateNextPageAfterDrag()
@@ -148,11 +149,11 @@ namespace RecyclableScrollRect
         {
             if (Input.GetKeyUp(KeyCode.UpArrow))
             {
-                ScrollToItem(Mathf.Max(_currentPage - 1, 0), false);
+                ScrollToItemIndex(Mathf.Max(_currentPage - 1, 0), _scrollingDuration);
             }
             else if (Input.GetKeyUp( KeyCode.DownArrow))
             {
-                ScrollToItem(Mathf.Min(_currentPage + 1, _itemsCount - 1), false);
+                ScrollToItemIndex(Mathf.Min(_currentPage + 1, _itemsCount - 1), _scrollingDuration);
             }
         }
 #endif
