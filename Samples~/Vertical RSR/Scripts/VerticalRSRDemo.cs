@@ -30,7 +30,18 @@ namespace RecyclableScrollRect
         [ContextMenu(nameof(ReloadData))]
         public void ReloadData()
         {
-            _dataSource.RemoveRange(_itemsToReloadTo, _itemsCount - _itemsToReloadTo);
+            if (_itemsToReloadTo < _itemsCount)
+            {
+                _dataSource.RemoveRange(_itemsToReloadTo, _itemsCount - _itemsToReloadTo);
+            }
+            else
+            {
+                for (int i = _itemsCount; i < _itemsToReloadTo; i++)
+                {
+                    _dataSource.Add(i.ToString());
+                }
+            }
+
             _itemsCount = _itemsToReloadTo;
             _scrollRect.ReloadData(true);
         }
