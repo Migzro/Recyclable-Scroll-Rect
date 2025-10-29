@@ -1,3 +1,7 @@
+## [1.0.3] - 29-10-2025
+### Bug Fixes
+- Fixed an issue where _maxExtraVisibleRowColumnInViewPort can be -1 after reloading data
+
 ## [1.0.2] - 24-10-2025
 ### Bug Fixes
 - Fixed an issue where editor scripts were being compiled when building the project.
