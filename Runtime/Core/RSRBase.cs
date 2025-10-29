@@ -46,7 +46,6 @@ namespace RecyclableScrollRect
         protected SortedDictionary<int, Item> _visibleItems;
         private Dictionary<string, List<Item>> _pooledItems;
         private Dictionary<int, HashSet<string>> _reloadTags;
-        protected HashSet<int> _ignoreSetItemDataIndices;
         private HashSet<int> _itemsMarkedForReload;
         
         protected Vector2 _dragStartingPosition;
@@ -196,7 +195,6 @@ namespace RecyclableScrollRect
             _itemPositions = new List<ItemPosition>();
             _reloadTags = new Dictionary<int, HashSet<string>>();
             _itemsMarkedForReload = new HashSet<int>();
-            _ignoreSetItemDataIndices = new HashSet<int>();
             _lastContentPosition = _contentTopLeftCorner;
             SetMovementType(_initialMovementType);
 
@@ -688,12 +686,8 @@ namespace RecyclableScrollRect
                 item.item.ItemIndex = itemIndex;
                 
                 SetItemAxisPosition(item.transform, itemIndex);
-                if (_ignoreSetItemDataIndices.Count == 0 || !_ignoreSetItemDataIndices.Contains(itemIndex))
-                {
-                    var actualItemIndex = GetActualItemIndex(itemIndex);
-                    _dataSource.SetItemData(item.item, actualItemIndex);
-                }
-
+                var actualItemIndex = GetActualItemIndex(itemIndex);
+                _dataSource.SetItemData(item.item, actualItemIndex);
                 CalculateItemAxisSize(item.transform, itemIndex);
                 
                 if (_itemsMarkedForReload.Contains(itemIndex))
@@ -945,13 +939,11 @@ namespace RecyclableScrollRect
             // late update handles setting the movementType back to _movementType
             movementType = MovementType.Unrestricted;
             StopMovement();
-            _ignoreSetItemDataIndices.Clear();
             _isAnimating = true;
         }
 
         protected virtual void PerformPostScrollingActions(bool callEvent, AnimationState animationState, int itemIndex = -1)
         {
-            _ignoreSetItemDataIndices.Clear();
             _isAnimating = false;
             StopMovement();
             

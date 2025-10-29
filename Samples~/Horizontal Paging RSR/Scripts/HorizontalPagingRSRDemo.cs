@@ -86,19 +86,11 @@ namespace RecyclableScrollRect
         {
         }
 
-        public void PageFocused(int itemIndex, bool isNextPage, IItem item)
+        public void PageWillFocus(int itemIndex, bool isNextPage, IItem item)
         {
         }
 
-        public void PageUnFocused(int itemIndex, bool isNextPage, IItem item)
-        {
-        }
-
-        public void PageWillFocus(int itemIndex, bool isNextPage, IItem item, RectTransform rect, Vector2 originalPosition)
-        {
-        }
-
-        public void PageWillUnFocus(int itemIndex, bool isNextPage, IItem item, RectTransform rect)
+        public void PageWillUnFocus(int itemIndex, bool isNextPage, IItem item)
         {
         }
     }

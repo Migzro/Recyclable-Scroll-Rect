@@ -13,7 +13,6 @@ namespace RecyclableScrollRect
         private IPageSource _pageSource;
         private int _currentPage;
         private bool _isDragging;
-        private bool _forceCallWillFocusAfterAnimation;
 
         protected override void Initialize()
         {
@@ -37,10 +36,9 @@ namespace RecyclableScrollRect
                 // scroll item will handle the focus
                 ScrollToItemIndex(Mathf.Max(0, _currentPage - 1), instant:true);
             }
-            else  if (_itemsCount > 0 && _visibleItems.ContainsKey(_currentPage))
+            else  if (_itemsCount > 0 && _visibleItems.TryGetValue(_currentPage, out var visibleItem))
             {
-                _pageSource?.PageWillFocus(_currentPage, true, _visibleItems[_currentPage].item, _visibleItems[_currentPage].transform, _itemPositions[_currentPage].topLeftPosition);
-                _pageSource?.PageFocused(_currentPage, true, _visibleItems[_currentPage].item);
+                _pageSource?.PageWillFocus(_currentPage, true, visibleItem.item);
             }
         }
         
@@ -48,45 +46,10 @@ namespace RecyclableScrollRect
         {
             base.PerformPreScrollingActions(itemIndex);
             
-            // create a list that will stop ScrollTo method from calling SetItemData on items that will only be visible in the one frame while scrolling, this assumes
-            // that the paging item is taking up the entire width or height
-            var direction = itemIndex > _currentPage ? 1 : -1;
-            var endingIndex = itemIndex;
-            if (direction > 0)
-            {
-                endingIndex -= _extraItemsVisible;
-                endingIndex = Mathf.Clamp(endingIndex, 0, _itemsCount - 1);
-                for (var j = _currentPage; j < endingIndex; j++)
-                {
-                    if (!_visibleItems.ContainsKey(j) && _itemPositions[j].positionSet)
-                    {
-                        _ignoreSetItemDataIndices.Add(j);
-                    }
-                }
-            }
-            else
-            {
-                endingIndex += _extraItemsVisible;
-                endingIndex = Mathf.Clamp(endingIndex, 0, _itemsCount - 1);
-                for (var j = _currentPage - 1; j > endingIndex; j--)
-                {
-                    if (!_visibleItems.ContainsKey(j) && _itemPositions[j].positionSet)
-                    {
-                        _ignoreSetItemDataIndices.Add(j);
-                    }
-                }
-            }
-            
-            _forceCallWillFocusAfterAnimation = !_visibleItems.ContainsKey(itemIndex);
             var isNextPage = itemIndex > _currentPage;
-            if (_visibleItems.ContainsKey(itemIndex))
+            if (_visibleItems.TryGetValue(_currentPage, out var visibleItem))
             {
-                _pageSource?.PageWillFocus(itemIndex, isNextPage, _visibleItems[itemIndex].item, _visibleItems[itemIndex].transform, _itemPositions[itemIndex].topLeftPosition);
-            }
-
-            if (_visibleItems.ContainsKey(_currentPage))
-            {
-                _pageSource?.PageWillUnFocus(_currentPage, isNextPage, _visibleItems[_currentPage].item, _visibleItems[_currentPage].transform);
+                _pageSource?.PageWillUnFocus(_currentPage, isNextPage, visibleItem.item);
             }
         }
 
@@ -97,14 +60,11 @@ namespace RecyclableScrollRect
             if (animationState == AnimationState.Finished && _currentPage != itemIndex)
             {
                 var isNextPage = itemIndex > _currentPage;
-                if (_visibleItems.TryGetValue(_currentPage, out var visibleItem))
-                    _pageSource?.PageUnFocused(_currentPage, isNextPage, visibleItem.item);
-
                 _currentPage = itemIndex;
-                
-                if (_forceCallWillFocusAfterAnimation)
-                    _pageSource?.PageWillFocus(_currentPage, isNextPage, _visibleItems[_currentPage].item, _visibleItems[_currentPage].transform, _itemPositions[_currentPage].topLeftPosition);
-                _pageSource?.PageFocused(_currentPage, isNextPage, _visibleItems[_currentPage].item);
+                if (_visibleItems.TryGetValue(_currentPage, out var visibleItem))
+                {
+                    _pageSource?.PageWillFocus(_currentPage, isNextPage, visibleItem.item);
+                }
             }
         }
 
