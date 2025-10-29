@@ -317,7 +317,7 @@ namespace RecyclableScrollRect
             }
 
             var newMinExtraVisibleItemInViewPort = Mathf.Max (0, newMinVisibleItemInViewPort - _extraItemsVisible);
-            var newMaxExtraVisibleItemInViewPort = Mathf.Min (_itemsCount - 1, newMaxVisibleItemInViewPort + _extraItemsVisible);
+            var newMaxExtraVisibleItemInViewPort = Mathf.Min (_itemsCount > 0 ? _itemsCount - 1 : 0, newMaxVisibleItemInViewPort + _extraItemsVisible);
             if (newMaxExtraVisibleItemInViewPort < _maxExtraVisibleRowColumnInViewPort)
             {
                 for (var i = newMaxExtraVisibleItemInViewPort + 1; i <= _maxExtraVisibleRowColumnInViewPort; i++)
