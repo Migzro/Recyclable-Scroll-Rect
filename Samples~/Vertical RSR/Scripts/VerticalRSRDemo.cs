@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace RecyclableScrollRect
 {
-    public class VerticalRSRDemo : MonoBehaviour, IDataSource
+    public class VerticalRSRDemo : MonoBehaviour, IRSRDataSource
     {
         [SerializeField] private int _itemsCount;
         [SerializeField] private RSR _scrollRect;

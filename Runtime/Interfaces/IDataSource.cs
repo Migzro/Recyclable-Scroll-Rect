@@ -7,9 +7,7 @@ namespace RecyclableScrollRect
     public interface IDataSource
     {
         int ItemsCount { get; }
-        bool IsItemSizeKnown { get; }
         GameObject[] PrototypeItems { get; }
-        float GetItemSize(int itemIndex);
         GameObject GetItemPrototype(int itemIndex);
         bool IsItemStatic(int itemIndex);
         void SetItemData(IItem item, int itemIndex);

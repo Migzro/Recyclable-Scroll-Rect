@@ -10,13 +10,13 @@ namespace RecyclableScrollRect
         [SerializeField] private float _scrollingDuration = 0.15f;
         [SerializeField] protected float _swipeThreshold = 200;
 
-        private IPageSource _pageSource;
+        private IPageDataSource _pageDataSource;
         private int _currentPage;
         private bool _isDragging;
 
         protected override void Initialize()
         {
-            _pageSource = (IPageSource)_dataSource;
+            _pageDataSource = (IPageDataSource)_dataSource;
             _currentPage = 0;
             base.Initialize();
         }
@@ -38,7 +38,7 @@ namespace RecyclableScrollRect
             }
             else  if (_itemsCount > 0 && _visibleItems.TryGetValue(_currentPage, out var visibleItem))
             {
-                _pageSource?.PageWillFocus(_currentPage, true, visibleItem.item);
+                _pageDataSource?.PageWillFocus(_currentPage, true, visibleItem.item);
             }
         }
         
@@ -49,7 +49,7 @@ namespace RecyclableScrollRect
             var isNextPage = itemIndex > _currentPage;
             if (_visibleItems.TryGetValue(_currentPage, out var visibleItem))
             {
-                _pageSource?.PageWillUnFocus(_currentPage, isNextPage, visibleItem.item);
+                _pageDataSource?.PageWillUnFocus(_currentPage, isNextPage, visibleItem.item);
             }
         }
 
@@ -63,7 +63,7 @@ namespace RecyclableScrollRect
                 _currentPage = itemIndex;
                 if (_visibleItems.TryGetValue(_currentPage, out var visibleItem))
                 {
-                    _pageSource?.PageWillFocus(_currentPage, isNextPage, visibleItem.item);
+                    _pageDataSource?.PageWillFocus(_currentPage, isNextPage, visibleItem.item);
                 }
             }
         }

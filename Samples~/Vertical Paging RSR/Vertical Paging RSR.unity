@@ -572,7 +572,7 @@ MonoBehaviour:
   _scrollAnimationController: {fileID: 0}
   _childForceExpand: 1
   _reverseArrangement: 0
-  _extraItemsVisible: 1
+  _extraItemsVisible: 5
   _scrollingDuration: 0.15
   _swipeThreshold: 200
 --- !u!1660057539 &9223372036854775807

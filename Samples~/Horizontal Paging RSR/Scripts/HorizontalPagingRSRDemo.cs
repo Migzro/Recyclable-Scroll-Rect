@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace RecyclableScrollRect
 {
-    public class HorizontalPagingRSRDemo : MonoBehaviour, IPageSource
+    public class HorizontalPagingRSRDemo : MonoBehaviour, IPageDataSource
     {
         [SerializeField] private int _itemsCount;
         [SerializeField] private RSRPages _scrollRect;

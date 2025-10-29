@@ -10,8 +10,16 @@ namespace RecyclableScrollRect
         [SerializeField] private bool _reverseArrangement;
         [SerializeField] protected int _extraItemsVisible;
         
+        private IRSRDataSource _rsrDataSource;
+
         protected override bool ReachedMinRowColumnInViewPort => _minVisibleRowColumnInViewPort == 0;
         protected override bool ReachedMaxRowColumnInViewPort => _maxVisibleRowColumnInViewPort == _itemsCount - 1;
+        
+        protected override void Initialize()
+        {
+            _rsrDataSource = (IRSRDataSource)_dataSource;
+            base.Initialize();
+        }
         
         /// <summary>
         /// get the index of the item
@@ -69,14 +77,14 @@ namespace RecyclableScrollRect
 
             for (var i = 0; i < _itemsCount; i++)
             {
-                if (!_dataSource.IsItemSizeKnown)
+                if (!_rsrDataSource.IsItemSizeKnown)
                 {
                     contentSizeDelta[_axis] += _itemPositions[i].itemSize[_axis];
                 }
                 else
                 {
                     var itemSize = _itemPositions[i].itemSize;
-                    itemSize[_axis] = _dataSource.GetItemSize(i);
+                    itemSize[_axis] = _rsrDataSource.GetItemSize(i);
                     _itemPositions[i].SetSize(itemSize);
                     contentSizeDelta[_axis] += itemSize[_axis];
                 }
@@ -141,7 +149,7 @@ namespace RecyclableScrollRect
             var newItemSize = _itemPositions[itemIndex].itemSize;
             var oldItemSize = newItemSize[_axis];
 
-            if (!_dataSource.IsItemSizeKnown)
+            if (!_rsrDataSource.IsItemSizeKnown)
             {
                 ForceLayoutRebuild(itemIndex);
                 newItemSize[_axis] = rect.rect.size[_axis];
@@ -162,7 +170,7 @@ namespace RecyclableScrollRect
             }
             else
             {
-                newItemSize[_axis] = _dataSource.GetItemSize(itemIndex);
+                newItemSize[_axis] = _rsrDataSource.GetItemSize(itemIndex);
             }
 
             _itemPositions[itemIndex].SetSize(newItemSize);

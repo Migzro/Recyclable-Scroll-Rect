@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace RecyclableScrollRect
 {
-    public class VerticalGridRSRDemo : MonoBehaviour, IDataSource
+    public class VerticalGridRSRDemo : MonoBehaviour, IGridDataSource
     {
         [SerializeField] private int _itemsCount;
         [SerializeField] private RSRGrid _scrollRect;
@@ -16,7 +16,6 @@ namespace RecyclableScrollRect
         private int _itemCount;
 
         public int ItemsCount => _dataSource.Count;
-        public bool IsItemSizeKnown => true;
         public GameObject[] PrototypeItems => _prototypeItems;
 
         private void Start()
@@ -44,11 +43,6 @@ namespace RecyclableScrollRect
 
             _itemsCount = _itemsToReloadTo;
             _scrollRect.ReloadData(true);
-        }
-
-        public float GetItemSize(int itemIndex)
-        {
-            return 500f;
         }
 
         public void SetItemData(IItem item, int itemIndex)

@@ -1,3 +1,17 @@
+## [1.1.0] - 29-10-2025
+### New Features
+- Vastly improved scrolling and added support for scrolling with DoTween and Prime Tween.
+- Added two new sample scenes for DoTween and Prime Tween integration.
+### API Changes
+- Removed UseConstantScrollingSpeed && ConstantScrollSpeed
+- Changed ScrollToItem to ScrollToItemAtIndex for better clarity and adjusted its paramaters.
+- Removed IPageSource functions PageFocused and PageUnfocused as they were confusing and didn't add much value.
+- Added IRSRDataSource which replaces IDataSource for all non Paging and Grid RSRs.
+- Moved IsItemSizeKown & GetItemSize to IRSRDataSource as they are not needed for Grid RSRs.
+- Added IGridDataSource which extends IDataSource for Grid RSRs.
+- Renamed IPageSource to IPageDataSource.
+- Please re-import any RSR samples if any exist in your current project.
+
 ## [1.0.3] - 29-10-2025
 ### Bug Fixes
 - Fixed an issue where _maxExtraVisibleRowColumnInViewPort can be -1 after reloading data
