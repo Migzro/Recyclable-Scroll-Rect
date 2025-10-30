@@ -33,14 +33,14 @@ namespace RecyclableScrollRect
         public Vector2 itemSize{ get; private set; }
         public bool positionSet { get; private set; }
         public bool sizeSet { get; private set; }
+        public bool nonAxisSizeSet { get; private set; }
 
         public ItemPosition()
         {
             absTopLeftPosition = Vector2.zero;
             absBottomRightPosition = Vector2.zero;
             itemSize = Vector2.zero;
-            positionSet = false;
-            sizeSet = false;
+            ResetAllFlags();
         }
 
         public void SetPosition(Vector2 position)
@@ -50,23 +50,33 @@ namespace RecyclableScrollRect
             positionSet = true;
 
             if (sizeSet)
+            {
                 absBottomRightPosition = absTopLeftPosition + itemSize;
+            }
         }
         
-        public void SetPositionAndSize (Vector2 position, Vector2 size)
+        public void SetNonAxisSize(Vector2 size)
         {
             itemSize = size;
-            absTopLeftPosition = position.Abs();
-            absBottomRightPosition = absTopLeftPosition + itemSize;
-            positionSet = true;
-            sizeSet = true;
+            nonAxisSizeSet = true;
         }
 
         public void SetSize(Vector2 size)
         {
             itemSize = size;
-            absBottomRightPosition = absTopLeftPosition + itemSize;
             sizeSet = true;
+        }
+
+        public void ResetAllFlags()
+        {
+            positionSet = false;
+            sizeSet = false;
+            nonAxisSizeSet = false;
+        }
+
+        public void ResetPositionFlag()
+        {
+            positionSet = false;
         }
 
         public override string ToString()

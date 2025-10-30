@@ -253,12 +253,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: RecyclableScrollRect::RecyclableScrollRect.DemoScrollingHelper
   _scrollRect: {fileID: 1904557393}
-  _itemToScrollTo: 50
-  _timeToScroll: 20
-  _targetNormalizedPosition: 0.25
+  _itemToScrollTo: 99
+  _timeToScroll: 2
+  _targetNormalizedPosition: 0
   _isSpeed: 0
   _isInstant: 0
-  _callEvent: 1
+  _callEvent: 0
 --- !u!1 &1362537419
 GameObject:
   m_ObjectHideFlags: 0
@@ -572,7 +572,7 @@ MonoBehaviour:
   _scrollAnimationController: {fileID: 0}
   _childForceExpand: 1
   _reverseArrangement: 0
-  _extraItemsVisible: 30
+  _extraItemsVisible: 10
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

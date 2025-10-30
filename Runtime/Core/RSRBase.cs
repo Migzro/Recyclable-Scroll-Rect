@@ -104,13 +104,14 @@ namespace RecyclableScrollRect
                 return true;
             }
         }
-        
+
+        protected abstract bool IsItemSizeKnown { get; }
         protected abstract bool ReachedMinRowColumnInViewPort { get; }
         protected abstract bool ReachedMaxRowColumnInViewPort { get; }
         protected abstract bool IsLastRowColumn(int itemIndex);
         protected abstract void InitializeItems(int startIndex = 0);
-        protected abstract void SetItemAxisPosition(RectTransform rect, int itemIndex);
-        protected abstract void CalculateItemAxisSize(RectTransform rect, int itemIndex);
+        protected abstract void SetItemPosition(int itemIndex, RectTransform rect = null);
+        protected abstract void SetItemSize(int itemIndex, RectTransform rect = null);
         protected abstract int GetActualItemIndex(int itemIndex);
         protected abstract void CalculateContentSize();
         protected abstract void HideItemsAtTopLeft();
@@ -376,7 +377,19 @@ namespace RecyclableScrollRect
         private void InitializeItemPositions()
         {
             for (var i = _itemPositions.Count; i < _itemsCount; i++)
+            {
                 _itemPositions.Add(new ItemPosition());
+            }
+
+            if (IsItemSizeKnown)
+            {
+                for (var i = 0; i < _itemsCount; i++)
+                {
+                    SetNonAxisSize(i);
+                    SetItemSize(i);
+                    SetItemPosition(i);
+                }
+            }
         }
         
         /// <summary>
@@ -417,15 +430,21 @@ namespace RecyclableScrollRect
                 }
             }
 
-            var rect = itemGo.transform as RectTransform;
+            var rect = (RectTransform)itemGo.transform;
             var item = new Item(itemImpl, rect);
             _visibleItems.Add(index, item);
             _dataSource.ItemCreated(actualItemIndex, itemImpl, itemGo);
+
+            // anchors and pivot will always be 0,1 no matter the settings of RSR
+            var anchorVector = new Vector2(0, 1);
+            rect.anchorMin = anchorVector;
+            rect.anchorMax = anchorVector;
+            rect.pivot = anchorVector;
             
-            CalculateNonAxisSizePosition(rect, index);
-            SetItemAxisPosition(rect, index);
+            SetNonAxisSize(index, rect);
             _dataSource.SetItemData(itemImpl, actualItemIndex);
-            CalculateItemAxisSize(rect, index);
+            SetItemSize(index, rect);
+            SetItemPosition(index, rect);
         }
         
         /// <summary>
@@ -484,12 +503,16 @@ namespace RecyclableScrollRect
             // item has been deleted, no need to reload
             if (itemIndex >= _itemsCount)
                 return;
-            
+         
             if (reloadItemData)
             {
+                _itemPositions[itemIndex].ResetAllFlags();
+                SetNonAxisSize(itemIndex, visibleItem.transform);
                 var actualItemIndex = GetActualItemIndex(itemIndex);
                 if (actualItemIndex != -1)
+                {
                     _dataSource.SetItemData(visibleItem.item, actualItemIndex);
+                }
             }
         }
 
@@ -505,32 +528,30 @@ namespace RecyclableScrollRect
             {
                 RectTransform[] rects = null;
                 if (!_staticItems[itemIndex])
+                {
                     rects = visibleItem.item.ItemsNeededForVisualUpdate;
+                }
 
                 if (rects != null)
                 {
                     foreach (var rect in rects)
+                    {
                         LayoutRebuilder.ForceRebuildLayoutImmediate(rect);
+                    }
                 }
                 LayoutRebuilder.ForceRebuildLayoutImmediate(visibleItem.transform);
             }
         }
 
         /// <summary>
-        /// This function call is only needed when the item is created, or when the resolution changes
         /// it sets the vertical size of the item in a horizontal layout
         /// or the horizontal size of an item in a vertical layout based on the settings of said layout
-        /// It also sets the vertical position in horizontal layout or the horizontal position in a vertical layout based on the padding of said layout
         /// Is not needed in grid as items will have different positions in non axis position and the non axis size is the same in all of them
         /// </summary>
-        /// <param name="rect">The rect of the item that its size will be adjusted</param>
         /// <param name="itemIndex">The index of the item that its size will be adjusted</param>
-        protected virtual void CalculateNonAxisSizePosition(RectTransform rect, int itemIndex)
+        /// <param name="rect">rect transform that needs setting</param>
+        protected virtual void SetNonAxisSize(int itemIndex, RectTransform rect = null)
         {
-            var anchorVector = new Vector2(0, 1);
-            rect.anchorMin = anchorVector;
-            rect.anchorMax = anchorVector;
-            rect.pivot = anchorVector;
         }
         
         /// <summary>
@@ -538,12 +559,12 @@ namespace RecyclableScrollRect
         /// It doesn't need to set the position of an invisible item as it will get set automatically when its in view 
         /// </summary>
         /// <param name="itemIndex">item index to set position to</param>
-        public void SetItemPosition(int itemIndex)
+        public void RestoreItemPosition(int itemIndex)
         {
             if (!_visibleItems.TryGetValue(itemIndex, out var visibleItem))
                 return;
 
-            SetItemAxisPosition(visibleItem.transform, itemIndex);
+            SetItemPosition(itemIndex, visibleItem.transform);
         }
 
         /// <summary>
@@ -685,10 +706,11 @@ namespace RecyclableScrollRect
                 _visibleItems.Add(itemIndex, item);
                 item.item.ItemIndex = itemIndex;
                 
-                SetItemAxisPosition(item.transform, itemIndex);
+                SetNonAxisSize(itemIndex, item.transform);
                 var actualItemIndex = GetActualItemIndex(itemIndex);
                 _dataSource.SetItemData(item.item, actualItemIndex);
-                CalculateItemAxisSize(item.transform, itemIndex);
+                SetItemSize(itemIndex, item.transform);
+                SetItemPosition(itemIndex, item.transform);
                 
                 if (_itemsMarkedForReload.Contains(itemIndex))
                 {
@@ -780,7 +802,7 @@ namespace RecyclableScrollRect
                 _prototypeNames.RemoveRange(_itemsCount, itemDiff);
                 _staticItems.RemoveRange(_itemsCount, itemDiff);
             }
-
+            
             ResetVariables();
             SetContentAnchorsPivot();
             InitializeItemPositions();

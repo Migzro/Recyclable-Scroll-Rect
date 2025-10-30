@@ -19,6 +19,7 @@ namespace RecyclableScrollRect
         private Vector2 _gridLayoutItemsOffset;
         private int _originalItemsCount;
 
+        protected override bool IsItemSizeKnown => true;
         protected override bool ReachedMinRowColumnInViewPort => _minVisibleRowColumnInViewPort == 0;
         protected override bool ReachedMaxRowColumnInViewPort => _maxVisibleRowColumnInViewPort == (_grid.maxGridItemsInAxis - 1) * _gridConstraintCount;
 
@@ -58,11 +59,6 @@ namespace RecyclableScrollRect
         {
             var contentSizeDelta = viewport.sizeDelta;
             contentSizeDelta[_axis] = (_grid.maxGridItemsInAxis * _gridItemSize[_axis]) + (_spacing[_axis] * (_grid.maxGridItemsInAxis - 1));
-
-            for (var i = 0; i < _itemsCount; i++)
-            {
-                _itemPositions[i].SetSize(_gridItemSize);
-            }
             
             if (vertical)
             {
@@ -128,31 +124,48 @@ namespace RecyclableScrollRect
                 _gridLayoutItemsOffset.x = _padding.left;
             }
         }
-        
+
         /// <summary>
         /// This function sets the position of the item whether its new or retrieved from pool based on its index
         /// it just sets the position of the grid items one after the other regardless of the data in each item
         /// </summary>
-        /// <param name="rect">rect of the item which position will be set</param>
         /// <param name="itemIndex">index of the item that needs its position set</param>
-        protected override void SetItemAxisPosition(RectTransform rect, int itemIndex)
+        /// <param name="rect">RectTransform to set position for</param>
+        protected override void SetItemPosition(int itemIndex, RectTransform rect = null)
         {
-            var newItemPosition = rect.anchoredPosition;
-            var gridIndex = _grid.To2dIndex(itemIndex);
-            newItemPosition.x = _gridLayoutItemsOffset.x + gridIndex.x * _itemPositions[itemIndex].itemSize[0] + _spacing[0] * gridIndex.x;
-            newItemPosition.y = -_gridLayoutItemsOffset.y - gridIndex.y * _itemPositions[itemIndex].itemSize[1] - _spacing[1] * gridIndex.y;
-            rect.anchoredPosition = newItemPosition;
-            _itemPositions[itemIndex].SetPosition(newItemPosition);
+            var itemPosition = _itemPositions[itemIndex];
+            if (!itemPosition.positionSet)
+            {
+                var newItemPosition = Vector2.zero;
+                var gridIndex = _grid.To2dIndex(itemIndex);
+                newItemPosition.x = _gridLayoutItemsOffset.x + gridIndex.x * itemPosition.itemSize[0] + _spacing[0] * gridIndex.x;
+                newItemPosition.y = -_gridLayoutItemsOffset.y - gridIndex.y * itemPosition.itemSize[1] - _spacing[1] * gridIndex.y;
+                itemPosition.SetPosition(newItemPosition);
+            }
+            
+            if (rect != null)
+            {
+                rect.anchoredPosition = itemPosition.topLeftPosition;
+            }
         }
         
         /// <summary>
         /// This function just sets the rect.sizeDelta of the grid
         /// </summary>
-        /// <param name="rect">rect of the item which the size will be calculated for</param>
         /// <param name="itemIndex">item index which the size will be calculated for</param>
-        protected override void CalculateItemAxisSize(RectTransform rect, int itemIndex)
+        /// <param name="rect">RectTransform to set size for</param>
+        protected override void SetItemSize(int itemIndex, RectTransform rect = null)
         {
-            rect.sizeDelta = _gridItemSize;
+            var itemPosition = _itemPositions[itemIndex];
+            if (!itemPosition.sizeSet)
+            {
+                itemPosition.SetSize(_gridItemSize);
+            }
+            
+            if (rect != null)
+            {
+                rect.sizeDelta = itemPosition.itemSize;
+            }
         }
 
         protected override bool IsLastRowColumn(int itemIndex)

@@ -12,6 +12,7 @@ namespace RecyclableScrollRect
         
         private IRSRDataSource _rsrDataSource;
 
+        protected override bool IsItemSizeKnown => _rsrDataSource.IsItemSizeKnown;
         protected override bool ReachedMinRowColumnInViewPort => _minVisibleRowColumnInViewPort == 0;
         protected override bool ReachedMaxRowColumnInViewPort => _maxVisibleRowColumnInViewPort == _itemsCount - 1;
         
@@ -77,19 +78,8 @@ namespace RecyclableScrollRect
 
             for (var i = 0; i < _itemsCount; i++)
             {
-                if (!_rsrDataSource.IsItemSizeKnown)
-                {
-                    contentSizeDelta[_axis] += _itemPositions[i].itemSize[_axis];
-                }
-                else
-                {
-                    var itemSize = _itemPositions[i].itemSize;
-                    itemSize[_axis] = _rsrDataSource.GetItemSize(i);
-                    _itemPositions[i].SetSize(itemSize);
-                    contentSizeDelta[_axis] += itemSize[_axis];
-                }
+                contentSizeDelta[_axis] += _itemPositions[i].itemSize[_axis];
             }
-
             contentSizeDelta[_axis] += _spacing[_axis] * (_itemsCount - 1);
 
             if (vertical)
@@ -105,172 +95,189 @@ namespace RecyclableScrollRect
 
             content.sizeDelta = contentSizeDelta;
         }
-        
+
+        protected override void SetNonAxisSize(int itemIndex, RectTransform rect = null)
+        {
+            var itemPosition = _itemPositions[itemIndex];
+            var newItemSize = itemPosition.itemSize;
+
+            if (!itemPosition.nonAxisSizeSet)
+            {
+                if (_childForceExpand)
+                {
+                    if (vertical)
+                    {
+                        // expand item width if it's in a vertical scrollRect and the conditions are satisfied
+                        newItemSize.x = content.rect.width;
+                        if (!_dataSource.IgnoreContentPadding(itemIndex))
+                        {
+                            newItemSize.x -= _padding.right + _padding.left;
+                        }
+                    }
+                    else if (!vertical)
+                    {
+                        // expand item height if it's in a horizontal scrollRect and the conditions are satisfied
+                        newItemSize.y = content.rect.height;
+                        if (!_dataSource.IgnoreContentPadding(itemIndex))
+                        {
+                            newItemSize.y -= _padding.top + _padding.bottom;
+                        }
+                    }
+                }
+                else
+                {
+                    newItemSize[1 - _axis] = _dataSource.GetItemPrototype(itemIndex).GetComponent<RectTransform>().sizeDelta[1 - _axis];
+                }
+
+                itemPosition.SetNonAxisSize(newItemSize);
+            }
+
+            if (rect != null)
+            {
+                rect.sizeDelta = newItemSize;
+            }
+        }
+
         /// <summary>
         /// This function sets the position of the item whether its new or retrieved from pool based on its index and the previous item index
         /// The current index position is the previous item position + previous item height
         /// or the previous item position - current item height
         /// </summary>
-        /// <param name="rect">rect of the item which position will be set</param>
         /// <param name="itemIndex">index of the item that needs its position set</param>
-        protected override void SetItemAxisPosition(RectTransform rect, int itemIndex)
+        /// <param name="rect">RectTransform to set position for</param>
+        protected override void SetItemPosition(int itemIndex, RectTransform rect = null)
         {
-            var newItemPosition = rect.anchoredPosition;
-            // figure out where the prev item position was
-            if (itemIndex == 0)
+            var itemPosition = _itemPositions[itemIndex];
+            if (!itemPosition.positionSet)
             {
-                if (vertical)
+                var newItemPosition = itemPosition.topLeftPosition;
+                // figure out where the prev item position was
+                if (itemIndex == 0)
                 {
-                    newItemPosition.y = -_padding.top;
+                    if (vertical)
+                    {
+                        newItemPosition.y = -_padding.top;
+                    }
+                    else
+                    {
+                        newItemPosition.x = _padding.left;
+                    }
                 }
                 else
                 {
-                    newItemPosition.x = _padding.left;
+                    var verticalSign = vertical ? -1 : 1;
+                    newItemPosition[_axis] = verticalSign * _itemPositions[itemIndex - 1].absBottomRightPosition[_axis] + verticalSign * _spacing[_axis];
                 }
-            }
-            else
-            {
-                var verticalSign = vertical ? -1 : 1;
-                newItemPosition[_axis] = verticalSign * _itemPositions[itemIndex - 1].absBottomRightPosition[_axis] + verticalSign * _spacing[_axis];
-            }
 
-            rect.anchoredPosition = newItemPosition;
-            _itemPositions[itemIndex].SetPosition(newItemPosition);
+                // Sets the vertical position in horizontal layout or the horizontal position in a vertical layout based on the padding of said layout
+                var itemSize = itemPosition.itemSize;
+                var contentSize = content.rect.size;
+                var itemSizeSmallerThanContent = itemSize[1 - _axis] < contentSize[1 - _axis];
+                if (itemSizeSmallerThanContent)
+                {
+                    if (vertical)
+                    {
+                        var rightPadding = _padding.right;
+                        var leftPadding = _padding.left;
+                        if (_dataSource.IgnoreContentPadding(itemIndex))
+                        {
+                            rightPadding = 0;
+                            leftPadding = 0;
+                        }
+
+                        if (_itemsAlignment == ItemsAlignment.Center)
+                        {
+                            newItemPosition.x = (leftPadding + (contentSize.x - itemSize.x) - rightPadding) / 2f;
+                        }
+                        else if (_itemsAlignment == ItemsAlignment.RightOrDown)
+                        {
+                            newItemPosition.x = contentSize.x - itemSize.x - rightPadding;
+                        }
+                        else
+                        {
+                            newItemPosition.x = leftPadding;
+                        }
+                    }
+                    else
+                    {
+                        var topPadding = _padding.top;
+                        var bottomPadding = _padding.bottom;
+                        if (_dataSource.IgnoreContentPadding(itemIndex))
+                        {
+                            topPadding = 0;
+                            bottomPadding = 0;
+                        }
+
+                        if (_itemsAlignment == ItemsAlignment.Center)
+                        {
+                            newItemPosition.y = -(topPadding + (contentSize.y - itemSize.y) - bottomPadding) / 2f;
+                        }
+                        else if (_itemsAlignment == ItemsAlignment.RightOrDown)
+                        {
+                            newItemPosition.y = -(contentSize.y - itemSize.y - bottomPadding);
+                        }
+                        else
+                        {
+                            newItemPosition.y = -topPadding;
+                        }
+                    }
+                }
+
+                itemPosition.SetPosition(newItemPosition);
+            }
+            
+            if (rect != null)
+            {
+                rect.anchoredPosition = itemPosition.topLeftPosition;
+            }
         }
         
         /// <summary>
         /// This function calculates the item size if its unknown by forcing a Layout rebuild
         /// if it is known we just get the item size
         /// </summary>
-        /// <param name="rect">rect of the item which the size will be calculated for</param>
         /// <param name="itemIndex">item index which the size will be calculated for</param>
-        protected override void CalculateItemAxisSize(RectTransform rect, int itemIndex)
+        /// <param name="rect">RectTransform to set size for</param>
+        protected override void SetItemSize(int itemIndex, RectTransform rect = null)
         {
-            var newItemSize = _itemPositions[itemIndex].itemSize;
-            var oldItemSize = newItemSize[_axis];
+            var itemPosition = _itemPositions[itemIndex];
 
-            if (!_rsrDataSource.IsItemSizeKnown)
+            if (!itemPosition.sizeSet)
             {
-                ForceLayoutRebuild(itemIndex);
-                newItemSize[_axis] = rect.rect.size[_axis];
-                
-                // set the content size since items size was not known at the time of the initialization
-                var contentSize = content.sizeDelta;
-                contentSize[_axis] += newItemSize[_axis] - oldItemSize;
+                var newItemSize = itemPosition.itemSize;
+                var oldItemSize = itemPosition.itemSize[_axis];
 
-                if (vertical)
+                if (!_rsrDataSource.IsItemSizeKnown)
                 {
-                    _layoutElement.preferredHeight = contentSize.y;
+                    ForceLayoutRebuild(itemIndex);
+                    newItemSize[_axis] = _visibleItems[itemIndex].transform.rect.size[_axis];
+
+                    // set the content size since items size was not known at the time of the initialization
+                    var contentSize = content.sizeDelta;
+                    contentSize[_axis] += newItemSize[_axis] - oldItemSize;
+
+                    if (vertical)
+                    {
+                        _layoutElement.preferredHeight = contentSize.y;
+                    }
+                    else
+                    {
+                        _layoutElement.preferredWidth = contentSize.x;
+                    }
+
+                    content.sizeDelta = contentSize;
                 }
                 else
                 {
-                    _layoutElement.preferredWidth = contentSize.x;
-                } 
-                content.sizeDelta = contentSize;
-            }
-            else
-            {
-                newItemSize[_axis] = _rsrDataSource.GetItemSize(itemIndex);
-            }
+                    newItemSize[_axis] = _rsrDataSource.GetItemSize(itemIndex);
+                }
 
-            _itemPositions[itemIndex].SetSize(newItemSize);
-        }
-
-        protected override void CalculateNonAxisSizePosition(RectTransform rect, int itemIndex)
-        {
-            base.CalculateNonAxisSizePosition(rect, itemIndex);
+                itemPosition.SetSize(newItemSize);
+            }
             
-            var forceSize = false;
-            // expand item width if it's in a vertical scrollRect and the conditions are satisfied
-            if (vertical && _childForceExpand)
+            if (rect != null)
             {
-                var itemSize = rect.sizeDelta;
-                itemSize.x = content.rect.width;
-                if (!_dataSource.IgnoreContentPadding(itemIndex))
-                {
-                    itemSize.x -= _padding.right + _padding.left;
-                }
-
-                rect.sizeDelta = itemSize;
-                _itemPositions[itemIndex].SetSize(itemSize);
-                forceSize = true;
-            }
-
-            // expand item height if it's in a horizontal scrollRect and the conditions are satisfied
-            else if (!vertical && _childForceExpand)
-            {
-                var itemSize = rect.sizeDelta;
-                itemSize.y = content.rect.height;
-                if (!_dataSource.IgnoreContentPadding(itemIndex))
-                {
-                    itemSize.y -= _padding.top + _padding.bottom;
-                }
-
-                rect.sizeDelta = itemSize;
-                _itemPositions[itemIndex].SetSize(itemSize);
-                forceSize = true;
-            }
-
-            // get content size without padding
-            var contentSize = content.rect.size;
-            var contentSizeWithoutPadding = contentSize;
-            contentSizeWithoutPadding.x -= _padding.right + _padding.left;
-            contentSizeWithoutPadding.y -= _padding.top + _padding.bottom;
-
-            // set position of item based on layout alignment
-            // we check for multiple conditions together since the content is made to fit the items, so they only move in one axis in each different scroll direction
-            var rectSize = rect.rect.size;
-            var itemSizeSmallerThanContent = rectSize[_axis] < contentSizeWithoutPadding[_axis];
-            if (itemSizeSmallerThanContent || forceSize)
-            {
-                var itemPosition = rect.anchoredPosition;
-                if (vertical)
-                {
-                    var rightPadding = _padding.right;
-                    var leftPadding = _padding.left;
-                    if (_dataSource.IgnoreContentPadding(itemIndex))
-                    {
-                        rightPadding = 0;
-                        leftPadding = 0;
-                    }
-
-                    if (_itemsAlignment == ItemsAlignment.Center)
-                    {
-                        itemPosition.x = (leftPadding + (contentSize.x - rectSize.x) - rightPadding) / 2f;
-                    }
-                    else if (_itemsAlignment == ItemsAlignment.RightOrDown)
-                    {
-                        itemPosition.x = contentSize.x - rectSize.x - rightPadding;
-                    }
-                    else
-                    {
-                        itemPosition.x = leftPadding;
-                    }
-                }
-                else
-                {
-                    var topPadding = _padding.top;
-                    var bottomPadding = _padding.bottom;
-                    if (_dataSource.IgnoreContentPadding(itemIndex))
-                    {
-                        topPadding = 0;
-                        bottomPadding = 0;
-                    }
-                    
-                    if (_itemsAlignment == ItemsAlignment.Center)
-                    {
-                        itemPosition.y = -(topPadding + (contentSize.y - rectSize.y) - bottomPadding) / 2f;
-                    }
-                    else if (_itemsAlignment == ItemsAlignment.RightOrDown)
-                    {
-                        itemPosition.y = -(contentSize.y - rectSize.y - bottomPadding);
-                    }
-                    else
-                    {
-                        itemPosition.y = -topPadding;
-                    }
-                }
-                rect.anchoredPosition = itemPosition;
+                rect.sizeDelta = itemPosition.itemSize;
             }
         }
         
@@ -379,9 +386,8 @@ namespace RecyclableScrollRect
         private void SetItemSizeWithPositionAfterReload(Item item, int itemIndex, bool isReloadingAllData)
         {
             var oldSize = _itemPositions[itemIndex].itemSize[_axis];
-            CalculateNonAxisSizePosition(item.transform, itemIndex);
-            SetItemAxisPosition(item.transform, itemIndex);
-            CalculateItemAxisSize(item.transform, itemIndex);
+            SetItemSize(itemIndex, item.transform);
+            SetItemPosition(itemIndex, item.transform);
             
             // no need to call this while reloading data, since ReloadData will call it after reloading items
             // calling it while reload data will add unneeded redundancy
@@ -390,7 +396,9 @@ namespace RecyclableScrollRect
                 // no need to call CalculateNewMinMaxItemsAfterReloadItem if content moved since it will be handled in Update
                 var contentMoved = RecalculateFollowingItems(itemIndex, oldSize);
                 if (!contentMoved)
+                {
                     CalculateNewMinMaxItemsAfterReloadItem();
+                }
             }
         }
         
@@ -406,11 +414,16 @@ namespace RecyclableScrollRect
             // need to adjust all the items position after itemIndex 
             var startingItemToAdjustPosition = itemIndex + 1;
             for (var i = startingItemToAdjustPosition; i <= _maxExtraVisibleRowColumnInViewPort; i++)
-                SetItemAxisPosition(_visibleItems[i].transform, i);
+            {
+                _itemPositions[i].ResetPositionFlag();
+                SetItemPosition(i, _visibleItems[i].transform);
+            }
 
             if (_isAnimating)
+            {
                 return true;
-            
+            }
+
             var contentPosition = content.anchoredPosition;
             var contentMoved = false;
             var oldContentPosition = contentPosition[_axis];
@@ -419,14 +432,6 @@ namespace RecyclableScrollRect
                 // this is a very special case as items reloaded at the top or right will have a different bottomRight position
                 // and since we are here at the item, if we don't manually set the position of the content, it will seem as the content suddenly shifted and disorient the user
                 contentPosition[_axis] = _itemPositions[itemIndex].absBottomRightPosition[_axis];
-                
-                // set the normalized position as well, because why not
-                // (viewMin - (itemPosition - contentSize)) / (contentSize - viewSize)
-                // var viewportRect = viewport.rect;
-                // var contentRect = content.rect;
-                // var viewPortBounds = new Bounds(viewportRect.center, viewportRect.size);
-                // var newNormalizedPosition = (viewPortBounds.min[_axis] - (_itemPositions[itemIndex].bottomRightPosition[_axis] - contentRect.size[_axis])) / (contentRect.size[_axis] - viewportRect.size[_axis]);
-                // SetNormalizedPosition(newNormalizedPosition, _axis);
             }
             else if (_minExtraVisibleRowColumnInViewPort <= itemIndex && _minVisibleRowColumnInViewPort > itemIndex)
             {
@@ -435,7 +440,9 @@ namespace RecyclableScrollRect
             
             var contentPositionDiff = Mathf.Abs(contentPosition[_axis] - oldContentPosition);
             if (contentPositionDiff > 0)
+            {
                 contentMoved = true;
+            }
 
             if (contentMoved)
             {

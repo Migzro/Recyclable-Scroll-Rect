@@ -132,7 +132,6 @@ GameObject:
   - component: {fileID: 658359681}
   - component: {fileID: 658359680}
   - component: {fileID: 658359685}
-  - component: {fileID: 658359686}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -240,25 +239,6 @@ MonoBehaviour:
   _prototypeItems:
   - {fileID: 1638117046129563386, guid: 6f5a79cc83c584f2a830072105911c5e, type: 3}
   - {fileID: 1638117046129563386, guid: e758246e7c6a24c7ca434ced3bde404c, type: 3}
---- !u!114 &658359686
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 658359679}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eaccc040569cd4426b12b2a2bfdfa0d4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: RecyclableScrollRect::RecyclableScrollRect.DemoScrollingHelper
-  _scrollRect: {fileID: 1904557393}
-  _itemToScrollTo: 50
-  _timeToScroll: 2
-  _targetNormalizedPosition: 0
-  _isSpeed: 0
-  _isInstant: 0
-  _callEvent: 1
 --- !u!1 &1362537419
 GameObject:
   m_ObjectHideFlags: 0

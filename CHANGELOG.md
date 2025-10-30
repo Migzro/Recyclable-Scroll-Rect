@@ -2,6 +2,7 @@
 ### New Features
 - Vastly improved scrolling and added support for scrolling with DoTween and Prime Tween.
 - Added two new sample scenes for DoTween and Prime Tween integration.
+- Changed how size and position calculations are done which should result in a small performance improvement.
 ### API Changes
 - Removed UseConstantScrollingSpeed && ConstantScrollSpeed
 - Changed ScrollToItem to ScrollToItemAtIndex for better clarity and adjusted its paramaters.
@@ -10,6 +11,7 @@
 - Moved IsItemSizeKown & GetItemSize to IRSRDataSource as they are not needed for Grid RSRs.
 - Added IGridDataSource which extends IDataSource for Grid RSRs.
 - Renamed IPageSource to IPageDataSource.
+- Renamed SetItemPosition to RestoreItemPosition
 - Please re-import any RSR samples if any exist in your current project.
 
 ## [1.0.3] - 29-10-2025
