@@ -19,6 +19,11 @@ namespace RecyclableScrollRect
             _pageDataSource = (IPageDataSource)_dataSource;
             _currentPage = 0;
             base.Initialize();
+            
+            if (_itemsCount > 0 && _visibleItems.TryGetValue(_currentPage, out var visibleItem))
+            {
+                _pageDataSource?.PageWillFocus(_currentPage, true, visibleItem.item);
+            }
         }
 
         /// <summary>
@@ -36,7 +41,7 @@ namespace RecyclableScrollRect
                 // scroll item will handle the focus
                 ScrollToItemIndex(Mathf.Max(0, _currentPage - 1), instant:true);
             }
-            else  if (_itemsCount > 0 && _visibleItems.TryGetValue(_currentPage, out var visibleItem))
+            else if (_itemsCount > 0 && _visibleItems.TryGetValue(_currentPage, out var visibleItem))
             {
                 _pageDataSource?.PageWillFocus(_currentPage, true, visibleItem.item);
             }

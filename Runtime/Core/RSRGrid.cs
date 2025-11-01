@@ -207,12 +207,6 @@ namespace RecyclableScrollRect
                 currentStartItemInRowColumn = current2DIndex[_axis] * _gridConstraintCount;
             }
         }
-        
-        public override void ReloadData(bool reloadAllItems = false)
-        {
-            base.ReloadData(reloadAllItems);
-            RefreshAfterReload(reloadAllItems);
-        }
                 
         /// <summary>
         /// this removes all items that are not needed after item reload if _itemsCount has been reduced
@@ -253,9 +247,10 @@ namespace RecyclableScrollRect
         {
             base.RefreshAfterReload(reloadAllItems);
 
-            if (!reloadAllItems)
+            // add more items if needed
+            if (_itemsCount - 1 > _maxExtraVisibleRowColumnInViewPort + _gridConstraintCount)
             {
-                return;
+                InitializeItems(_maxExtraVisibleRowColumnInViewPort + _gridConstraintCount);
             }
 
             // we start from the _minExtraVisibleItemInViewPort row/column till the _maxExtraVisibleItemInViewPort
@@ -281,12 +276,12 @@ namespace RecyclableScrollRect
                     }
                 }
             }
-
+            
             foreach (var index in indicesToHide)
             {
                 HideItemAtIndex(index);
             }
-
+            
             foreach (var index in indicesToShow)
             {
                 ShowItemAtIndex(index);

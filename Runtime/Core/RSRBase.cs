@@ -224,7 +224,6 @@ namespace RecyclableScrollRect
             HideStaticItems();
             SetPrototypeNames();
             InitializeItems();
-            RefreshAfterReload(false);
 
             IsInitialized = true;
         }
@@ -788,7 +787,7 @@ namespace RecyclableScrollRect
         /// Reload data in scroll view
         /// </summary>
         /// <param name="reloadAllItems">should be only used when adding items to the top of the current visible items</param>
-        public virtual void ReloadData(bool reloadAllItems = false)
+        public void ReloadData(bool reloadAllItems = false)
         {
             var oldItemsCount = _itemsCount;
             _itemsCount = _dataSource.ItemsCount;
@@ -815,6 +814,7 @@ namespace RecyclableScrollRect
                 foreach (var item in _visibleItems)
                     ReloadItemInternal(item.Key, "", true, true);
             }
+            RefreshAfterReload(reloadAllItems);
         }
 
         /// <summary>
