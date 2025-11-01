@@ -17,6 +17,12 @@ namespace RecyclableScrollRect
         {
             _pageSource = (IPageSource)_dataSource;
             base.Initialize();
+            
+            if (_itemsCount > 0 && _visibleItems.ContainsKey(_currentPage))
+            {
+                _pageSource?.PageWillFocus(_currentPage, true, _visibleItems[_currentPage].item, _visibleItems[_currentPage].transform, _itemPositions[_currentPage].topLeftPosition);
+                _pageSource?.PageFocused(_currentPage, true, _visibleItems[_currentPage].item);
+            }
         }
 
         /// <summary>
@@ -34,7 +40,7 @@ namespace RecyclableScrollRect
                 // scroll item will handle the focus
                 ScrollToItem(Mathf.Max(0, _currentPage - 1), instant:true);
             }
-            else  if (_itemsCount > 0 && _visibleItems.ContainsKey(_currentPage))
+            else if (_itemsCount > 0 && _visibleItems.ContainsKey(_currentPage))
             {
                 _pageSource?.PageWillFocus(_currentPage, true, _visibleItems[_currentPage].item, _visibleItems[_currentPage].transform, _itemPositions[_currentPage].topLeftPosition);
                 _pageSource?.PageFocused(_currentPage, true, _visibleItems[_currentPage].item);

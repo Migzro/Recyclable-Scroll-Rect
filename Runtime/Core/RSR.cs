@@ -40,10 +40,10 @@ namespace RecyclableScrollRect
         protected override void InitializeItems(int startIndex = 0)
         {
             GetContentBounds();
+
             var contentHasSpace = startIndex == 0 || _itemPositions[startIndex - 1].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
             var extraItemsInitialized = contentHasSpace ? 0 : _maxExtraVisibleRowColumnInViewPort - _maxVisibleRowColumnInViewPort;
-            var i = startIndex;
-            while ((contentHasSpace || extraItemsInitialized < _extraItemsVisible) && i < _itemsCount)
+            for (var i = startIndex; (contentHasSpace || extraItemsInitialized < _extraItemsVisible) && i < _itemsCount; i++)
             {
                 ShowItemAtIndex(i);
                 if (!contentHasSpace)
@@ -52,9 +52,8 @@ namespace RecyclableScrollRect
                     _maxVisibleRowColumnInViewPort = i;
 
                 contentHasSpace = _itemPositions[i].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
-                i++;
+                _maxExtraVisibleRowColumnInViewPort = i;
             }
-            _maxExtraVisibleRowColumnInViewPort = i - 1;
         }
         
         /// <summary>
@@ -265,13 +264,6 @@ namespace RecyclableScrollRect
                 rect.anchoredPosition = itemPosition;
             }
         }
-        
-        public override void ReloadData(bool reloadAllItems = false)
-        {
-            base.ReloadData(reloadAllItems);
-            CalculateNewMinMaxItemsAfterReloadItem();
-            RefreshAfterReload(reloadAllItems);
-        }
 
         /// <summary>
         /// this removes all items that are not needed after item reload if _itemsCount has been reduced
@@ -283,19 +275,21 @@ namespace RecyclableScrollRect
             
             if (_itemsCount - 1 < _maxVisibleRowColumnInViewPort)
             {
-                _maxVisibleRowColumnInViewPort = _itemsCount - 1;
+                _maxVisibleRowColumnInViewPort = Mathf.Max(0, _itemsCount - 1);
             }
             if (_itemsCount - 1 < _maxExtraVisibleRowColumnInViewPort)
             {
-                _maxExtraVisibleRowColumnInViewPort = Mathf.Min(_itemsCount - 1, _maxVisibleRowColumnInViewPort + _extraItemsVisible);
+                _maxExtraVisibleRowColumnInViewPort = Mathf.Min(Mathf.Max(0, _itemsCount - 1), _maxVisibleRowColumnInViewPort + _extraItemsVisible);
             }
         }
         
         /// <summary>
         /// Checks if items need to be hidden, shown, instantiated after an item is reloaded and its size changes
         /// </summary>
-        private void CalculateNewMinMaxItemsAfterReloadItem()
+        protected override void RefreshAfterReload(bool reloadAllItems)
         {
+            base.RefreshAfterReload(reloadAllItems);
+            
             // figure out the new _minVisibleItemInViewPort && _maxVisibleItemInViewPort
             GetContentBounds();
             var newMinVisibleItemInViewPortSet = false;
@@ -316,41 +310,29 @@ namespace RecyclableScrollRect
                 }
             }
 
-            var newMinExtraVisibleItemInViewPort = Mathf.Max (0, newMinVisibleItemInViewPort - _extraItemsVisible);
-            var newMaxExtraVisibleItemInViewPort = Mathf.Min (_itemsCount > 0 ? _itemsCount - 1 : 0, newMaxVisibleItemInViewPort + _extraItemsVisible);
-            if (newMaxExtraVisibleItemInViewPort < _maxExtraVisibleRowColumnInViewPort)
+            _minVisibleRowColumnInViewPort = newMinVisibleItemInViewPort;
+            _minExtraVisibleRowColumnInViewPort = Mathf.Clamp(newMinVisibleItemInViewPort - _extraItemsVisible, 0, Mathf.Max(0, _itemsCount - 1));
+            
+            var newMaxExtraVisibleItemInViewPort = Mathf.Clamp(newMaxVisibleItemInViewPort + _extraItemsVisible, 0, Mathf.Max(0, _itemsCount - 1));
+            if (_maxExtraVisibleRowColumnInViewPort > newMaxExtraVisibleItemInViewPort)
             {
-                for (var i = newMaxExtraVisibleItemInViewPort + 1; i <= _maxExtraVisibleRowColumnInViewPort; i++)
+                for (var i = _maxExtraVisibleRowColumnInViewPort + 1; i <= newMaxExtraVisibleItemInViewPort; i++)
                 {
                     HideItemAtIndex(i);
                 }
-
-                _maxVisibleRowColumnInViewPort = newMaxVisibleItemInViewPort;
-                _maxExtraVisibleRowColumnInViewPort = newMaxExtraVisibleItemInViewPort;
-            }
-            else
-            {
-                // here we initialize items instead of using ShowItemAtIndex because we don't know much viewport space is left
-                InitializeItems(_maxExtraVisibleRowColumnInViewPort + 1);
             }
             
-            if (newMinExtraVisibleItemInViewPort > _minExtraVisibleRowColumnInViewPort)
+            _maxVisibleRowColumnInViewPort = newMaxVisibleItemInViewPort;
+            if (_maxExtraVisibleRowColumnInViewPort < newMaxExtraVisibleItemInViewPort || (_itemsCount > 0 && newMaxVisibleItemInViewPort == 0))
             {
-                for (var i = _minExtraVisibleRowColumnInViewPort; i < newMinExtraVisibleItemInViewPort; i++)
+                // here we initialize items instead of using ShowItemAtIndex because we don't know much viewport space is left, initialize items handles setting _maxExtraVisibleRowColumnInViewPort
+                var startItemIndex = _maxExtraVisibleRowColumnInViewPort;
+                if (_visibleItems.ContainsKey(startItemIndex))
                 {
-                    HideItemAtIndex(i);
+                    startItemIndex++;
                 }
+                InitializeItems(startItemIndex);
             }
-            else
-            {
-                for (var i = _minExtraVisibleRowColumnInViewPort - 1; i >= newMinExtraVisibleItemInViewPort; i--)
-                {
-                    ShowItemAtIndex(i);
-                }
-            }
-
-            _minVisibleRowColumnInViewPort = newMinVisibleItemInViewPort;
-            _minExtraVisibleRowColumnInViewPort = newMinExtraVisibleItemInViewPort;
         }
 
         protected override void ReloadItemInternal(int itemIndex, string reloadTag = "", bool reloadItemData = false, bool isReloadingAllData = false)
@@ -379,10 +361,12 @@ namespace RecyclableScrollRect
             // calling it while reload data will add unneeded redundancy
             if (!isReloadingAllData)
             {
-                // no need to call CalculateNewMinMaxItemsAfterReloadItem if content moved since it will be handled in Update
+                // no need to call RefreshAfterReload if content moved since it will be handled in Update
                 var contentMoved = RecalculateFollowingItems(itemIndex, oldSize);
                 if (!contentMoved)
-                    CalculateNewMinMaxItemsAfterReloadItem();
+                {
+                    RefreshAfterReload(false);
+                }
             }
         }
         

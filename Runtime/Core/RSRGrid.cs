@@ -194,12 +194,6 @@ namespace RecyclableScrollRect
                 currentStartItemInRowColumn = current2DIndex[_axis] * _gridConstraintCount;
             }
         }
-        
-        public override void ReloadData(bool reloadAllItems = false)
-        {
-            base.ReloadData(reloadAllItems);
-            RefreshAfterReload(reloadAllItems);
-        }
                 
         /// <summary>
         /// this removes all items that are not needed after item reload if _itemsCount has been reduced
