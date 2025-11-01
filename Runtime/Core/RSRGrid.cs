@@ -234,9 +234,10 @@ namespace RecyclableScrollRect
         {
             base.RefreshAfterReload(reloadAllItems);
 
-            if (!reloadAllItems)
+            // add more items if needed
+            if (_itemsCount - 1 > _maxExtraVisibleRowColumnInViewPort + _gridConstraintCount)
             {
-                return;
+                InitializeItems(_maxExtraVisibleRowColumnInViewPort + _gridConstraintCount);
             }
 
             // we start from the _minExtraVisibleItemInViewPort row/column till the _maxExtraVisibleItemInViewPort
@@ -262,12 +263,12 @@ namespace RecyclableScrollRect
                     }
                 }
             }
-
+            
             foreach (var index in indicesToHide)
             {
                 HideItemAtIndex(index);
             }
-
+            
             foreach (var index in indicesToShow)
             {
                 ShowItemAtIndex(index);

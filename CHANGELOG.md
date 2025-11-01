@@ -1,6 +1,11 @@
+## [1.0.4] - 1-11-2025
+### Bug Fixes
+- Fixed an issue where calling ReloadData after scrolling with a new itemCount less than current itemCount can sometimes cause null exceptions.
+- Fixed an issue where calling ReloadData in a grid with more items than itemsCount would result in an unexpected behaviour.
+
 ## [1.0.3] - 29-10-2025
 ### Bug Fixes
-- Fixed an issue where _maxExtraVisibleRowColumnInViewPort can be -1 after reloading data
+- Fixed an issue where _maxExtraVisibleRowColumnInViewPort can be -1 after reloading data.
 
 ## [1.0.2] - 24-10-2025
 ### Bug Fixes
