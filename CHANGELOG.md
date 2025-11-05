@@ -3,6 +3,11 @@
 - Vastly improved scrolling and added support for scrolling with DoTween and Prime Tween.
 - Added two new sample scenes for DoTween and Prime Tween integration.
 - Changed how size and position calculations are done which should result in a small performance improvement.
+- Multiple items can now show and hide per frame.
+
+### Bug Fixes
+- Fixed an issue with an item reloading while not being visible.
+
 ### API Changes
 - Removed UseConstantScrollingSpeed && ConstantScrollSpeed
 - Changed ScrollToItem to ScrollToItemAtIndex for better clarity and adjusted its paramaters.

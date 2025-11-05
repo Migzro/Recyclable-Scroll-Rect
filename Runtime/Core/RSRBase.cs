@@ -46,7 +46,7 @@ namespace RecyclableScrollRect
         protected SortedDictionary<int, Item> _visibleItems;
         private Dictionary<string, List<Item>> _pooledItems;
         private Dictionary<int, HashSet<string>> _reloadTags;
-        private HashSet<int> _itemsMarkedForReload;
+        private Dictionary<int, (string, bool)> _itemsMarkedForReload;
         
         protected Vector2 _dragStartingPosition;
         protected Vector2 _contentTopLeftCorner;
@@ -195,7 +195,7 @@ namespace RecyclableScrollRect
             _prototypeNames = new List<string>();
             _itemPositions = new List<ItemPosition>();
             _reloadTags = new Dictionary<int, HashSet<string>>();
-            _itemsMarkedForReload = new HashSet<int>();
+            _itemsMarkedForReload = new Dictionary<int, (string, bool)>();
             _lastContentPosition = _contentTopLeftCorner;
             SetMovementType(_initialMovementType);
 
@@ -499,7 +499,7 @@ namespace RecyclableScrollRect
             // reloading the item multiple times with different tags is needed when multiple changes happen to an item over the course of some frames when its visible
             if (!_visibleItems.TryGetValue(itemIndex, out var visibleItem))
             {
-                _itemsMarkedForReload.Add(itemIndex);
+                _itemsMarkedForReload.Add(itemIndex, (reloadTag, reloadItemData));
                 return;
             }
 
@@ -727,10 +727,10 @@ namespace RecyclableScrollRect
                 SetItemSize(itemIndex, item.transform);
                 SetItemPosition(itemIndex, item.transform);
                 
-                if (_itemsMarkedForReload.Contains(itemIndex))
+                if (_itemsMarkedForReload.TryGetValue(itemIndex, out var itemMarkedForReload))
                 {
                     // item needs to be reloaded
-                    ReloadItem(itemIndex);
+                    ReloadItem(itemIndex, itemMarkedForReload.Item1, itemMarkedForReload.Item2);
                     _itemsMarkedForReload.Remove(itemIndex);
                 }
                 
