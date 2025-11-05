@@ -385,10 +385,13 @@ namespace RecyclableScrollRect
         {
             // need to adjust all the items position after itemIndex 
             var startingItemToAdjustPosition = itemIndex + 1;
-            for (var i = startingItemToAdjustPosition; i <= _maxExtraVisibleRowColumnInViewPort; i++)
+            for (var i = startingItemToAdjustPosition; i < _itemsCount; i++)
             {
                 _itemPositions[i].ResetPositionFlag();
-                SetItemPosition(i, _visibleItems[i].transform);
+                if (_visibleItems.ContainsKey(i))
+                {
+                    SetItemPosition(i, _visibleItems[i].transform);
+                }
             }
 
             if (_isAnimating)
@@ -439,12 +442,12 @@ namespace RecyclableScrollRect
 
                 var itemToHide = index - _extraItemsVisible;
                 _minVisibleRowColumnInViewPort++;
+                _minExtraVisibleRowColumnInViewPort = Mathf.Max(0, _minVisibleRowColumnInViewPort - _extraItemsVisible);
                 if (itemToHide >= 0 && _visibleItems.ContainsKey(itemToHide))
                 {
                     HideItemAtIndex(itemToHide);
                 }
             }
-            _minExtraVisibleRowColumnInViewPort = Mathf.Max(0, _minVisibleRowColumnInViewPort - _extraItemsVisible);
         }
 
         protected override void ShowItemsAtBottomRight()
@@ -458,13 +461,13 @@ namespace RecyclableScrollRect
                 }
 
                 _maxVisibleRowColumnInViewPort++;
+                _maxExtraVisibleRowColumnInViewPort = Mathf.Min(_itemsCount - 1, _maxVisibleRowColumnInViewPort + _extraItemsVisible);
                 var itemToShow = _maxVisibleRowColumnInViewPort + _extraItemsVisible;
                 if (itemToShow < _itemsCount && !_visibleItems.ContainsKey(itemToShow))
                 {
                     ShowItemAtIndex(itemToShow);
                 }
             }
-            _maxExtraVisibleRowColumnInViewPort = Mathf.Min(_itemsCount - 1, _maxVisibleRowColumnInViewPort + _extraItemsVisible);
         }
 
         protected override void HideItemsAtBottomRight()
@@ -479,12 +482,12 @@ namespace RecyclableScrollRect
 
                 var itemToHide = index + _extraItemsVisible;
                 _maxVisibleRowColumnInViewPort--;
+                _maxExtraVisibleRowColumnInViewPort = Mathf.Min(_itemsCount - 1, _maxVisibleRowColumnInViewPort + _extraItemsVisible);
                 if (itemToHide < _itemsCount && _visibleItems.ContainsKey(itemToHide))
                 {
                     HideItemAtIndex(itemToHide);
                 }
             }
-            _maxExtraVisibleRowColumnInViewPort = Mathf.Min(_itemsCount - 1, _maxVisibleRowColumnInViewPort + _extraItemsVisible);
         }
 
         protected override void ShowItemsAtTopLeft()
@@ -498,13 +501,13 @@ namespace RecyclableScrollRect
                 }
 
                 _minVisibleRowColumnInViewPort--;
+                _minExtraVisibleRowColumnInViewPort = Mathf.Max(0, _minVisibleRowColumnInViewPort - _extraItemsVisible);
                 var itemToShow = _minVisibleRowColumnInViewPort - _extraItemsVisible;
                 if (itemToShow >= 0 && !_visibleItems.ContainsKey(itemToShow))
                 {
                     ShowItemAtIndex(itemToShow);
                 }
             }
-            _minExtraVisibleRowColumnInViewPort = Mathf.Max(0, _minVisibleRowColumnInViewPort - _extraItemsVisible);
         }
     }
 }
