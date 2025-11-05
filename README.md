@@ -127,7 +127,6 @@ public class VerticalRSRDemo : MonoBehaviour, IDataSource
 Here’s what’s planned for upcoming releases of **Recyclable Scroll Rect**:
 - Sections with headers and footers
 - Support for carousel mode
-- Smoother scrolling with Dotween integration
 
 ## 🧪 Why Use This?
 For large lists or grids (hundreds/thousands of items), regular UI instantiation is heavy.  

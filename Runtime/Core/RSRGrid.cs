@@ -242,10 +242,9 @@ namespace RecyclableScrollRect
         /// we need to check all the visible items, and hide the ones that currently have an actual index (not -1)
         /// we need to check all the items that might need showing that are currently not showing and show them
         /// </summary>
-        /// <param name="reloadAllItems"></param>
-        protected override void RefreshAfterReload(bool reloadAllItems)
+        protected override void RefreshAfterReload()
         {
-            base.RefreshAfterReload(reloadAllItems);
+            base.RefreshAfterReload();
 
             // add more items if needed
             if (_itemsCount - 1 > _maxExtraVisibleRowColumnInViewPort + _gridConstraintCount)

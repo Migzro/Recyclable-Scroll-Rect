@@ -301,9 +301,9 @@ namespace RecyclableScrollRect
         /// <summary>
         /// Checks if items need to be hidden, shown, instantiated after an item is reloaded and its size changes
         /// </summary>
-        protected override void RefreshAfterReload(bool reloadAllItems)
+        protected override void RefreshAfterReload()
         {
-            base.RefreshAfterReload(reloadAllItems);
+            base.RefreshAfterReload();
             
             // figure out the new _minVisibleItemInViewPort && _maxVisibleItemInViewPort
             GetContentBounds();
@@ -328,15 +328,18 @@ namespace RecyclableScrollRect
             _minVisibleRowColumnInViewPort = newMinVisibleItemInViewPort;
             _minExtraVisibleRowColumnInViewPort = Mathf.Clamp(newMinVisibleItemInViewPort - _extraItemsVisible, 0, Mathf.Max(0, _itemsCount - 1));
             
+            // check if items need to be hidden from bottomRight, item reloading got bigger
             var newMaxExtraVisibleItemInViewPort = Mathf.Clamp(newMaxVisibleItemInViewPort + _extraItemsVisible, 0, Mathf.Max(0, _itemsCount - 1));
             if (_maxExtraVisibleRowColumnInViewPort > newMaxExtraVisibleItemInViewPort)
             {
-                for (var i = _maxExtraVisibleRowColumnInViewPort + 1; i <= newMaxExtraVisibleItemInViewPort; i++)
+                for (var i = newMaxExtraVisibleItemInViewPort + 1; i <= _maxExtraVisibleRowColumnInViewPort; i++)
                 {
                     HideItemAtIndex(i);
                 }
+                _maxExtraVisibleRowColumnInViewPort = newMaxExtraVisibleItemInViewPort;
             }
             
+            // check if items need to be shown at bottomRight, item reloading got smaller
             _maxVisibleRowColumnInViewPort = newMaxVisibleItemInViewPort;
             if (_maxExtraVisibleRowColumnInViewPort < newMaxExtraVisibleItemInViewPort || (_itemsCount > 0 && newMaxVisibleItemInViewPort == 0))
             {
@@ -350,36 +353,23 @@ namespace RecyclableScrollRect
             }
         }
 
-        protected override void ReloadItemInternal(int itemIndex, string reloadTag = "", bool reloadItemData = false, bool isReloadingAllData = false)
-        {
-            base.ReloadItemInternal(itemIndex, reloadTag, reloadItemData, isReloadingAllData);
-            if (_visibleItems.TryGetValue(itemIndex, out var visibleItem))
-            {
-                SetItemSizeWithPositionAfterReload(visibleItem, itemIndex, isReloadingAllData);
-            }
-        }
-
         /// <summary>
         /// Sets the item new size and position after reloading, if item size changed, recalculate all the items that follow
         /// </summary>
-        /// <param name="item"></param>
+        /// <param name="oldSize"></param>
         /// <param name="itemIndex"></param>
         /// <param name="isReloadingAllData"></param>
-        private void SetItemSizeWithPositionAfterReload(Item item, int itemIndex, bool isReloadingAllData)
+        protected override void CheckTrailingItemsNeedReload(float oldSize, int itemIndex, bool isReloadingAllData)
         {
-            var oldSize = _itemPositions[itemIndex].itemSize[_axis];
-            SetItemSize(itemIndex, item.transform);
-            SetItemPosition(itemIndex, item.transform);
-            
-            // no need to call this while reloading data, since ReloadData will call it after reloading items
+            // no need to call this while reloading data, since isReloadingAllData will handle all other items
             // calling it while reload data will add unneeded redundancy
             if (!isReloadingAllData)
             {
                 // no need to call RefreshAfterReload if content moved since it will be handled in Update
-                var contentMoved = RecalculateFollowingItems(itemIndex, oldSize);
+                var contentMoved = RecalculateTrailingItems(itemIndex, oldSize);
                 if (!contentMoved)
                 {
-                    RefreshAfterReload(false);
+                    RefreshAfterReload();
                 }
             }
         }
@@ -391,7 +381,7 @@ namespace RecyclableScrollRect
         /// <param name="itemIndex">index of item to start calculate following items from</param>
         /// <param name="oldSize">old item size used to offset content position with</param>
         /// <returns></returns>
-        private bool RecalculateFollowingItems(int itemIndex, float oldSize)
+        private bool RecalculateTrailingItems(int itemIndex, float oldSize)
         {
             // need to adjust all the items position after itemIndex 
             var startingItemToAdjustPosition = itemIndex + 1;
@@ -439,58 +429,82 @@ namespace RecyclableScrollRect
 
         protected override void HideItemsAtTopLeft()
         {
-            if (_minVisibleRowColumnInViewPort < _itemsCount - 1 && _contentTopLeftCorner[_axis] >= _itemPositions[_minVisibleRowColumnInViewPort].absBottomRightPosition[_axis])
+            while (_minVisibleRowColumnInViewPort < _itemsCount - 1)
             {
-                var itemToHide = _minVisibleRowColumnInViewPort - _extraItemsVisible;
-                _minVisibleRowColumnInViewPort++;
-                if (itemToHide > -1)
+                var index = _minVisibleRowColumnInViewPort;
+                if (_contentTopLeftCorner[_axis] < _itemPositions[index].absBottomRightPosition[_axis])
                 {
-                    _minExtraVisibleRowColumnInViewPort++;
+                    break;
+                }
+
+                var itemToHide = index - _extraItemsVisible;
+                _minVisibleRowColumnInViewPort++;
+                if (itemToHide >= 0 && _visibleItems.ContainsKey(itemToHide))
+                {
                     HideItemAtIndex(itemToHide);
                 }
             }
+            _minExtraVisibleRowColumnInViewPort = Mathf.Max(0, _minVisibleRowColumnInViewPort - _extraItemsVisible);
         }
-        
+
         protected override void ShowItemsAtBottomRight()
         {
-            if (_maxVisibleRowColumnInViewPort < _itemsCount - 1 && _contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleRowColumnInViewPort].absBottomRightPosition[_axis] + _spacing[_axis])
+            while (_maxVisibleRowColumnInViewPort < _itemsCount - 1)
             {
+                var index = _maxVisibleRowColumnInViewPort;
+                if (_contentBottomRightCorner[_axis] <= _itemPositions[index].absBottomRightPosition[_axis] + _spacing[_axis])
+                {
+                    break;
+                }
+
                 _maxVisibleRowColumnInViewPort++;
                 var itemToShow = _maxVisibleRowColumnInViewPort + _extraItemsVisible;
-                if (itemToShow < _itemsCount)
+                if (itemToShow < _itemsCount && !_visibleItems.ContainsKey(itemToShow))
                 {
-                    _maxExtraVisibleRowColumnInViewPort = itemToShow;
                     ShowItemAtIndex(itemToShow);
                 }
             }
+            _maxExtraVisibleRowColumnInViewPort = Mathf.Min(_itemsCount - 1, _maxVisibleRowColumnInViewPort + _extraItemsVisible);
         }
 
         protected override void HideItemsAtBottomRight()
         {
-            if (_maxVisibleRowColumnInViewPort > 0 && _contentBottomRightCorner[_axis] <= _itemPositions[_maxVisibleRowColumnInViewPort].absTopLeftPosition[_axis])
+            while (_maxVisibleRowColumnInViewPort > 0)
             {
-                var itemToHide = _maxVisibleRowColumnInViewPort + _extraItemsVisible;
-                _maxVisibleRowColumnInViewPort--;
-                if (itemToHide < _itemsCount)
+                var index = _maxVisibleRowColumnInViewPort;
+                if (_contentBottomRightCorner[_axis] > _itemPositions[index].absTopLeftPosition[_axis])
                 {
-                    _maxExtraVisibleRowColumnInViewPort--;
+                    break;
+                }
+
+                var itemToHide = index + _extraItemsVisible;
+                _maxVisibleRowColumnInViewPort--;
+                if (itemToHide < _itemsCount && _visibleItems.ContainsKey(itemToHide))
+                {
                     HideItemAtIndex(itemToHide);
                 }
             }
+            _maxExtraVisibleRowColumnInViewPort = Mathf.Min(_itemsCount - 1, _maxVisibleRowColumnInViewPort + _extraItemsVisible);
         }
-        
+
         protected override void ShowItemsAtTopLeft()
         {
-            if (_minVisibleRowColumnInViewPort > 0 && _contentTopLeftCorner[_axis] < _itemPositions[_minVisibleRowColumnInViewPort].absTopLeftPosition[_axis] - _spacing[_axis])
+            while (_minVisibleRowColumnInViewPort > 0)
             {
+                var index = _minVisibleRowColumnInViewPort;
+                if (_contentTopLeftCorner[_axis] >= _itemPositions[index].absTopLeftPosition[_axis] - _spacing[_axis])
+                {
+                    break;
+                }
+
                 _minVisibleRowColumnInViewPort--;
                 var itemToShow = _minVisibleRowColumnInViewPort - _extraItemsVisible;
-                if (itemToShow > -1)
+                if (itemToShow >= 0 && !_visibleItems.ContainsKey(itemToShow))
                 {
-                    _minExtraVisibleRowColumnInViewPort = itemToShow;
                     ShowItemAtIndex(itemToShow);
                 }
             }
+            _minExtraVisibleRowColumnInViewPort = Mathf.Max(0, _minVisibleRowColumnInViewPort - _extraItemsVisible);
         }
     }
 }

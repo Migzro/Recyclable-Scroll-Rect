@@ -31,10 +31,9 @@ namespace RecyclableScrollRect
         /// Focuses first item if a new item was added
         /// Scrolls to new page if currentPage page was deleted
         /// </summary>
-        /// <param name="reloadAllItems"></param>
-        protected override void RefreshAfterReload(bool reloadAllItems)
+        protected override void RefreshAfterReload()
         {
-            base.RefreshAfterReload(reloadAllItems);
+            base.RefreshAfterReload();
             
             if (_currentPage >= _itemsCount)
             {
@@ -58,9 +57,9 @@ namespace RecyclableScrollRect
             }
         }
 
-        protected override void PerformPostScrollingActions(bool callEvent, AnimationState animationState, int itemIndex = -1)
+        protected override void PerformPostScrollingActions(bool callEvent, AnimationState animationState, bool scrollingDown, int itemIndex = -1)
         {
-            base.PerformPostScrollingActions(callEvent, animationState, itemIndex);
+            base.PerformPostScrollingActions(callEvent, animationState, scrollingDown, itemIndex);
             
             if (animationState == AnimationState.Finished && _currentPage != itemIndex)
             {

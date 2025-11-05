@@ -454,6 +454,10 @@ namespace RecyclableScrollRect
         /// <param name="reloadItemData">when set true, it will fetch item data from IDataSource</param>
         public void ReloadItem(int itemIndex, string reloadTag = "", bool reloadItemData = false)
         {
+            if (reloadItemData)
+            {
+                _itemPositions[itemIndex].ResetAllFlags();
+            }
             ReloadItemInternal(itemIndex, reloadTag, reloadItemData);
         }
 
@@ -465,7 +469,7 @@ namespace RecyclableScrollRect
         /// <param name="reloadItemData">when set true, it will fetch item data from IDataSource</param>
         /// <param name="isReloadingAllData">Used to prevent calling CalculateNewMinMaxItemsAfterReloadItem in ReloadItemInternal each time when this function is called from ReloadData since we call
         /// CalculateNewMinMaxItemsAfterReloadItem at the end of ReloadData</param> 
-        protected virtual void ReloadItemInternal(int itemIndex, string reloadTag = "", bool reloadItemData = false, bool isReloadingAllData = false)
+        private void ReloadItemInternal(int itemIndex, string reloadTag = "", bool reloadItemData = false, bool isReloadingAllData = false)
         {
             // add the reloadTag if it doesn't exist for the itemIndex
             // if reloading data, clear all the reloadTags for the itemIndex
@@ -505,14 +509,21 @@ namespace RecyclableScrollRect
          
             if (reloadItemData)
             {
-                _itemPositions[itemIndex].ResetAllFlags();
                 SetNonAxisSize(itemIndex, visibleItem.transform);
                 var actualItemIndex = GetActualItemIndex(itemIndex);
                 if (actualItemIndex != -1)
                 {
                     _dataSource.SetItemData(visibleItem.item, actualItemIndex);
                 }
+                var oldSize = _itemPositions[itemIndex].itemSize[_axis];
+                SetItemSize(itemIndex, visibleItem.transform);
+                SetItemPosition(itemIndex, visibleItem.transform);
+                CheckTrailingItemsNeedReload(oldSize, itemIndex, isReloadingAllData);
             }
+        }
+
+        protected virtual void CheckTrailingItemsNeedReload(float oldSize, int itemIndex, bool isReloadingAllData)
+        {
         }
 
         /// <summary>
@@ -656,15 +667,20 @@ namespace RecyclableScrollRect
             if (reachedLimits && !_needsClearance)
                 return;
             
+            ShowHideItems(showBottomRight);
+        }
+
+        private void ShowHideItems(bool showBottomRight)
+        {
             if (showBottomRight)
             {
-                HideItemsAtTopLeft();
                 ShowItemsAtBottomRight();
+                HideItemsAtTopLeft();
             }
             else
             {
-                HideItemsAtBottomRight();
                 ShowItemsAtTopLeft();
+                HideItemsAtBottomRight();
             }
         }
         
@@ -801,6 +817,15 @@ namespace RecyclableScrollRect
                 _prototypeNames.RemoveRange(_itemsCount, itemDiff);
                 _staticItems.RemoveRange(_itemsCount, itemDiff);
             }
+
+            if (reloadAllItems)
+            {
+                for (var index = 0; index < _itemPositions.Count; index++)
+                {
+                    var itemPosition = _itemPositions[index];
+                    itemPosition.ResetAllFlags();
+                }
+            }
             
             ResetVariables();
             SetContentAnchorsPivot();
@@ -814,7 +839,7 @@ namespace RecyclableScrollRect
                 foreach (var item in _visibleItems)
                     ReloadItemInternal(item.Key, "", true, true);
             }
-            RefreshAfterReload(reloadAllItems);
+            RefreshAfterReload();
         }
 
         /// <summary>
@@ -832,7 +857,7 @@ namespace RecyclableScrollRect
             }
         }
 
-        protected virtual void RefreshAfterReload(bool reloadAllItems)
+        protected virtual void RefreshAfterReload()
         {
         }
 
@@ -855,14 +880,14 @@ namespace RecyclableScrollRect
         /// <param name="ease">Tweening ease if DoTween or PrimeTween are being used</param>
         public void ScrollToTopRight(float timeOrSpeed = -1, bool isSpeed = false, bool instant = false, object ease = null)
         {
-            ScrollToContentPosition(0, 0, timeOrSpeed, isSpeed, instant, ease, state => PerformPostScrollingActions(false, state));
+            ScrollToContentPosition(0, 0, timeOrSpeed, isSpeed, instant, ease, (state, scrollingDown) => PerformPostScrollingActions(false, state, scrollingDown));
         }
         
         public void ScrollToNormalisedPosition(float targetNormalizedPosition, float timeOrSpeed = -1, bool isSpeed = false, bool instant = false, object ease = null)
         {
             targetNormalizedPosition = Mathf.Clamp01(targetNormalizedPosition);
             var targetContentPosition = (content.rect.size[_axis] - _viewPortSize[_axis]) * targetNormalizedPosition * (vertical ? 1 : -1);
-            ScrollToContentPosition(0, targetContentPosition, timeOrSpeed, isSpeed, instant, ease, state => PerformPostScrollingActions(false, state));
+            ScrollToContentPosition(0, targetContentPosition, timeOrSpeed, isSpeed, instant, ease, (state, scrollingDown) => PerformPostScrollingActions(false, state, scrollingDown));
         }
         
         public void ScrollToItemIndex(int itemIndex, float timeOrSpeed = -1, bool isSpeed = false, bool instant = false, bool callEvent = false, object ease = null)
@@ -887,14 +912,11 @@ namespace RecyclableScrollRect
             {
                 animationState = AnimationState.Animating; 
                 var estimatedItemTop = itemIndex * (AverageItemSize + _spacing[_axis]) * (vertical ? 1 : -1);
-                ScrollToContentPosition(itemIndex, estimatedItemTop, animationTimeLeft, isSpeed, instant, ease, state =>
+                ScrollToContentPosition(itemIndex, estimatedItemTop, animationTimeLeft, isSpeed, instant, ease, (state, scrollingDown) =>
                 {
                     animationState = state;
-                    // The reason this condition is here and not after the yield return is that if we cancel the animation, we want to call PerformPostScrollingActions immediately and not wait until the next frame
-                    if (animationState == AnimationState.Canceled)
-                    {
-                        PerformPostScrollingActions(false, state, itemIndex);
-                    }
+                    // The reason this is here and not after the yield return is that I want to call PerformPostScrollingActions immediately and not wait until the next frame
+                    PerformPostScrollingActions(false, state, scrollingDown, itemIndex);
                 });
                 yield return new WaitUntil(() => animationState == AnimationState.Finished || animationState == AnimationState.Canceled || itemPosition.positionSet);
                 if (animationState == AnimationState.Canceled)
@@ -920,16 +942,17 @@ namespace RecyclableScrollRect
                 var maxContentPosition = vertical ? content.rect.size[_axis] - _viewPortSize[_axis] : 0;
                 itemPositionFinal = Mathf.Clamp(itemPositionFinal, minContentPosition, maxContentPosition);
             }
-            ScrollToContentPosition(itemIndex, itemPositionFinal, animationTimeLeft, isSpeed, instant, ease, state => PerformPostScrollingActions(callEvent, state, itemIndex));
+            ScrollToContentPosition(itemIndex, itemPositionFinal, animationTimeLeft, isSpeed, instant, ease, (state, scrollingDown) => PerformPostScrollingActions(callEvent, state, scrollingDown, itemIndex));
         }
         
-        private void ScrollToContentPosition(int itemIndex, float targetContentPosition, float timeOrSpeed, bool isSpeed, bool instant, object ease = null, Action<AnimationState> animationFinished = null)
+        private void ScrollToContentPosition(int itemIndex, float targetContentPosition, float timeOrSpeed, bool isSpeed, bool instant, object ease = null, Action<AnimationState, bool> animationFinished = null)
         {
             PerformPreScrollingActions(itemIndex);
+            var scrollingDown = Mathf.Abs(targetContentPosition) >= Mathf.Abs(ContentPosition);
             if (instant || timeOrSpeed <= 0)
             {
                 ContentPosition = targetContentPosition;
-                animationFinished?.Invoke(AnimationState.Finished);
+                animationFinished?.Invoke(AnimationState.Finished, scrollingDown);
                 return;
             }
             
@@ -938,19 +961,19 @@ namespace RecyclableScrollRect
 #if DOTWEEN
                 case DoTweenScrollAnimationController doTween:
                     var doEase = ease is DG.Tweening.Ease de ? de : DG.Tweening.Ease.Linear;
-                    doTween.ScrollToContentPosition(targetContentPosition, timeOrSpeed, isSpeed, doEase, state => animationFinished?.Invoke(state)); 
+                    doTween.ScrollToContentPosition(targetContentPosition, timeOrSpeed, isSpeed, doEase, state => animationFinished?.Invoke(state, scrollingDown)); 
                     break;
 #endif
 
 #if PRIMETWEEN
                 case PrimeTweenScrollAnimationController primeTween:
                     var primeEase = ease is PrimeTween.Ease pe ? pe : PrimeTween.Ease.Linear;
-                    primeTween.ScrollToContentPosition(targetContentPosition, timeOrSpeed, isSpeed, primeEase, state => animationFinished?.Invoke(state));
+                    primeTween.ScrollToContentPosition(targetContentPosition, timeOrSpeed, isSpeed, primeEase, state => animationFinished?.Invoke(state, scrollingDown));
                     break;
 #endif
 
                 default:
-                    _scrollAnimationController.ScrollToContentPosition(targetContentPosition, timeOrSpeed, isSpeed, state => animationFinished?.Invoke(state));
+                    _scrollAnimationController.ScrollToContentPosition(targetContentPosition, timeOrSpeed, isSpeed, state => animationFinished?.Invoke(state, scrollingDown));
                     break;
             }
         }
@@ -964,10 +987,12 @@ namespace RecyclableScrollRect
             _isAnimating = true;
         }
 
-        protected virtual void PerformPostScrollingActions(bool callEvent, AnimationState animationState, int itemIndex = -1)
+        protected virtual void PerformPostScrollingActions(bool callEvent, AnimationState animationState, bool scrollingDown, int itemIndex = -1)
         {
             _isAnimating = false;
             StopMovement();
+            GetContentBounds();
+            ShowHideItems(scrollingDown);
             
             if (animationState == AnimationState.Finished && callEvent)
             {
