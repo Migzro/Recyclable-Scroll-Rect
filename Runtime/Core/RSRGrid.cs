@@ -321,7 +321,7 @@ namespace RecyclableScrollRect
         
         protected override void HideItemsAtTopLeft()
         {
-            if (_minVisibleRowColumnInViewPort < _itemsCount - _gridConstraintCount - 1 && _contentTopLeftCorner[_axis] >= _itemPositions[_minVisibleRowColumnInViewPort].absBottomRightPosition[_axis])
+            while (_minVisibleRowColumnInViewPort < _itemsCount - _gridConstraintCount - 1 && _contentTopLeftCorner[_axis] >= _itemPositions[_minVisibleRowColumnInViewPort].absBottomRightPosition[_axis])
             {
                 var itemToHide = _minVisibleRowColumnInViewPort - (_extraRowsColumnsVisible * _gridConstraintCount);
                 _minVisibleRowColumnInViewPort += _gridConstraintCount;
@@ -335,7 +335,7 @@ namespace RecyclableScrollRect
         
         protected override void ShowItemsAtBottomRight()
         {
-            if (_maxVisibleRowColumnInViewPort < _itemsCount - _gridConstraintCount - 1 && _contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleRowColumnInViewPort].absBottomRightPosition[_axis] + _spacing[_axis])
+            while (_maxVisibleRowColumnInViewPort < _itemsCount - _gridConstraintCount - 1 && _contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleRowColumnInViewPort].absBottomRightPosition[_axis] + _spacing[_axis])
             {
                 _maxVisibleRowColumnInViewPort += _gridConstraintCount;
                 var itemToShow = _maxVisibleRowColumnInViewPort + (_extraRowsColumnsVisible * _gridConstraintCount);
@@ -349,7 +349,7 @@ namespace RecyclableScrollRect
 
         protected override void HideItemsAtBottomRight()
         {
-            if (_maxVisibleRowColumnInViewPort > 0 && _contentBottomRightCorner[_axis] <= _itemPositions[_maxVisibleRowColumnInViewPort].absTopLeftPosition[_axis])
+            while (_maxVisibleRowColumnInViewPort > 0 && _contentBottomRightCorner[_axis] <= _itemPositions[_maxVisibleRowColumnInViewPort].absTopLeftPosition[_axis])
             {
                 var itemToHide = _maxVisibleRowColumnInViewPort + (_extraRowsColumnsVisible * _gridConstraintCount);
                 _maxVisibleRowColumnInViewPort -= _gridConstraintCount;
@@ -363,7 +363,7 @@ namespace RecyclableScrollRect
         
         protected override void ShowItemsAtTopLeft()
         {
-            if (_minVisibleRowColumnInViewPort > 0 && _contentTopLeftCorner[_axis] < _itemPositions[_minVisibleRowColumnInViewPort].absTopLeftPosition[_axis] - _spacing[_axis])
+            while (_minVisibleRowColumnInViewPort > 0 && _contentTopLeftCorner[_axis] < _itemPositions[_minVisibleRowColumnInViewPort].absTopLeftPosition[_axis] - _spacing[_axis])
             {
                 _minVisibleRowColumnInViewPort -= _gridConstraintCount;
                 var itemToShow = _minVisibleRowColumnInViewPort - (_extraRowsColumnsVisible * _gridConstraintCount);

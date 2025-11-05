@@ -432,19 +432,13 @@ namespace RecyclableScrollRect
 
         protected override void HideItemsAtTopLeft()
         {
-            while (_minVisibleRowColumnInViewPort < _itemsCount - 1)
+            while (_minVisibleRowColumnInViewPort < _itemsCount - 1 && _contentTopLeftCorner[_axis] >= _itemPositions[_minVisibleRowColumnInViewPort].absBottomRightPosition[_axis])
             {
-                var index = _minVisibleRowColumnInViewPort;
-                if (_contentTopLeftCorner[_axis] < _itemPositions[index].absBottomRightPosition[_axis])
-                {
-                    break;
-                }
-
-                var itemToHide = index - _extraItemsVisible;
+                var itemToHide = _minVisibleRowColumnInViewPort - _extraItemsVisible;
                 _minVisibleRowColumnInViewPort++;
-                _minExtraVisibleRowColumnInViewPort = Mathf.Max(0, _minVisibleRowColumnInViewPort - _extraItemsVisible);
                 if (itemToHide >= 0 && _visibleItems.ContainsKey(itemToHide))
                 {
+                    _minExtraVisibleRowColumnInViewPort++;
                     HideItemAtIndex(itemToHide);
                 }
             }
@@ -452,19 +446,13 @@ namespace RecyclableScrollRect
 
         protected override void ShowItemsAtBottomRight()
         {
-            while (_maxVisibleRowColumnInViewPort < _itemsCount - 1)
+            while (_maxVisibleRowColumnInViewPort < _itemsCount - 1 && _contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleRowColumnInViewPort].absBottomRightPosition[_axis] + _spacing[_axis])
             {
-                var index = _maxVisibleRowColumnInViewPort;
-                if (_contentBottomRightCorner[_axis] <= _itemPositions[index].absBottomRightPosition[_axis] + _spacing[_axis])
-                {
-                    break;
-                }
-
                 _maxVisibleRowColumnInViewPort++;
-                _maxExtraVisibleRowColumnInViewPort = Mathf.Min(_itemsCount - 1, _maxVisibleRowColumnInViewPort + _extraItemsVisible);
                 var itemToShow = _maxVisibleRowColumnInViewPort + _extraItemsVisible;
                 if (itemToShow < _itemsCount && !_visibleItems.ContainsKey(itemToShow))
                 {
+                    _maxExtraVisibleRowColumnInViewPort = itemToShow;
                     ShowItemAtIndex(itemToShow);
                 }
             }
@@ -472,19 +460,13 @@ namespace RecyclableScrollRect
 
         protected override void HideItemsAtBottomRight()
         {
-            while (_maxVisibleRowColumnInViewPort > 0)
+            while (_maxVisibleRowColumnInViewPort > 0 && _contentBottomRightCorner[_axis] <= _itemPositions[_maxVisibleRowColumnInViewPort].absTopLeftPosition[_axis])
             {
-                var index = _maxVisibleRowColumnInViewPort;
-                if (_contentBottomRightCorner[_axis] > _itemPositions[index].absTopLeftPosition[_axis])
-                {
-                    break;
-                }
-
-                var itemToHide = index + _extraItemsVisible;
+                var itemToHide = _maxVisibleRowColumnInViewPort + _extraItemsVisible;
                 _maxVisibleRowColumnInViewPort--;
-                _maxExtraVisibleRowColumnInViewPort = Mathf.Min(_itemsCount - 1, _maxVisibleRowColumnInViewPort + _extraItemsVisible);
                 if (itemToHide < _itemsCount && _visibleItems.ContainsKey(itemToHide))
                 {
+                    _maxExtraVisibleRowColumnInViewPort--;
                     HideItemAtIndex(itemToHide);
                 }
             }
@@ -492,19 +474,13 @@ namespace RecyclableScrollRect
 
         protected override void ShowItemsAtTopLeft()
         {
-            while (_minVisibleRowColumnInViewPort > 0)
+            while (_minVisibleRowColumnInViewPort > 0 && _contentTopLeftCorner[_axis] < _itemPositions[_minVisibleRowColumnInViewPort].absTopLeftPosition[_axis] - _spacing[_axis])
             {
-                var index = _minVisibleRowColumnInViewPort;
-                if (_contentTopLeftCorner[_axis] >= _itemPositions[index].absTopLeftPosition[_axis] - _spacing[_axis])
-                {
-                    break;
-                }
-
                 _minVisibleRowColumnInViewPort--;
-                _minExtraVisibleRowColumnInViewPort = Mathf.Max(0, _minVisibleRowColumnInViewPort - _extraItemsVisible);
                 var itemToShow = _minVisibleRowColumnInViewPort - _extraItemsVisible;
                 if (itemToShow >= 0 && !_visibleItems.ContainsKey(itemToShow))
                 {
+                    _minExtraVisibleRowColumnInViewPort = itemToShow;
                     ShowItemAtIndex(itemToShow);
                 }
             }
