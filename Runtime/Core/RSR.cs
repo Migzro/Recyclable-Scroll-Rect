@@ -305,52 +305,74 @@ namespace RecyclableScrollRect
         {
             base.RefreshAfterReload();
             
-            // figure out the new _minVisibleItemInViewPort && _maxVisibleItemInViewPort
-            GetContentBounds();
             var newMinVisibleItemInViewPortSet = false;
-            var newMinVisibleItemInViewPort = 0;
-            var newMaxVisibleItemInViewPort = 0;
-            foreach (var item in _visibleItems)
+            var newMinVisibleItemInViewPort = -1;
+            var newMaxVisibleItemInViewPort = -1;
+            var newMinExtraVisibleItemInViewPort = -1;
+            var newMaxExtraVisibleItemInViewPort = -1;
+            for (var i = 0; i < _itemPositions.Count; i++)
             {
-                var itemPosition = _itemPositions[item.Key];
-                if (itemPosition.absBottomRightPosition[_axis] >= _contentTopLeftCorner[_axis] && !newMinVisibleItemInViewPortSet)
+                if (!_itemPositions[i].positionSet)
                 {
-                    newMinVisibleItemInViewPort = item.Key;
-                    newMinVisibleItemInViewPortSet = true; // this boolean is needed as all items in the view port will satisfy the above condition, and we only need the first one
+                    continue;
+                }
+
+                var itemPosition = _itemPositions[i];
+                if (!newMinVisibleItemInViewPortSet && itemPosition.absBottomRightPosition[_axis] >= _contentTopLeftCorner[_axis])
+                {
+                    newMinVisibleItemInViewPort = i;
+                    newMinVisibleItemInViewPortSet = true;
                 }
 
                 if (itemPosition.absTopLeftPosition[_axis] <= _contentBottomRightCorner[_axis])
                 {
-                    newMaxVisibleItemInViewPort = item.Key;
+                    newMaxVisibleItemInViewPort = i;
                 }
             }
 
-            _minVisibleRowColumnInViewPort = newMinVisibleItemInViewPort;
-            _minExtraVisibleRowColumnInViewPort = Mathf.Clamp(newMinVisibleItemInViewPort - _extraItemsVisible, 0, Mathf.Max(0, _itemsCount - 1));
-            
-            // check if items need to be hidden from bottomRight, item reloading got bigger
-            var newMaxExtraVisibleItemInViewPort = Mathf.Clamp(newMaxVisibleItemInViewPort + _extraItemsVisible, 0, Mathf.Max(0, _itemsCount - 1));
-            if (_maxExtraVisibleRowColumnInViewPort > newMaxExtraVisibleItemInViewPort)
+            if (newMinVisibleItemInViewPort >= 0)
             {
-                for (var i = newMaxExtraVisibleItemInViewPort + 1; i <= _maxExtraVisibleRowColumnInViewPort; i++)
+                newMinExtraVisibleItemInViewPort = Mathf.Clamp(newMinVisibleItemInViewPort - _extraItemsVisible, 0, Mathf.Max(0, _itemsCount - 1));
+            }
+            if (newMaxVisibleItemInViewPort >= 0)
+            {
+                newMaxExtraVisibleItemInViewPort = Mathf.Clamp(newMaxVisibleItemInViewPort + _extraItemsVisible, 0, Mathf.Max(0, _itemsCount - 1));
+            }
+            
+            // // hide all items that are at the top, from _minExtraVisibleRowColumnInViewPort to newMinExtraVisibleItemInViewPort
+            // for (var i = _minExtraVisibleRowColumnInViewPort; i < newMinExtraVisibleItemInViewPort; i++)
+            // {
+            //     if (_visibleItems.ContainsKey(i))
+            //     {
+            //         HideItemAtIndex(i);
+            //     }
+            // }
+            
+            // hide all the items that are the bottom, from newMaxExtraVisibleItemInViewPort to _maxExtraVisibleRowColumnInViewPort
+            for (var i = newMaxExtraVisibleItemInViewPort + 1; i <= _maxExtraVisibleRowColumnInViewPort; i++)
+            {
+                if (_visibleItems.ContainsKey(i))
                 {
                     HideItemAtIndex(i);
                 }
-                _maxExtraVisibleRowColumnInViewPort = newMaxExtraVisibleItemInViewPort;
             }
             
-            // check if items need to be shown at bottomRight, item reloading got smaller
-            _maxVisibleRowColumnInViewPort = newMaxVisibleItemInViewPort;
-            if (_maxExtraVisibleRowColumnInViewPort < newMaxExtraVisibleItemInViewPort || (_itemsCount > 0 && newMaxVisibleItemInViewPort == 0))
+            // make sure all items from newMinExtraVisibleItemInViewPort till newMaxExtraVisibleItemInViewPort are visible
+            for (var i = newMinExtraVisibleItemInViewPort; i <= newMaxExtraVisibleItemInViewPort; i++)
             {
-                // here we initialize items instead of using ShowItemAtIndex because we don't know much viewport space is left, initialize items handles setting _maxExtraVisibleRowColumnInViewPort
-                var startItemIndex = _maxExtraVisibleRowColumnInViewPort;
-                if (_visibleItems.ContainsKey(startItemIndex))
+                if (i >= 0 && i < _itemsCount && !_visibleItems.ContainsKey(i))
                 {
-                    startItemIndex++;
+                    ShowItemAtIndex(i);
                 }
-                InitializeItems(startItemIndex);
             }
+
+            _minVisibleRowColumnInViewPort = Mathf.Clamp(newMinVisibleItemInViewPort, 0, Mathf.Max(0, _itemsCount - 1));
+            _minExtraVisibleRowColumnInViewPort = Mathf.Clamp(newMinExtraVisibleItemInViewPort, 0, Mathf.Max(0, _itemsCount - 1));
+            _maxVisibleRowColumnInViewPort = Mathf.Clamp(newMaxVisibleItemInViewPort, 0, Mathf.Max(0, _itemsCount - 1));
+            _maxExtraVisibleRowColumnInViewPort = Mathf.Clamp(newMaxExtraVisibleItemInViewPort, 0, Mathf.Max(0, _itemsCount - 1));
+            
+            // fill the view port if possible
+            InitializeItems(newMaxExtraVisibleItemInViewPort + 1);
         }
 
         /// <summary>
