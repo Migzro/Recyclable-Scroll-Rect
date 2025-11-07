@@ -7,8 +7,11 @@
 
 ### Bug Fixes
 - Fixed an issue with an item reloading while not being visible.
+- Content position now clamps after reloading data.
 
 ### API Changes
+- Added IsItemFullyVisible (int itemIndex).
+- Added IsItemPartiallyVisible (int itemIndex).
 - Removed UseConstantScrollingSpeed && ConstantScrollSpeed
 - Changed ScrollToItem to ScrollToItemAtIndex for better clarity and adjusted its paramaters.
 - Removed IPageSource functions PageFocused and PageUnfocused as they were confusing and didn't add much value.

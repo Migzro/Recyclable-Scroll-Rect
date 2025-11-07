@@ -395,28 +395,28 @@ namespace RecyclableScrollRect
         /// Initialize the items
         /// Its only called when there are no pooled items available and the RecyclableScrollRect needs to show an item
         /// </summary>
-        /// <param name="index"></param>
-        private void InitializeItem(int index)
+        /// <param name="itemIndex"></param>
+        private void InitializeItem(int itemIndex)
         {
-            var actualItemIndex = GetActualItemIndex(index);
+            var actualItemIndex = GetActualItemIndex(itemIndex);
             var itemPrototypeItem = _dataSource.GetItemPrototype(actualItemIndex);
 
             GameObject itemGo;
             IItem itemImpl;
-            if (!_staticItems[index])
+            if (!_staticItems[itemIndex])
             {
                 itemGo = Instantiate(itemPrototypeItem, content, false);
                 itemImpl = itemGo.GetComponent<IItem>();
                 itemImpl.RSRBase = this;
-                itemImpl.ItemIndex = index;
-                itemGo.name = $"{itemPrototypeItem.name} {index}";
+                itemImpl.ItemIndex = itemIndex;
+                itemGo.name = $"{itemPrototypeItem.name} {itemIndex}";
             }
             else
             {
                 itemGo = itemPrototypeItem;
                 itemImpl = itemGo.GetComponent<IItem>() ?? itemGo.AddComponent<BaseItem>();
                 itemImpl.RSRBase = this;
-                itemImpl.ItemIndex = index;
+                itemImpl.ItemIndex = itemIndex;
                 
                 SetVisibilityInHierarchy((RectTransform)itemGo.transform, true);
                 itemGo.SetActive(true);
@@ -431,7 +431,7 @@ namespace RecyclableScrollRect
 
             var rect = (RectTransform)itemGo.transform;
             var item = new Item(itemImpl, rect);
-            _visibleItems.Add(index, item);
+            _visibleItems.Add(itemIndex, item);
             _dataSource.ItemCreated(actualItemIndex, itemImpl, itemGo);
 
             // anchors and pivot will always be 0,1 no matter the settings of RSR
@@ -440,10 +440,10 @@ namespace RecyclableScrollRect
             rect.anchorMax = anchorVector;
             rect.pivot = anchorVector;
             
-            SetNonAxisSize(index, rect);
+            SetNonAxisSize(itemIndex, rect);
             _dataSource.SetItemData(itemImpl, actualItemIndex);
-            SetItemSize(index, rect);
-            SetItemPosition(index, rect);
+            SetItemSize(itemIndex, rect);
+            SetItemPosition(itemIndex, rect);
         }
         
         /// <summary>
@@ -831,13 +831,17 @@ namespace RecyclableScrollRect
             SetContentAnchorsPivot();
             InitializeItemPositions();
             CalculateContentSize();
+            ClampContentPosition();
+            GetContentBounds();
             SetStaticItems();
             SetPrototypeNames();
 
             if (reloadAllItems)
             {
                 foreach (var item in _visibleItems)
+                {
                     ReloadItemInternal(item.Key, "", true, true);
+                }
             }
             RefreshAfterReload();
         }
@@ -854,6 +858,14 @@ namespace RecyclableScrollRect
                 {
                     HideItemAtIndex(i);
                 }
+            }
+        }
+
+        private void ClampContentPosition()
+        {
+            if (_contentBottomRightCorner[_axis] >= content.sizeDelta[_axis])
+            {
+                ContentPosition = content.sizeDelta[_axis] - _viewPortSize[_axis];
             }
         }
 
@@ -1031,6 +1043,48 @@ namespace RecyclableScrollRect
             if (_visibleItems.TryGetValue( itemIndex, out var item ))
                 return item;
             return null;
+        }
+
+        public bool IsItemPartiallyVisible(int itemIndex)
+        {
+            if (itemIndex < 0 || itemIndex >= _itemPositions.Count)
+            {
+                return false;
+            }
+
+            if (_visibleItems.TryGetValue(itemIndex, out var visibleItem))
+            {
+                var itemPosition = _itemPositions[itemIndex];
+                if (itemPosition.positionSet)
+                {
+                    if (itemPosition.absTopLeftPosition[_axis] <= _contentBottomRightCorner[_axis] && itemPosition.absBottomRightPosition[_axis] >= _contentTopLeftCorner[_axis])
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        
+        public bool IsItemFullyVisible(int itemIndex)
+        {
+            if (itemIndex < 0 || itemIndex >= _itemPositions.Count)
+            {
+                return false;
+            }
+            
+            if (_visibleItems.TryGetValue(itemIndex, out var visibleItem))
+            {
+                var itemPosition = _itemPositions[itemIndex];
+                if (itemPosition.positionSet)
+                {
+                    if (itemPosition.absTopLeftPosition[_axis] >= _contentTopLeftCorner[_axis] && itemPosition.absBottomRightPosition[_axis] <= _contentBottomRightCorner[_axis])
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
     }
 }
