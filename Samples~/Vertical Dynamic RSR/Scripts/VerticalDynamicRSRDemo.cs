@@ -23,13 +23,22 @@ namespace RecyclableScrollRect
             for (var i = 0; i < _itemsCount; i++)
                 _dataSource.Add(i + " " + Helpers.RandomString(Random.Range(50, 150)));
             _scrollRect.Initialize(this);
-            Invoke(nameof(ReloadItem), 5);
         }
 
+        [ContextMenu(nameof(ReloadAllData))]
+        private void ReloadAllData()
+        {
+            _dataSource.Clear();
+            for (var i = 0; i < _itemsCount; i++)
+                _dataSource.Add(i + " " + Helpers.RandomString(Random.Range(0, 10)));
+            _scrollRect.ReloadData(true);
+        }
+        
+        [ContextMenu(nameof(ReloadItem))]
         private void ReloadItem()
         {
             _dataSource[5] = "5";
-            _scrollRect.ReloadItem(5, "", true);
+            _scrollRect.ReloadItem(5);
         }
         
         public float GetItemSize(int itemIndex)
