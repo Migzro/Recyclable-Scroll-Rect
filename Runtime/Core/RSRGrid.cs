@@ -186,7 +186,7 @@ namespace RecyclableScrollRect
             var current2DIndex = _grid.To2dIndex(startIndex);
             var currentStartItemInRowColumn = current2DIndex[_axis] * _gridConstraintCount;
             
-            GetContentBounds();
+            SetContentBounds();
             var contentHasSpace = currentStartItemInRowColumn == 0 || _itemPositions[currentStartItemInRowColumn].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
             var extraRowsColumnsInitialized = contentHasSpace ? 0 : (_maxExtraVisibleRowColumnInViewPort - _maxVisibleRowColumnInViewPort) / _gridConstraintCount;
 

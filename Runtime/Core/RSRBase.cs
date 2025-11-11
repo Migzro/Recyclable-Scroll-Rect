@@ -183,7 +183,7 @@ namespace RecyclableScrollRect
             _maxExtraVisibleRowColumnInViewPort = 0;
             
             ContentPosition = 0;
-            GetContentBounds();
+            SetContentBounds();
 
             _itemsCount = _dataSource.ItemsCount;
             _staticItems = new List<bool>();
@@ -531,7 +531,7 @@ namespace RecyclableScrollRect
             if (Mathf.Approximately(currentContentAnchoredPosition[_axis], _lastContentPosition[_axis]) && !_needsClearance)
                 return;
             
-            GetContentBounds();
+            SetContentBounds();
             
             if (!_pullToRefresh && Mathf.RoundToInt(_contentTopLeftCorner[_axis]) <= -_pullToRefreshThreshold)
             {
@@ -732,7 +732,7 @@ namespace RecyclableScrollRect
         /// <summary>
         /// Updates content bounds for different uses
         /// </summary>
-        protected void GetContentBounds()
+        protected void SetContentBounds()
         {
             _viewPortSize = viewport.rect.size;
             _contentTopLeftCorner = content.anchoredPosition * (vertical ? 1f : -1f);
@@ -769,7 +769,7 @@ namespace RecyclableScrollRect
                 if (!IsItemSizeKnown)
                 {
                     ContentPosition = 0;
-                    GetContentBounds();
+                    SetContentBounds();
                 }
             }
             
@@ -800,7 +800,7 @@ namespace RecyclableScrollRect
 
         private void ClampContentPosition()
         {
-            GetContentBounds();
+            SetContentBounds();
             if (ContentPosition < 0)
             {
                 ContentPosition = 0;
@@ -809,7 +809,7 @@ namespace RecyclableScrollRect
             {
                 ContentPosition = Mathf.Max(0, content.sizeDelta[_axis] - _viewPortSize[_axis]);
             }
-            GetContentBounds();
+            SetContentBounds();
         }
 
         protected virtual void RefreshAfterReload()
@@ -946,7 +946,7 @@ namespace RecyclableScrollRect
         {
             _isAnimating = false;
             StopMovement();
-            GetContentBounds();
+            SetContentBounds();
             ShowHideItems(scrollingDown);
             
             if (animationState == AnimationState.Finished && callEvent)

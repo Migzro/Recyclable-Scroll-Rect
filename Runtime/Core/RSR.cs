@@ -48,7 +48,7 @@ namespace RecyclableScrollRect
         /// <param name="startIndex">the starting item index on which we want initialized</param>
         protected override void InitializeItems(int startIndex = 0)
         {
-            GetContentBounds();
+            SetContentBounds();
 
             var contentHasSpace = startIndex == 0 || _itemPositions[startIndex - 1].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
             var extraItemsInitialized = contentHasSpace ? 0 : _maxExtraVisibleRowColumnInViewPort - _maxVisibleRowColumnInViewPort;
