@@ -58,7 +58,7 @@ namespace RecyclableScrollRect
         protected override void CalculateContentSize()
         {
             var contentSizeDelta = viewport.sizeDelta;
-            contentSizeDelta[_axis] = (_grid.maxGridItemsInAxis * _gridItemSize[_axis]) + (_spacing[_axis] * (_grid.maxGridItemsInAxis - 1));
+            contentSizeDelta[_axis] = (_grid.maxGridItemsInAxis * _gridItemSize[_axis]) + (_spacing[_axis] * Mathf.Max(0, _grid.maxGridItemsInAxis - 1));
             
             if (vertical)
             {

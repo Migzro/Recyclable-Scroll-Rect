@@ -45,8 +45,6 @@ namespace RecyclableScrollRect
 
         protected SortedDictionary<int, Item> _visibleItems;
         private Dictionary<string, List<Item>> _pooledItems;
-        private Dictionary<int, HashSet<string>> _reloadTags;
-        private Dictionary<int, (string, bool)> _itemsMarkedForReload;
         
         protected Vector2 _dragStartingPosition;
         protected Vector2 _contentTopLeftCorner;
@@ -184,18 +182,13 @@ namespace RecyclableScrollRect
             _maxVisibleRowColumnInViewPort = 0;
             _maxExtraVisibleRowColumnInViewPort = 0;
             
-            var zeroContentPosition = content.anchoredPosition;
-            zeroContentPosition[_axis] = 0;
-            m_ContentStartPosition = zeroContentPosition;
-            content.anchoredPosition = zeroContentPosition;
+            ContentPosition = 0;
             GetContentBounds();
 
             _itemsCount = _dataSource.ItemsCount;
             _staticItems = new List<bool>();
             _prototypeNames = new List<string>();
             _itemPositions = new List<ItemPosition>();
-            _reloadTags = new Dictionary<int, HashSet<string>>();
-            _itemsMarkedForReload = new Dictionary<int, (string, bool)>();
             _lastContentPosition = _contentTopLeftCorner;
             SetMovementType(_initialMovementType);
 
@@ -440,89 +433,36 @@ namespace RecyclableScrollRect
             rect.anchorMax = anchorVector;
             rect.pivot = anchorVector;
             
-            SetNonAxisSize(itemIndex, rect);
-            _dataSource.SetItemData(itemImpl, actualItemIndex);
-            SetItemSize(itemIndex, rect);
-            SetItemPosition(itemIndex, rect);
+            SetItemRectAndData(itemIndex, item);
         }
         
         /// <summary>
         /// Hides private ReloadItem implementation to avoid calling it with unneeded variables (isReloadingAllData)
         /// </summary>
         /// <param name="itemIndex">item index to reload</param>
-        /// <param name="reloadTag">used to reload item based on a tag, so if the reload is called more than once with the same tag, we can ignore it</param>
-        /// <param name="reloadItemData">when set true, it will fetch item data from IDataSource</param>
-        public void ReloadItem(int itemIndex, string reloadTag = "", bool reloadItemData = false)
+        public void ReloadItem(int itemIndex)
         {
-            if (reloadItemData)
+            if (itemIndex < 0 || itemIndex >= _itemsCount)
             {
-                _itemPositions[itemIndex].ResetAllFlags();
-            }
-            ReloadItemInternal(itemIndex, reloadTag, reloadItemData);
-        }
-
-        /// <summary>
-        /// Creates and checks tags for reloading items, this avoids calling calculating the item size if it's called with same tag more than once and only calls ForceLayoutRebuild
-        /// </summary>
-        /// <param name="itemIndex">item index to reload</param>
-        /// <param name="reloadTag">used to reload item based on a tag, so if the reload is called more than once with the same tag, we can ignore it</param>
-        /// <param name="reloadItemData">when set true, it will fetch item data from IDataSource</param>
-        /// <param name="isReloadingAllData">Used to prevent calling CalculateNewMinMaxItemsAfterReloadItem in ReloadItemInternal each time when this function is called from ReloadData since we call
-        /// CalculateNewMinMaxItemsAfterReloadItem at the end of ReloadData</param> 
-        private void ReloadItemInternal(int itemIndex, string reloadTag = "", bool reloadItemData = false, bool isReloadingAllData = false)
-        {
-            // add the reloadTag if it doesn't exist for the itemIndex
-            // if reloading data, clear all the reloadTags for the itemIndex
-            if (reloadItemData && _reloadTags.TryGetValue( itemIndex, out var itemTags ))
-                itemTags.Clear();
-
-            if (!string.IsNullOrEmpty(reloadTag))
-            {
-                if (_reloadTags.ContainsKey(itemIndex))
-                {
-                    if (_reloadTags[itemIndex].Contains(reloadTag))
-                    {
-                        ForceLayoutRebuild(itemIndex);
-                        return;
-                    }
-                    else
-                        _reloadTags[itemIndex].Add(reloadTag);
-                }
-                else
-                {
-                    _reloadTags.Add(itemIndex, new HashSet<string>{reloadTag});
-                }
+                return;
             }
             
+            _itemPositions[itemIndex].ResetAllFlags();
             // No need to reload item at index {itemIndex} as its currently not visible and everything will be automatically handled when it appears
-            // it's ok to return here after setting the tag, as if an item gets marked for reload with multiple tags, it only needs to reload once its visible
-            // reloading the item multiple times with different tags is needed when multiple changes happen to an item over the course of some frames when its visible
             if (!_visibleItems.TryGetValue(itemIndex, out var visibleItem))
             {
-                _itemsMarkedForReload.Add(itemIndex, (reloadTag, reloadItemData));
                 return;
             }
-
-            // item has been deleted, no need to reload
-            if (itemIndex >= _itemsCount)
-                return;
-         
-            if (reloadItemData)
+            
+            var oldSize = _itemPositions[itemIndex].itemSize[_axis];
+            SetItemRectAndData(itemIndex, visibleItem);
+            if (oldSize != 0 && Mathf.Abs(oldSize - _itemPositions[itemIndex].itemSize[_axis]) > 0.01f)
             {
-                SetNonAxisSize(itemIndex, visibleItem.transform);
-                var actualItemIndex = GetActualItemIndex(itemIndex);
-                if (actualItemIndex != -1)
-                {
-                    _dataSource.SetItemData(visibleItem.item, actualItemIndex);
-                }
-                var oldSize = _itemPositions[itemIndex].itemSize[_axis];
-                SetItemSize(itemIndex, visibleItem.transform);
-                SetItemPosition(itemIndex, visibleItem.transform);
-                CheckTrailingItemsNeedReload(oldSize, itemIndex, isReloadingAllData);
+                RecalculateTrailingItems(itemIndex);
             }
         }
-
-        protected virtual void CheckTrailingItemsNeedReload(float oldSize, int itemIndex, bool isReloadingAllData)
+        
+        protected virtual void RecalculateTrailingItems(int itemIndex)
         {
         }
 
@@ -720,28 +660,29 @@ namespace RecyclableScrollRect
 
                 _visibleItems.Add(itemIndex, item);
                 item.item.ItemIndex = itemIndex;
-                
-                SetNonAxisSize(itemIndex, item.transform);
-                var actualItemIndex = GetActualItemIndex(itemIndex);
-                _dataSource.SetItemData(item.item, actualItemIndex);
-                SetItemSize(itemIndex, item.transform);
-                SetItemPosition(itemIndex, item.transform);
-                
-                if (_itemsMarkedForReload.TryGetValue(itemIndex, out var itemMarkedForReload))
-                {
-                    // item needs to be reloaded
-                    ReloadItem(itemIndex, itemMarkedForReload.Item1, itemMarkedForReload.Item2);
-                    _itemsMarkedForReload.Remove(itemIndex);
-                }
-                
+                SetItemRectAndData(itemIndex, item);
                 if (!_staticItems[itemIndex])
+                {
                     item.transform.name = $"{itemPrototypeName} {itemIndex}";
+                }
             }
 
             SetSiblingIndices();
             
             if (IsLastRowColumn(itemIndex))
                 _dataSource.LastItemIsVisible();
+        }
+
+        private void SetItemRectAndData(int itemIndex, Item item)
+        {
+            SetNonAxisSize(itemIndex, item.transform);
+            var actualItemIndex = GetActualItemIndex(itemIndex);
+            if (actualItemIndex != -1)
+            {
+                _dataSource.SetItemData(item.item, actualItemIndex);
+            }
+            SetItemSize(itemIndex, item.transform);
+            SetItemPosition(itemIndex, item.transform);
         }
 
         /// <summary>
@@ -820,10 +761,15 @@ namespace RecyclableScrollRect
 
             if (reloadAllItems)
             {
-                for (var index = 0; index < _itemPositions.Count; index++)
+                foreach (var itemPosition in _itemPositions)
                 {
-                    var itemPosition = _itemPositions[index];
                     itemPosition.ResetAllFlags();
+                }
+
+                if (!IsItemSizeKnown)
+                {
+                    ContentPosition = 0;
+                    GetContentBounds();
                 }
             }
             
@@ -832,17 +778,8 @@ namespace RecyclableScrollRect
             InitializeItemPositions();
             CalculateContentSize();
             ClampContentPosition();
-            GetContentBounds();
             SetStaticItems();
             SetPrototypeNames();
-
-            if (reloadAllItems)
-            {
-                foreach (var item in _visibleItems)
-                {
-                    ReloadItemInternal(item.Key, "", true, true);
-                }
-            }
             RefreshAfterReload();
         }
 
@@ -863,10 +800,16 @@ namespace RecyclableScrollRect
 
         private void ClampContentPosition()
         {
-            if (_contentBottomRightCorner[_axis] >= content.sizeDelta[_axis])
+            GetContentBounds();
+            if (ContentPosition < 0)
             {
-                ContentPosition = content.sizeDelta[_axis] - _viewPortSize[_axis];
+                ContentPosition = 0;
             }
+            else if (AllItemsPositionsSet && _contentBottomRightCorner[_axis] >= content.sizeDelta[_axis])
+            {
+                ContentPosition = Mathf.Max(0, content.sizeDelta[_axis] - _viewPortSize[_axis]);
+            }
+            GetContentBounds();
         }
 
         protected virtual void RefreshAfterReload()
@@ -1052,7 +995,7 @@ namespace RecyclableScrollRect
                 return false;
             }
 
-            if (_visibleItems.TryGetValue(itemIndex, out var visibleItem))
+            if (_visibleItems.TryGetValue(itemIndex, out _))
             {
                 var itemPosition = _itemPositions[itemIndex];
                 if (itemPosition.positionSet)
@@ -1073,7 +1016,7 @@ namespace RecyclableScrollRect
                 return false;
             }
             
-            if (_visibleItems.TryGetValue(itemIndex, out var visibleItem))
+            if (_visibleItems.TryGetValue(itemIndex, out _))
             {
                 var itemPosition = _itemPositions[itemIndex];
                 if (itemPosition.positionSet)

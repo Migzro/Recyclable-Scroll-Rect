@@ -37,6 +37,7 @@ namespace RecyclableScrollRect
 
         public ItemPosition()
         {
+            topLeftPosition = Vector2.zero;
             absTopLeftPosition = Vector2.zero;
             absBottomRightPosition = Vector2.zero;
             itemSize = Vector2.zero;

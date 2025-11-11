@@ -79,7 +79,7 @@ namespace RecyclableScrollRect
             {
                 contentSizeDelta[_axis] += _itemPositions[i].itemSize[_axis];
             }
-            contentSizeDelta[_axis] += _spacing[_axis] * (_itemsCount - 1);
+            contentSizeDelta[_axis] += _spacing[_axis] * (Mathf.Max(0, _itemsCount - 1));
 
             if (vertical)
             {
@@ -365,7 +365,7 @@ namespace RecyclableScrollRect
                     ShowItemAtIndex(i);
                 }
             }
-
+            
             _minVisibleRowColumnInViewPort = Mathf.Clamp(newMinVisibleItemInViewPort, 0, Mathf.Max(0, _itemsCount - 1));
             _minExtraVisibleRowColumnInViewPort = Mathf.Clamp(newMinExtraVisibleItemInViewPort, 0, Mathf.Max(0, _itemsCount - 1));
             _maxVisibleRowColumnInViewPort = Mathf.Clamp(newMaxVisibleItemInViewPort, 0, Mathf.Max(0, _itemsCount - 1));
@@ -374,82 +374,29 @@ namespace RecyclableScrollRect
             // fill the view port if possible
             InitializeItems(newMaxExtraVisibleItemInViewPort + 1);
         }
-
-        /// <summary>
-        /// Sets the item new size and position after reloading, if item size changed, recalculate all the items that follow
-        /// </summary>
-        /// <param name="oldSize"></param>
-        /// <param name="itemIndex"></param>
-        /// <param name="isReloadingAllData"></param>
-        protected override void CheckTrailingItemsNeedReload(float oldSize, int itemIndex, bool isReloadingAllData)
-        {
-            // no need to call this while reloading data, since isReloadingAllData will handle all other items
-            // calling it while reload data will add unneeded redundancy
-            if (!isReloadingAllData)
-            {
-                // no need to call RefreshAfterReload if content moved since it will be handled in Update
-                var contentMoved = RecalculateTrailingItems(itemIndex, oldSize);
-                if (!contentMoved)
-                {
-                    RefreshAfterReload();
-                }
-            }
-        }
         
         /// <summary>
         /// Sets the positions of all items of index + 1
-        /// Persists content position to avoid sudden jumps if an item size changes
         /// </summary>
-        /// <param name="itemIndex">index of item to start calculate following items from</param>
-        /// <param name="oldSize">old item size used to offset content position with</param>
         /// <returns></returns>
-        private bool RecalculateTrailingItems(int itemIndex, float oldSize)
+        protected override void RecalculateTrailingItems(int itemIndex)
         {
-            // need to adjust all the items position after itemIndex 
             var startingItemToAdjustPosition = itemIndex + 1;
+            var anyItemPositionChanged = false;
             for (var i = startingItemToAdjustPosition; i < _itemsCount; i++)
             {
                 _itemPositions[i].ResetPositionFlag();
                 if (_visibleItems.ContainsKey(i))
                 {
                     SetItemPosition(i, _visibleItems[i].transform);
+                    anyItemPositionChanged = true;
                 }
             }
 
-            if (_isAnimating)
+            if (anyItemPositionChanged)
             {
-                return true;
+                RefreshAfterReload();
             }
-
-            var contentPosition = content.anchoredPosition;
-            var contentMoved = false;
-            var oldContentPosition = contentPosition[_axis];
-            if (itemIndex < _minExtraVisibleRowColumnInViewPort)
-            {
-                // this is a very special case as items reloaded at the top or right will have a different bottomRight position
-                // and since we are here at the item, if we don't manually set the position of the content, it will seem as the content suddenly shifted and disorient the user
-                contentPosition[_axis] = _itemPositions[itemIndex].absBottomRightPosition[_axis];
-            }
-            else if (_minExtraVisibleRowColumnInViewPort <= itemIndex && _minVisibleRowColumnInViewPort > itemIndex)
-            {
-                contentPosition[_axis] -= (oldSize - _itemPositions[itemIndex].itemSize[_axis]);
-            }
-            
-            var contentPositionDiff = Mathf.Abs(contentPosition[_axis] - oldContentPosition);
-            if (contentPositionDiff > 0)
-            {
-                contentMoved = true;
-            }
-
-            if (contentMoved)
-            {
-                content.anchoredPosition = contentPosition;
-                // this is important since the scroll rect will likely be dragging, and it will cause a jump
-                // this only took me 6 hours to figure out :(
-                m_ContentStartPosition = contentPosition;
-            }
-
-            return contentMoved;
         }
 
         protected override void HideItemsAtTopLeft()
