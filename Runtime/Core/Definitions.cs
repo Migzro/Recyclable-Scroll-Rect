@@ -226,6 +226,10 @@ namespace RecyclableScrollRect
 
         public Vector2Int To2dIndex(int index)
         {
+            if (index < 0 || index >= _grid2dIndices.Count)
+            {
+                return Vector2Int.zero;
+            }
             return _grid2dIndices[index];
         }
     }

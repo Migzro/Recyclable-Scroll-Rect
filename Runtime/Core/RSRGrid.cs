@@ -246,6 +246,11 @@ namespace RecyclableScrollRect
         {
             base.RefreshAfterReload();
 
+            if (_itemsCount <= 0)
+            {
+                return;
+            }
+
             // add more items if needed
             if (_itemsCount - 1 > _maxExtraVisibleRowColumnInViewPort + _gridConstraintCount)
             {
