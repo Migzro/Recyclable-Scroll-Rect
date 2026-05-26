@@ -1,5 +1,5 @@
 # Recyclable Scroll Rect for Unity UI
-An ListView implementation for Unity’s UI that recycles item views, designed to handle large data sets efficiently.
+A ListView implementation for Unity’s UI that recycles item views, designed to handle large data sets efficiently.
 
 ## 📘 Features
 - Seamless infinite (or large-scale) scrolling of UI lists.
