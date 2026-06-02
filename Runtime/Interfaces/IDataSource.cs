@@ -6,19 +6,23 @@ namespace RecyclableScrollRect
 {
     public interface IDataSource
     {
-        int ItemsCount { get; }
+        int SectionsCount { get; }
         GameObject[] PrototypeItems { get; }
-        GameObject GetItemPrototype(int itemIndex);
-        bool IsItemStatic(int itemIndex);
-        void SetItemData(IItem item, int itemIndex);
-        void ItemCreated(int itemIndex, IItem item, GameObject itemGo);
-        void ItemHidden(IItem item, int itemIndex);
-        void ScrolledToItem(IItem item, int itemIndex);
-        bool IgnoreContentPadding(int itemIndex);
+        int GetItemsCountInSection(int sectionIndex);
+        GameObject GetItemPrototype(int sectionIndex, int itemIndex, ItemType itemType);
+        bool IsItemStatic(int sectionIndex, int itemIndex);
+        void SetItemData(IItem item, int sectionIndex, int itemIndex);
+        void ItemCreated(int sectionIndex, int itemIndex, IItem item, GameObject itemGo);
+        void ItemHidden(IItem item, int sectionIndex, int itemIndex);
+        void ScrolledToItem(IItem item, int sectionIndex, int itemIndex);
+        bool IgnoreContentPadding(int sectionIndex, int itemIndex);
         void PullToRefresh();
         void PushToClose();
         void ReachedScrollStart();
         void ReachedScrollEnd();
         void LastItemIsVisible();
+        bool SectionHasHeader(int sectionIndex);
+        bool SectionHasFooter(int sectionIndex);
+        bool HeaderIsPinned (int sectionIndex);
     }
 }

@@ -26,8 +26,9 @@ namespace RecyclableScrollRect
         /// get the index of the item
         /// </summary>
         /// <returns></returns>
-        protected override int GetActualItemIndex(int itemIndex)
+        protected override int GetActualItemIndex (int sectionIndex, int itemIndex)
         {
+            // TODO: use sectionIndex here?
             if (_reverseArrangement)
             {
                 return _itemsCount - 1 - itemIndex;
@@ -97,6 +98,7 @@ namespace RecyclableScrollRect
 
         protected override void SetNonAxisSize(int itemIndex, RectTransform rect = null)
         {
+            var itemData = _itemData[itemIndex];
             var itemPosition = _itemPositions[itemIndex];
             var newItemSize = itemPosition.itemSize;
 
@@ -108,7 +110,7 @@ namespace RecyclableScrollRect
                     {
                         // expand item width if it's in a vertical scrollRect and the conditions are satisfied
                         newItemSize.x = content.rect.width;
-                        if (!_dataSource.IgnoreContentPadding(itemIndex))
+                        if (!_dataSource.IgnoreContentPadding(itemData.sectionIndex, itemData.actualItemIndex))
                         {
                             newItemSize.x -= _padding.right + _padding.left;
                         }
@@ -117,7 +119,7 @@ namespace RecyclableScrollRect
                     {
                         // expand item height if it's in a horizontal scrollRect and the conditions are satisfied
                         newItemSize.y = content.rect.height;
-                        if (!_dataSource.IgnoreContentPadding(itemIndex))
+                        if (!_dataSource.IgnoreContentPadding(itemData.sectionIndex, itemData.actualItemIndex))
                         {
                             newItemSize.y -= _padding.top + _padding.bottom;
                         }
@@ -125,7 +127,7 @@ namespace RecyclableScrollRect
                 }
                 else
                 {
-                    newItemSize[1 - _axis] = _dataSource.GetItemPrototype(itemIndex).GetComponent<RectTransform>().sizeDelta[1 - _axis];
+                    newItemSize[1 - _axis] = _dataSource.GetItemPrototype(itemData.sectionIndex, itemIndex, _itemData[itemIndex].itemType).GetComponent<RectTransform>().sizeDelta[1 - _axis];
                 }
 
                 itemPosition.SetNonAxisSize(newItemSize);
@@ -146,6 +148,7 @@ namespace RecyclableScrollRect
         /// <param name="rect">RectTransform to set position for</param>
         protected override void SetItemPosition(int itemIndex, RectTransform rect = null)
         {
+            var itemData = _itemData[itemIndex];
             var itemPosition = _itemPositions[itemIndex];
             if (!itemPosition.positionSet)
             {
@@ -178,7 +181,7 @@ namespace RecyclableScrollRect
                     {
                         var rightPadding = _padding.right;
                         var leftPadding = _padding.left;
-                        if (_dataSource.IgnoreContentPadding(itemIndex))
+                        if (_dataSource.IgnoreContentPadding(itemData.sectionIndex, itemData.actualItemIndex))
                         {
                             rightPadding = 0;
                             leftPadding = 0;
@@ -201,7 +204,7 @@ namespace RecyclableScrollRect
                     {
                         var topPadding = _padding.top;
                         var bottomPadding = _padding.bottom;
-                        if (_dataSource.IgnoreContentPadding(itemIndex))
+                        if (_dataSource.IgnoreContentPadding(itemData.sectionIndex, itemData.actualItemIndex))
                         {
                             topPadding = 0;
                             bottomPadding = 0;
@@ -268,7 +271,8 @@ namespace RecyclableScrollRect
                 }
                 else
                 {
-                    newItemSize[_axis] = _rsrDataSource.GetItemSize(itemIndex);
+                    var itemData = _itemData[itemIndex];
+                    newItemSize[_axis] = _rsrDataSource.GetItemSize(itemData.sectionIndex, itemIndex);
                 }
 
                 itemPosition.SetSize(newItemSize);

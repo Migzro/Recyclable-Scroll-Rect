@@ -25,6 +25,7 @@ namespace RecyclableScrollRect
         protected LayoutElement _layoutElement;
         private ScreenResolutionDetector _screenResolutionDetector;
 
+        protected List<ItemData> _itemData;
         protected List<ItemPosition> _itemPositions;
         private List<bool> _staticItems;
         private List<string> _prototypeNames;
@@ -110,7 +111,7 @@ namespace RecyclableScrollRect
         protected abstract void InitializeItems(int startIndex = 0);
         protected abstract void SetItemPosition(int itemIndex, RectTransform rect = null);
         protected abstract void SetItemSize(int itemIndex, RectTransform rect = null);
-        protected abstract int GetActualItemIndex(int itemIndex);
+        protected abstract int GetActualItemIndex(int sectionIndex, int itemIndex);
         protected abstract void CalculateContentSize();
         protected abstract void HideItemsAtTopLeft();
         protected abstract void ShowItemsAtBottomRight();
@@ -185,7 +186,7 @@ namespace RecyclableScrollRect
             ContentPosition = 0;
             SetContentBounds();
 
-            _itemsCount = _dataSource.ItemsCount;
+            BuildItemsMap();
             _staticItems = new List<bool>();
             _prototypeNames = new List<string>();
             _itemPositions = new List<ItemPosition>();
@@ -219,6 +220,50 @@ namespace RecyclableScrollRect
             InitializeItems();
 
             IsInitialized = true;
+        }
+        
+        private void BuildItemsMap()
+        {
+            _itemsCount = 0;
+            _itemData = new List<ItemData>();
+            
+            for (var i = 0; i < _dataSource.SectionsCount; i++)
+            {
+                if (_dataSource.SectionHasHeader(i))
+                {
+                    _itemData.Add(new ItemData
+                    {
+                        itemType = ItemType.Header,
+                        sectionIndex = i,
+                        itemIndex = _itemsCount
+                    });
+                    _itemsCount++;
+                }
+
+                var itemsCountInSection= _dataSource.GetItemsCountInSection(i);
+                for (var j = 0; j < itemsCountInSection; j++)
+                {
+                    _itemData.Add(new ItemData
+                    {
+                        itemType = ItemType.Item,
+                        sectionIndex = i,
+                        itemIndex = _itemsCount,
+                        actualItemIndex = GetActualItemIndex(i, _itemsCount)
+                    });
+                    _itemsCount++;
+                }
+
+                if (_dataSource.SectionHasFooter(i))
+                {
+                    _itemData.Add(new ItemData
+                    {
+                        itemType = ItemType.Footer,
+                        sectionIndex = i,
+                        itemIndex = _itemsCount
+                    });
+                    _itemsCount++;
+                }
+            }
         }
 
         /// <summary>
@@ -276,8 +321,8 @@ namespace RecyclableScrollRect
         {
             for (var i = 0; i < _itemsCount; i++)
             {
-                var actualItemIndex = GetActualItemIndex(i);
-                var isCellStatic = actualItemIndex != -1 && _dataSource.IsItemStatic(actualItemIndex); 
+                var actualItemIndex = _itemData[i].actualItemIndex;
+                var isCellStatic = actualItemIndex != -1 && _dataSource.IsItemStatic(_itemData[i].sectionIndex, actualItemIndex);
                 if (i < _staticItems.Count)
                 {
                     _staticItems[i] = isCellStatic;
@@ -307,8 +352,8 @@ namespace RecyclableScrollRect
                     }
                     else
                     {
-                        var actualItemIndex = GetActualItemIndex(i);
-                        itemRect = (RectTransform)_dataSource.GetItemPrototype(actualItemIndex).transform;
+                        var actualItemIndex = _itemData[i].actualItemIndex;
+                        itemRect = (RectTransform)_dataSource.GetItemPrototype(_itemData[i].sectionIndex, actualItemIndex, _itemData[i].itemType).transform;
                     }
                     SetVisibilityInHierarchy(itemRect, false);
 
@@ -337,8 +382,8 @@ namespace RecyclableScrollRect
             // set an array of prototype names to be used when getting the correct prefab for the item index if it exists
             for (var i = 0; i < _itemsCount; i++)
             {
-                var actualItemIndex = GetActualItemIndex(i);
-                var newPrototypeName = actualItemIndex == -1 ? string.Empty : _dataSource.GetItemPrototype(actualItemIndex).name;
+                var actualItemIndex = _itemData[i].actualItemIndex;
+                var newPrototypeName = actualItemIndex == -1 ? string.Empty : _dataSource.GetItemPrototype(_itemData[i].sectionIndex, actualItemIndex, _itemData[i].itemType).name;
                 if (i < _prototypeNames.Count)
                 {
                     if (newPrototypeName != _prototypeNames[i] && actualItemIndex != -1)
@@ -391,8 +436,8 @@ namespace RecyclableScrollRect
         /// <param name="itemIndex"></param>
         private void InitializeItem(int itemIndex)
         {
-            var actualItemIndex = GetActualItemIndex(itemIndex);
-            var itemPrototypeItem = _dataSource.GetItemPrototype(actualItemIndex);
+            var actualItemIndex = _itemData[itemIndex].actualItemIndex;
+            var itemPrototypeItem = _dataSource.GetItemPrototype(_itemData[itemIndex].sectionIndex, actualItemIndex, _itemData[itemIndex].itemType);
 
             GameObject itemGo;
             IItem itemImpl;
@@ -425,7 +470,7 @@ namespace RecyclableScrollRect
             var rect = (RectTransform)itemGo.transform;
             var item = new Item(itemImpl, rect);
             _visibleItems.Add(itemIndex, item);
-            _dataSource.ItemCreated(actualItemIndex, itemImpl, itemGo);
+            _dataSource.ItemCreated(_itemData[itemIndex].sectionIndex, actualItemIndex, itemImpl, itemGo);
 
             // anchors and pivot will always be 0,1 no matter the settings of RSR
             var anchorVector = new Vector2(0, 1);
@@ -676,10 +721,10 @@ namespace RecyclableScrollRect
         private void SetItemRectAndData(int itemIndex, Item item)
         {
             SetNonAxisSize(itemIndex, item.transform);
-            var actualItemIndex = GetActualItemIndex(itemIndex);
+            var actualItemIndex = _itemData[itemIndex].actualItemIndex;
             if (actualItemIndex != -1)
             {
-                _dataSource.SetItemData(item.item, actualItemIndex);
+                _dataSource.SetItemData(item.item, _itemData[itemIndex].sectionIndex, actualItemIndex);
             }
             SetItemSize(itemIndex, item.transform);
             SetItemPosition(itemIndex, item.transform);
@@ -715,9 +760,9 @@ namespace RecyclableScrollRect
                 visibleItem.transform.gameObject.SetActive(false);
             }
 
-            var actualItemIndex = GetActualItemIndex(itemIndex);
+            var actualItemIndex = _itemData[itemIndex].actualItemIndex;
             SetVisibilityInHierarchy(visibleItem.transform, false);
-            _dataSource.ItemHidden(visibleItem.item, actualItemIndex);
+            _dataSource.ItemHidden(visibleItem.item, _itemData[itemIndex].sectionIndex, actualItemIndex);
 
             var protoName = _prototypeNames[itemIndex];
             if (!_pooledItems.TryGetValue(protoName, out var pool))
@@ -747,7 +792,7 @@ namespace RecyclableScrollRect
         public void ReloadData(bool reloadAllItems = false)
         {
             var oldItemsCount = _itemsCount;
-            _itemsCount = _dataSource.ItemsCount;
+            BuildItemsMap();
             
             // removes extra items
             if (oldItemsCount > _itemsCount)
@@ -951,8 +996,8 @@ namespace RecyclableScrollRect
             
             if (animationState == AnimationState.Finished && callEvent)
             {
-                var actualItemIndex = GetActualItemIndex(itemIndex);
-                _dataSource.ScrolledToItem(_visibleItems[itemIndex].item, actualItemIndex);
+                var itemData = _itemData[itemIndex];
+                _dataSource.ScrolledToItem(_visibleItems[itemIndex].item, itemData.sectionIndex, itemData.actualItemIndex);
             }
         }
         

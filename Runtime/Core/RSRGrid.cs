@@ -78,8 +78,9 @@ namespace RecyclableScrollRect
         /// get the index of the item
         /// </summary>
         /// <returns></returns>
-        protected override int GetActualItemIndex(int itemIndex)
+        protected override int GetActualItemIndex(int sectionIndex, int itemIndex)
         {
+            // TODO: use sectionIndex here?
             return _grid.GetActualItemIndex(itemIndex);
         }
         

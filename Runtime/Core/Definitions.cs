@@ -12,6 +12,26 @@ namespace RecyclableScrollRect
         Center,
         RightOrDown
     }
+
+    public enum ItemType
+    {
+        Header = 0,
+        Item,
+        Footer
+    }
+
+    public class ItemData
+    {
+        public ItemType itemType;
+        public int sectionIndex;
+        public int itemIndex;
+        public int actualItemIndex;
+
+        public override string ToString()
+        {
+            return $"ItemData: Type {itemType}, Section {sectionIndex}, Item {itemIndex}";
+        }
+    }
     
     public readonly struct Item
     {

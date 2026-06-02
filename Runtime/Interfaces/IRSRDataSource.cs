@@ -5,6 +5,6 @@ namespace RecyclableScrollRect
     public interface IRSRDataSource : IDataSource
     {
         bool IsItemSizeKnown { get; }
-        float GetItemSize(int itemIndex);
+        float GetItemSize(int sectionIndex, int itemIndex);
     }
 }
