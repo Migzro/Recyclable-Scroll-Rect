@@ -1,4 +1,4 @@
-## [1.1.2] - 02-6-2026
+## [1.1.3] - 02-6-2026
 ### New Features
 - Added a new sample - Images Grid RSR
 
