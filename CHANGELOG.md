@@ -1,3 +1,6 @@
+## [1.1.2] - 02-6-2026
+- Added a new sample - Images Grid RSR
+
 ## [1.1.0] - 11-1-2025
 ### New Features
 - Vastly improved scrolling and added support for scrolling with DoTween and Prime Tween.
