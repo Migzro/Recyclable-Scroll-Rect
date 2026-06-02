@@ -1,4 +1,5 @@
 ## [1.1.2] - 02-6-2026
+### New Features
 - Added a new sample - Images Grid RSR
 
 ## [1.1.0] - 11-1-2025
