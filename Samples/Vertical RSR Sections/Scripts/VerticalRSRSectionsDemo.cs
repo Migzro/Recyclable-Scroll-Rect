@@ -5,43 +5,44 @@ using UnityEngine;
 
 namespace RecyclableScrollRect
 {
-    public class VerticalRSRDemoDoTweenScrolling : MonoBehaviour, IRSRDataSource
+    public class VerticalRSRSectionsDemo : MonoBehaviour, IRSRDataSource
     {
-        [SerializeField] private int _itemsCount;
+        [SerializeField] private int[] _itemsCount;
         [SerializeField] private RSR _scrollRect;
         [SerializeField] private GameObject[] _prototypeItems;
-        [SerializeField] private float _timeToScroll;
-        [SerializeField] private bool _isSpeed;
-        [SerializeField] private bool _isInstant;
+        
+        private List<List<string>> _dataSource;
 
-        private List<string> _dataSource;
-        private int _itemCount;
-
-        public int SectionsCount => -1;
+        public int SectionsCount => 2;
         public bool IsItemSizeKnown => true;
         public GameObject[] PrototypeItems => _prototypeItems;
 
         private void Start()
         {
-            _dataSource = new List<string>();
-            for (var i = 0; i < _itemsCount; i++)
-                _dataSource.Add(i.ToString());
+            _dataSource = new List<List<string>>();
+            for (var i = 0; i < _itemsCount.Length; i++)
+            {
+                _dataSource.Add(new List<string>());
+                for (var j = 0; j < _itemsCount[i]; j++)
+                    _dataSource[i].Add(j.ToString());
+            }
+
             _scrollRect.Initialize(this);
         }
         
         public int GetItemsCountInSection(int sectionIndex)
         {
-            return _itemsCount;
+            return _itemsCount[sectionIndex];
         }
 
         public bool SectionHasHeader(int sectionIndex)
         {
-            return false;
+            return true;
         }
         
         public bool SectionHasFooter(int sectionIndex)
         {
-            return false;
+            return true;
         }
 
         public bool HeaderIsPinned(int sectionIndex)
@@ -51,12 +52,17 @@ namespace RecyclableScrollRect
 
         public float GetItemSize(ItemData itemData)
         {
-            return 40.22f;
+            if (itemData.itemType == ItemType.Item)
+                return 40.22f;
+            return 80f;
         }
 
         public void SetItemData(IItem item, ItemData itemData)
         {
-            (item as DemoItemPrototype)?.Initialize(_dataSource[itemData.actualItemIndex]);
+            if (itemData.itemType == ItemType.Item)
+            {
+                (item as DemoItemPrototype)?.Initialize(_dataSource[itemData.sectionIndex][itemData.itemIndex]);
+            }
         }
 
         public void ItemHidden(IItem item, ItemData itemData)
@@ -65,14 +71,17 @@ namespace RecyclableScrollRect
 
         public GameObject GetItemPrototype(ItemData itemData)
         {
-            if (itemData.itemIndex % 2 == 0)
+            if (itemData.itemType == ItemType.Footer)
+                return _prototypeItems[3];
+            if (itemData.itemType == ItemType.Header)
+                return _prototypeItems[2];
+            if (itemData.sectionIndex == 0)
                 return _prototypeItems[0];
             return _prototypeItems[1];
         }
 
         public void ItemCreated(IItem item, GameObject itemGo, ItemData itemData)
         {
-
         }
 
         public bool IsItemStatic(ItemData itemData)

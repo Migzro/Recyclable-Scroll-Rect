@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Maged Farid
+// Copyright (c) 2026 Maged Farid
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -22,7 +22,7 @@ namespace RecyclableScrollRect
             
             if (_itemsCount > 0 && _visibleItems.TryGetValue(_currentPage, out var visibleItem))
             {
-                _pageDataSource?.PageWillFocus(_currentPage, true, visibleItem.item);
+                _pageDataSource?.PageWillFocus(visibleItem.item, _itemData[_currentPage], true);
             }
         }
 
@@ -42,7 +42,7 @@ namespace RecyclableScrollRect
             }
             else if (_itemsCount > 0 && _visibleItems.TryGetValue(_currentPage, out var visibleItem))
             {
-                _pageDataSource?.PageWillFocus(_currentPage, true, visibleItem.item);
+                _pageDataSource?.PageWillFocus(visibleItem.item, _itemData[_currentPage], true);
             }
         }
         
@@ -53,7 +53,7 @@ namespace RecyclableScrollRect
             var isNextPage = itemIndex > _currentPage;
             if (_visibleItems.TryGetValue(_currentPage, out var visibleItem))
             {
-                _pageDataSource?.PageWillUnFocus(_currentPage, isNextPage, visibleItem.item);
+                _pageDataSource?.PageWillUnFocus(visibleItem.item, _itemData[_currentPage], isNextPage);
             }
         }
 
@@ -67,7 +67,7 @@ namespace RecyclableScrollRect
                 _currentPage = itemIndex;
                 if (_visibleItems.TryGetValue(_currentPage, out var visibleItem))
                 {
-                    _pageDataSource?.PageWillFocus(_currentPage, isNextPage, visibleItem.item);
+                    _pageDataSource?.PageWillFocus(visibleItem.item, _itemData[_currentPage], isNextPage);
                 }
             }
         }

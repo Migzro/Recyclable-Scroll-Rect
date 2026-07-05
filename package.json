@@ -86,6 +86,11 @@
           "displayName": "Images Vertical Grid",
           "description": "Contains a vertical grid recyclable scroll rect setup that loads images from a URL and uses a placeholder while loading",
           "path": "Samples~/Images Grid RSR"
+        },
+        {
+            "displayName": "Vertical RSR Sections",
+            "description": "Contains a vertical recyclable scroll rect setup that supports sections and headers",
+            "path": "Samples~/Vertical RSR Sections"
         }
     ]
 }

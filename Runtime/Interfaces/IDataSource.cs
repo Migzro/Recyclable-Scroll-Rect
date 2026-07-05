@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Maged Farid
+// Copyright (c) 2026 Maged Farid
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 using UnityEngine;
 
@@ -9,13 +9,13 @@ namespace RecyclableScrollRect
         int SectionsCount { get; }
         GameObject[] PrototypeItems { get; }
         int GetItemsCountInSection(int sectionIndex);
-        GameObject GetItemPrototype(int sectionIndex, int itemIndex, ItemType itemType);
-        bool IsItemStatic(int sectionIndex, int itemIndex);
-        void SetItemData(IItem item, int sectionIndex, int itemIndex);
-        void ItemCreated(int sectionIndex, int itemIndex, IItem item, GameObject itemGo);
-        void ItemHidden(IItem item, int sectionIndex, int itemIndex);
-        void ScrolledToItem(IItem item, int sectionIndex, int itemIndex);
-        bool IgnoreContentPadding(int sectionIndex, int itemIndex);
+        GameObject GetItemPrototype(ItemData itemData);
+        bool IsItemStatic(ItemData itemData);
+        void SetItemData(IItem item, ItemData itemData);
+        void ItemCreated(IItem item, GameObject itemGo, ItemData itemData);
+        void ItemHidden(IItem item, ItemData itemData);
+        void ScrolledToItem(IItem item, ItemData itemData);
+        bool IgnoreContentPadding(ItemData itemData);
         void PullToRefresh();
         void PushToClose();
         void ReachedScrollStart();

@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Maged Farid
+// Copyright (c) 2026 Maged Farid
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 using UnityEngine;
 
@@ -110,7 +110,7 @@ namespace RecyclableScrollRect
                     {
                         // expand item width if it's in a vertical scrollRect and the conditions are satisfied
                         newItemSize.x = content.rect.width;
-                        if (!_dataSource.IgnoreContentPadding(itemData.sectionIndex, itemData.actualItemIndex))
+                        if (!_dataSource.IgnoreContentPadding(itemData))
                         {
                             newItemSize.x -= _padding.right + _padding.left;
                         }
@@ -119,7 +119,7 @@ namespace RecyclableScrollRect
                     {
                         // expand item height if it's in a horizontal scrollRect and the conditions are satisfied
                         newItemSize.y = content.rect.height;
-                        if (!_dataSource.IgnoreContentPadding(itemData.sectionIndex, itemData.actualItemIndex))
+                        if (!_dataSource.IgnoreContentPadding(itemData))
                         {
                             newItemSize.y -= _padding.top + _padding.bottom;
                         }
@@ -127,7 +127,7 @@ namespace RecyclableScrollRect
                 }
                 else
                 {
-                    newItemSize[1 - _axis] = _dataSource.GetItemPrototype(itemData.sectionIndex, itemIndex, _itemData[itemIndex].itemType).GetComponent<RectTransform>().sizeDelta[1 - _axis];
+                    newItemSize[1 - _axis] = _dataSource.GetItemPrototype(itemData).GetComponent<RectTransform>().sizeDelta[1 - _axis];
                 }
 
                 itemPosition.SetNonAxisSize(newItemSize);
@@ -181,7 +181,7 @@ namespace RecyclableScrollRect
                     {
                         var rightPadding = _padding.right;
                         var leftPadding = _padding.left;
-                        if (_dataSource.IgnoreContentPadding(itemData.sectionIndex, itemData.actualItemIndex))
+                        if (_dataSource.IgnoreContentPadding(itemData))
                         {
                             rightPadding = 0;
                             leftPadding = 0;
@@ -204,7 +204,7 @@ namespace RecyclableScrollRect
                     {
                         var topPadding = _padding.top;
                         var bottomPadding = _padding.bottom;
-                        if (_dataSource.IgnoreContentPadding(itemData.sectionIndex, itemData.actualItemIndex))
+                        if (_dataSource.IgnoreContentPadding(itemData))
                         {
                             topPadding = 0;
                             bottomPadding = 0;
@@ -272,7 +272,7 @@ namespace RecyclableScrollRect
                 else
                 {
                     var itemData = _itemData[itemIndex];
-                    newItemSize[_axis] = _rsrDataSource.GetItemSize(itemData.sectionIndex, itemIndex);
+                    newItemSize[_axis] = _rsrDataSource.GetItemSize(itemData);
                 }
 
                 itemPosition.SetSize(newItemSize);

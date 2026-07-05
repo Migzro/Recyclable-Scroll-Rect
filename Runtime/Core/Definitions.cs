@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Maged Farid
+// Copyright (c) 2026 Maged Farid
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 using System.Collections.Generic;
 using UnityEngine;
@@ -29,7 +29,7 @@ namespace RecyclableScrollRect
 
         public override string ToString()
         {
-            return $"ItemData: Type {itemType}, Section {sectionIndex}, Item {itemIndex}";
+            return $"ItemData: Type {itemType}, Section {sectionIndex}, Item {itemIndex}, Actual Item Index {actualItemIndex}";
         }
     }
     

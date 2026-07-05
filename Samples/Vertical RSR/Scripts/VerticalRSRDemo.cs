@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Maged Farid
+// Copyright (c) 2026 Maged Farid
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 using System.Collections.Generic;
 using UnityEngine;
@@ -53,7 +53,7 @@ namespace RecyclableScrollRect
 
         public bool SectionHasHeader(int sectionIndex)
         {
-            return true;
+            return false;
         }
         
         public bool SectionHasFooter(int sectionIndex)
@@ -66,49 +66,42 @@ namespace RecyclableScrollRect
             return false;
         }
 
-        public float GetItemSize(int sectionIndex, int itemIndex)
+        public float GetItemSize(ItemData itemData)
         {
-            if (sectionIndex == 0 && itemIndex == 0)
-                return 80f;
-            
             return 40.22f;
         }
 
-        public void SetItemData(IItem item, int sectionIndex, int itemIndex)
+        public void SetItemData(IItem item, ItemData itemData)
         {
-            if (sectionIndex == 0 && itemIndex != 0)
-                (item as DemoItemPrototype)?.Initialize(_dataSource[itemIndex - 1]);
+            (item as DemoItemPrototype)?.Initialize(_dataSource[itemData.actualItemIndex]);
         }
 
-        public void ItemHidden(IItem item, int sectionIndex, int itemIndex)
+        public void ItemHidden(IItem item, ItemData itemData)
         {
         }
 
-        public GameObject GetItemPrototype(int sectionIndex, int itemIndex, ItemType itemType)
+        public GameObject GetItemPrototype(ItemData itemData)
         {
-            if (sectionIndex == 0 && itemType == ItemType.Header)
-                return _prototypeItems[2];
-            
-            if (itemIndex % 2 == 0)
+            if (itemData.itemIndex % 2 == 0)
                 return _prototypeItems[0];
             return _prototypeItems[1];
         }
 
-        public void ItemCreated(int sectionIndex, int itemIndex, IItem item, GameObject itemGo)
+        public void ItemCreated(IItem item, GameObject itemGo, ItemData itemData)
         {
 
         }
 
-        public bool IsItemStatic(int sectionIndex, int itemIndex)
+        public bool IsItemStatic(ItemData itemData)
         {
             return false;
         }
 
-        public void ScrolledToItem(IItem item, int sectionIndex, int itemIndex)
+        public void ScrolledToItem(IItem item, ItemData itemData)
         {
         }
 
-        public bool IgnoreContentPadding(int sectionIndex, int itemIndex)
+        public bool IgnoreContentPadding(ItemData itemData)
         {
             return false;
         }

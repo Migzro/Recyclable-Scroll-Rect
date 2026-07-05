@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Maged Farid
+// Copyright (c) 2026 Maged Farid
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using System.Collections;
@@ -19,6 +19,7 @@ namespace RecyclableScrollRect
         private int _itemCount;
 
         public int ItemsCount => _dataSource.Count;
+        public int SectionsCount => 0;
         public GameObject[] PrototypeItems => _prototypeItems;
 
         private void Start()
@@ -48,37 +49,37 @@ namespace RecyclableScrollRect
             ((ImageItemPrototype)item)?.SetImage(_sprites[itemIndex]);
         }
 
-        public void SetItemData(IItem item, int itemIndex)
+        public void SetItemData(IItem item, ItemData itemData)
         {
             // download image and cache it using itemIndex as key, then pass the downloaded image to the item to initialize it
             ((ImageItemPrototype)item)?.Initialize();
-            StartCoroutine(LoadImage(item, itemIndex));
+            StartCoroutine(LoadImage(item, itemData.actualItemIndex));
         }
 
-        public void ItemHidden(IItem item, int itemIndex)
+        public void ItemHidden(IItem item, ItemData itemData)
         {
         }
 
-        public GameObject GetItemPrototype(int itemIndex)
+        public GameObject GetItemPrototype(ItemData itemData)
         {
             return _prototypeItems[0];
         }
 
-        public void ItemCreated(int itemIndex, IItem item, GameObject itemGo)
+        public void ItemCreated(IItem item, GameObject itemGo, ItemData itemData)
         {
 
         }
 
-        public bool IsItemStatic(int itemIndex)
+        public bool IsItemStatic(ItemData itemData)
         {
             return false;
         }
 
-        public void ScrolledToItem(IItem item, int itemIndex)
+        public void ScrolledToItem(IItem item, ItemData itemData)
         {
         }
 
-        public bool IgnoreContentPadding(int itemIndex)
+        public bool IgnoreContentPadding(ItemData itemData)
         {
             return false;
         }
@@ -101,6 +102,26 @@ namespace RecyclableScrollRect
 
         public void LastItemIsVisible()
         {
+        }
+        
+        public int GetItemsCountInSection(int sectionIndex)
+        {
+            return 0;
+        }
+
+        public bool SectionHasHeader(int sectionIndex)
+        {
+            return false;
+        }
+
+        public bool SectionHasFooter(int sectionIndex)
+        {
+            return false;
+        }
+
+        public bool HeaderIsPinned(int sectionIndex)
+        {
+            return false;
         }
     }
 }

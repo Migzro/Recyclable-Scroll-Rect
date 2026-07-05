@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Maged Farid
+// Copyright (c) 2026 Maged Farid
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 using System.Collections.Generic;
 using UnityEngine;
@@ -46,41 +46,41 @@ namespace RecyclableScrollRect
             return false;
         }
 
-        public float GetItemSize(int sectionIndex, int itemIndex)
+        public float GetItemSize(ItemData itemData)
         {
             return 1334f;
         }
 
-        public void SetItemData(IItem item, int sectionIndex, int itemIndex)
+        public void SetItemData(IItem item, ItemData itemData)
         {
-            (item as DemoItemPrototype)?.Initialize(_dataSource[itemIndex]);
+            (item as DemoItemPrototype)?.Initialize(_dataSource[itemData.actualItemIndex]);
         }
 
-        public void ItemHidden(IItem item, int sectionIndex, int itemIndex)
+        public void ItemHidden(IItem item, ItemData itemData)
         {
         }
 
-        public GameObject GetItemPrototype(int sectionIndex, int itemIndex, ItemType itemType)
+        public GameObject GetItemPrototype(ItemData itemData)
         {
-            if (itemIndex % 2 == 0)
+            if (itemData.itemIndex % 2 == 0)
                 return _prototypeItems[0];
             return _prototypeItems[1];
         }
 
-        public void ItemCreated(int sectionIndex, int itemIndex, IItem item, GameObject itemGo)
+        public void ItemCreated(IItem item, GameObject itemGo, ItemData itemData)
         {
         }
 
-        public bool IsItemStatic(int sectionIndex, int itemIndex)
+        public bool IsItemStatic(ItemData itemData)
         {
             return false;
         }
 
-        public void ScrolledToItem(IItem item, int sectionIndex, int itemIndex)
+        public void ScrolledToItem(IItem item, ItemData itemData)
         {
         }
 
-        public bool IgnoreContentPadding(int sectionIndex, int itemIndex)
+        public bool IgnoreContentPadding(ItemData itemData)
         {
             return false;
         }
@@ -105,11 +105,11 @@ namespace RecyclableScrollRect
         {
         }
 
-        public void PageWillFocus(int itemIndex, bool isNextPage, IItem item)
+        public void PageWillFocus(IItem item, ItemData itemData, bool isNextPage)
         {
         }
 
-        public void PageWillUnFocus(int itemIndex, bool isNextPage, IItem item)
+        public void PageWillUnFocus(IItem item, ItemData itemData, bool isNextPage)
         {
         }
     }
