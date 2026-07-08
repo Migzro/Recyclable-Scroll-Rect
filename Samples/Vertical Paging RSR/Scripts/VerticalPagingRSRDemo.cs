@@ -53,7 +53,7 @@ namespace RecyclableScrollRect
 
         public void SetItemData(IItem item, ItemData itemData)
         {
-            (item as DemoItemPrototype)?.Initialize(_dataSource[itemData.actualItemIndex]);
+            (item as DemoItemPrototype)?.Initialize(_dataSource[itemData.itemIndex]);
         }
 
         public void ItemHidden(IItem item, ItemData itemData)

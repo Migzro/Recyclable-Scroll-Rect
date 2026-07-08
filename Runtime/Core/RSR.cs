@@ -26,14 +26,13 @@ namespace RecyclableScrollRect
         /// get the index of the item
         /// </summary>
         /// <returns></returns>
-        protected override int GetActualItemIndex (int sectionIndex, int itemIndex)
+        protected override int GetActualItemIndex (int totalItemsInSection, int itemIndexInSection)
         {
-            // TODO: use sectionIndex here?
             if (_reverseArrangement)
             {
-                return _itemsCount - 1 - itemIndex;
+                return totalItemsInSection - 1 - itemIndexInSection;
             }
-            return itemIndex;
+            return itemIndexInSection;
         }
 
         protected override bool IsLastRowColumn(int itemIndex)

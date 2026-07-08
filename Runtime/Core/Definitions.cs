@@ -25,7 +25,7 @@ namespace RecyclableScrollRect
         public ItemType itemType;
         public int sectionIndex;
         public int itemIndex;
-        public int actualItemIndex;
+        internal int actualItemIndex;
 
         public override string ToString()
         {

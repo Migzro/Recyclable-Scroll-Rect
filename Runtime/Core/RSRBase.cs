@@ -111,7 +111,7 @@ namespace RecyclableScrollRect
         protected abstract void InitializeItems(int startIndex = 0);
         protected abstract void SetItemPosition(int itemIndex, RectTransform rect = null);
         protected abstract void SetItemSize(int itemIndex, RectTransform rect = null);
-        protected abstract int GetActualItemIndex(int sectionIndex, int itemIndex);
+        protected abstract int GetActualItemIndex(int totalItemsInSection, int itemIndexInSection);
         protected abstract void CalculateContentSize();
         protected abstract void HideItemsAtTopLeft();
         protected abstract void ShowItemsAtBottomRight();
@@ -233,7 +233,24 @@ namespace RecyclableScrollRect
                 Debug.LogWarning("Sections count cannot be 0, defaulting to 1");
                 sectionsCount = 1;
             }
+            
+            // Calculate _itemsCount before building the map
+            for (var i = 0; i < sectionsCount; i++)
+            {
+                _itemsCount += _dataSource.GetItemsCountInSection(i);
+                
+                if (_dataSource.SectionHasHeader(i))
+                {
+                    _itemsCount++;
+                }
 
+                if (_dataSource.SectionHasFooter(i))
+                {
+                    _itemsCount++;
+                }
+            }
+
+            var currentItemIndex = 0;
             for (var i = 0; i < sectionsCount; i++)
             {
                 if (_dataSource.SectionHasHeader(i))
@@ -242,25 +259,23 @@ namespace RecyclableScrollRect
                     {
                         itemType = ItemType.Header,
                         sectionIndex = i,
-                        itemIndex = -1,
-                        actualItemIndex = GetActualItemIndex(i, _itemsCount)
+                        itemIndex = currentItemIndex,
+                        actualItemIndex = currentItemIndex
                     });
-                    _itemsCount++;
+                    currentItemIndex++;
                 }
 
                 var itemsCountInSection= _dataSource.GetItemsCountInSection(i);
-                var itemsInSectionCount = 0;
                 for (var j = 0; j < itemsCountInSection; j++)
                 {
                     _itemData.Add(new ItemData
                     {
                         itemType = ItemType.Item,
                         sectionIndex = i,
-                        itemIndex = itemsInSectionCount,
-                        actualItemIndex = GetActualItemIndex(i, _itemsCount)
+                        itemIndex = GetActualItemIndex(itemsCountInSection, j),
+                        actualItemIndex = currentItemIndex
                     });
-                    itemsInSectionCount++;
-                    _itemsCount++;
+                    currentItemIndex++;
                 }
 
                 if (_dataSource.SectionHasFooter(i))
@@ -269,10 +284,10 @@ namespace RecyclableScrollRect
                     {
                         itemType = ItemType.Footer,
                         sectionIndex = i,
-                        itemIndex = -1,
-                        actualItemIndex = GetActualItemIndex(i, _itemsCount)
+                        itemIndex = currentItemIndex,
+                        actualItemIndex = currentItemIndex
                     });
-                    _itemsCount++;
+                    currentItemIndex++;
                 }
             }
         }
@@ -730,8 +745,7 @@ namespace RecyclableScrollRect
         private void SetItemRectAndData(int itemIndex, Item item)
         {
             SetNonAxisSize(itemIndex, item.transform);
-            var actualItemIndex = _itemData[itemIndex].actualItemIndex;
-            if (actualItemIndex != -1 && !_staticItems[itemIndex])
+            if (_itemData[itemIndex].actualItemIndex != -1 && !_staticItems[itemIndex])
             {
                 _dataSource.SetItemData(item.item, _itemData[itemIndex]);
             }

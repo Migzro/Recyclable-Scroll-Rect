@@ -53,7 +53,7 @@ namespace RecyclableScrollRect
         {
             // download image and cache it using itemIndex as key, then pass the downloaded image to the item to initialize it
             ((ImageItemPrototype)item)?.Initialize();
-            StartCoroutine(LoadImage(item, itemData.actualItemIndex));
+            StartCoroutine(LoadImage(item, itemData.itemIndex));
         }
 
         public void ItemHidden(IItem item, ItemData itemData)
