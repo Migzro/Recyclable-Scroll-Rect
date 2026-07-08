@@ -226,8 +226,15 @@ namespace RecyclableScrollRect
         {
             _itemsCount = 0;
             _itemData = new List<ItemData>();
-            
-            for (var i = 0; i < _dataSource.SectionsCount; i++)
+
+            var sectionsCount = _dataSource.SectionsCount;
+            if (_dataSource.SectionsCount <= 0)
+            {
+                Debug.LogWarning("Sections count cannot be 0, defaulting to 1");
+                sectionsCount = 1;
+            }
+
+            for (var i = 0; i < sectionsCount; i++)
             {
                 if (_dataSource.SectionHasHeader(i))
                 {
