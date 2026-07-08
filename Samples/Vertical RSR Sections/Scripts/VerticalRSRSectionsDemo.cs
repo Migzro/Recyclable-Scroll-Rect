@@ -76,17 +76,16 @@ namespace RecyclableScrollRect
             if (itemData.itemType == ItemType.Header)
                 return _prototypeItems[2];
             if (itemData.sectionIndex == 0)
+            {
+                if (itemData.itemIndex == 0)
+                    return _prototypeItems[4];
                 return _prototypeItems[0];
+            }
             return _prototypeItems[1];
         }
 
         public void ItemCreated(IItem item, GameObject itemGo, ItemData itemData)
         {
-        }
-
-        public bool IsItemStatic(ItemData itemData)
-        {
-            return false;
         }
 
         public void ScrolledToItem(IItem item, ItemData itemData)

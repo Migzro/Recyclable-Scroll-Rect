@@ -70,11 +70,6 @@ namespace RecyclableScrollRect
 
         }
 
-        public bool IsItemStatic(ItemData itemData)
-        {
-            return false;
-        }
-
         public void ScrolledToItem(IItem item, ItemData itemData)
         {
         }

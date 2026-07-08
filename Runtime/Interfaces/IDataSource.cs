@@ -10,7 +10,6 @@ namespace RecyclableScrollRect
         GameObject[] PrototypeItems { get; }
         int GetItemsCountInSection(int sectionIndex);
         GameObject GetItemPrototype(ItemData itemData);
-        bool IsItemStatic(ItemData itemData);
         void SetItemData(IItem item, ItemData itemData);
         void ItemCreated(IItem item, GameObject itemGo, ItemData itemData);
         void ItemHidden(IItem item, ItemData itemData);

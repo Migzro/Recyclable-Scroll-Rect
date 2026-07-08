@@ -326,7 +326,7 @@ namespace RecyclableScrollRect
             for (var i = 0; i < _itemsCount; i++)
             {
                 var actualItemIndex = _itemData[i].actualItemIndex;
-                var isCellStatic = actualItemIndex != -1 && _dataSource.IsItemStatic(_itemData[i]);
+                var isCellStatic = actualItemIndex != -1 && _dataSource.GetItemPrototype(_itemData[i]).scene.IsValid();
                 if (i < _staticItems.Count)
                 {
                     _staticItems[i] = isCellStatic;
@@ -724,7 +724,7 @@ namespace RecyclableScrollRect
         {
             SetNonAxisSize(itemIndex, item.transform);
             var actualItemIndex = _itemData[itemIndex].actualItemIndex;
-            if (actualItemIndex != -1)
+            if (actualItemIndex != -1 && !_staticItems[itemIndex])
             {
                 _dataSource.SetItemData(item.item, _itemData[itemIndex]);
             }
