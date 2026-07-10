@@ -47,7 +47,9 @@ namespace RecyclableScrollRect
 
         public bool HeaderIsPinned(int sectionIndex)
         {
-            return false;
+            if (sectionIndex == 0)
+                return true;
+            return true;
         }
 
         public float GetItemSize(ItemData itemData)
@@ -62,6 +64,14 @@ namespace RecyclableScrollRect
             if (itemData.itemType == ItemType.Item)
             {
                 (item as DemoItemPrototype)?.Initialize(_dataSource[itemData.sectionIndex][itemData.itemIndex]);
+            }
+            else if (itemData.itemType == ItemType.Header)
+            {
+                (item as DemoItemPrototype)?.Initialize("Header " + itemData.sectionIndex);
+            }
+            else if (itemData.itemType == ItemType.Footer)
+            {
+                (item as DemoItemPrototype)?.Initialize("Footer " + itemData.sectionIndex);
             }
         }
 

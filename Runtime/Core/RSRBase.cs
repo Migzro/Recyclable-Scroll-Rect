@@ -36,6 +36,8 @@ namespace RecyclableScrollRect
         protected int _maxVisibleRowColumnInViewPort;
         protected int _minExtraVisibleRowColumnInViewPort;
         protected int _maxExtraVisibleRowColumnInViewPort;
+        private int _currentSection;
+        protected int _currentPinnedHeaderIndex;
         protected bool _isAnimating;
         private bool _needsClearance;
         private bool _pullToRefresh;
@@ -178,6 +180,8 @@ namespace RecyclableScrollRect
 
             StopMovement();
             
+            _currentSection = 0;
+            _currentPinnedHeaderIndex = -1;
             _minVisibleRowColumnInViewPort = 0;
             _minExtraVisibleRowColumnInViewPort = 0;
             _maxVisibleRowColumnInViewPort = 0;
@@ -633,14 +637,14 @@ namespace RecyclableScrollRect
             {
                 movementType = _movementType;
                 reachedLimits = true;
-                
-                if ( atStart && _canCallReachedScrollStart )
+
+                if (atStart && _canCallReachedScrollStart)
                 {
                     _dataSource.ReachedScrollStart();
                     _canCallReachedScrollStart = false;
                 }
-                
-                if ( atEnd && _canCallReachedScrollEnd )
+
+                if (atEnd && _canCallReachedScrollEnd)
                 {
                     _dataSource.ReachedScrollEnd();
                     _canCallReachedScrollEnd = false;
@@ -673,10 +677,12 @@ namespace RecyclableScrollRect
             }
             _lastContentPosition = currentContentAnchoredPosition;
 
+            UnpinHeader();
             if (reachedLimits && !_needsClearance)
                 return;
             
             ShowHideItems(showBottomRight);
+            CheckPinnedHeaders();
         }
 
         private void ShowHideItems(bool showBottomRight)
@@ -760,7 +766,10 @@ namespace RecyclableScrollRect
         {
             foreach (var visibleItem in _visibleItems)
             {
-                visibleItem.Value.transform.SetSiblingIndex(visibleItem.Key);
+                if (_currentPinnedHeaderIndex != visibleItem.Key)
+                {
+                    visibleItem.Value.transform.SetSiblingIndex(visibleItem.Key);
+                }
             }
         }
         
@@ -794,6 +803,81 @@ namespace RecyclableScrollRect
             }
             pool.Add(visibleItem);
             _visibleItems.Remove(itemIndex);
+        }
+        
+        private void UnpinHeader()
+        {
+            if (_currentPinnedHeaderIndex == -1)
+                return;
+            
+            var currentHeaderPosition =  _itemPositions[_currentPinnedHeaderIndex];
+            var currentHeaderSection = _itemData[_currentPinnedHeaderIndex].sectionIndex;
+            
+            // this condition is only used for the header of section 0 to make sure it unpins when we scroll back to the top
+            if (_contentTopLeftCorner[_axis] >= currentHeaderPosition.absTopLeftPosition[_axis] && _currentSection == currentHeaderSection)
+                return;
+            
+            Debug.Log($"Unpinning current header {_currentPinnedHeaderIndex}");
+            if (_visibleItems.TryGetValue(_currentPinnedHeaderIndex, out var headerItem))
+            {
+                headerItem.transform.SetParent(content, true);
+                headerItem.transform.SetSiblingIndex(_currentPinnedHeaderIndex);
+                RestoreItemPosition(_currentPinnedHeaderIndex);
+                // hide the header as if its no longer in the viewport and the section has changed
+                if (_currentPinnedHeaderIndex < _minExtraVisibleRowColumnInViewPort && _currentSection != currentHeaderSection)
+                {
+                    HideItemAtIndex(_currentPinnedHeaderIndex);
+                }
+                _currentPinnedHeaderIndex = -1;
+            }
+        }
+
+        private void CheckPinnedHeaders()
+        {
+            _currentSection = _itemData[_minVisibleRowColumnInViewPort].sectionIndex;
+            
+            if (!_dataSource.SectionHasHeader(_currentSection) || !_dataSource.HeaderIsPinned(_currentSection))
+                return;
+
+            var currentHeaderIndex = GetHeaderIndexFromSection(_currentSection);
+            if (_currentPinnedHeaderIndex == currentHeaderIndex)
+                return;
+
+            var itemPosition = _itemPositions[currentHeaderIndex];
+            if (_contentTopLeftCorner[_axis] < itemPosition.absTopLeftPosition[_axis])
+                return;
+
+            if (!_visibleItems.ContainsKey(currentHeaderIndex))
+                ShowItemAtIndex(currentHeaderIndex);
+            
+            _visibleItems.TryGetValue(currentHeaderIndex, out var headerItem);
+            headerItem.transform.SetParent(viewport, true);
+            headerItem.transform.SetAsLastSibling();
+
+            var headerPosition = _itemPositions[currentHeaderIndex];
+            var newItemPosition = headerPosition.topLeftPosition;
+            if (vertical)
+                newItemPosition.y = -_padding.top;
+            else
+                newItemPosition.x = _padding.left;
+            headerItem.transform.anchoredPosition = newItemPosition;
+            
+            UnpinHeader();
+            _currentPinnedHeaderIndex = currentHeaderIndex;
+            Debug.Log($"Pinning current header {_currentPinnedHeaderIndex}");
+        }
+        
+        private int GetHeaderIndexFromSection(int sectionIndex)
+        {
+            for (int i = 0; i < _itemData.Count; i++)
+            {
+                var data = _itemData[i];
+                if (data.sectionIndex == sectionIndex && data.itemType == ItemType.Header)
+                {
+                    return i;
+                }
+            }
+            return -1;
         }
 
         /// <summary>
