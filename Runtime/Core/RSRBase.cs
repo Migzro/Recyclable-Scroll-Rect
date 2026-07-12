@@ -244,7 +244,10 @@ namespace RecyclableScrollRect
                 _sectionsCount = 1;
             }
             
-            // Calculate _itemsCount before building the map
+            _itemsCount += _sectionsSource is { ScrollRectHasHeader: true } ? 1 : 0;
+            _itemsCount += _sectionsSource is { ScrollRectHasFooter: true } ? 1 : 0;
+            
+            // Calculate _itemsCount before building the items map
             for (var i = 0; i < _sectionsCount; i++)
             {
                 _itemsCount += _dataSource.GetItemsCount(i);
@@ -267,6 +270,19 @@ namespace RecyclableScrollRect
             _itemData = new List<ItemData>();
 
             var currentItemIndex = 0;
+
+            if (_sectionsSource != null && _sectionsSource.ScrollRectHasHeader)
+            {
+                _itemData.Add(new ItemData
+                {
+                    itemType = ItemType.RSRHeader,
+                    sectionIndex = 0,
+                    itemIndex = currentItemIndex,
+                    actualItemIndex = currentItemIndex
+                });
+                currentItemIndex++;
+            }
+            
             for (var i = 0; i < _sectionsCount; i++)
             {
                 if (_sectionsSource != null && _sectionsSource.SectionHasHeader(i))
@@ -305,6 +321,17 @@ namespace RecyclableScrollRect
                     });
                     currentItemIndex++;
                 }
+            }
+            
+            if (_sectionsSource != null && _sectionsSource.ScrollRectHasFooter)
+            {
+                _itemData.Add(new ItemData
+                {
+                    itemType = ItemType.RSRFooter,
+                    sectionIndex = _sectionsSource.SectionsCount - 1,
+                    itemIndex = currentItemIndex,
+                    actualItemIndex = currentItemIndex
+                });
             }
         }
 

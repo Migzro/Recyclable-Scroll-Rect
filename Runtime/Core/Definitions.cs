@@ -15,7 +15,9 @@ namespace RecyclableScrollRect
 
     public enum ItemType
     {
-        Header = 0,
+        RSRHeader = 0,
+        RSRFooter,
+        Header,
         Item,
         Footer
     }

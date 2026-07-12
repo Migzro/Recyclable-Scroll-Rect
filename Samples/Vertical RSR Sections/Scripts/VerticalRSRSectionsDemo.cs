@@ -14,6 +14,9 @@ namespace RecyclableScrollRect
         private List<List<string>> _dataSource;
 
         public int SectionsCount => _itemsCount.Length;
+        public bool ScrollRectHasHeader => true;
+        public bool ScrollRectHasFooter => true;
+        public bool ScrollRectHeaderIsPinned => true;
         public bool IsItemSizeKnown => true;
         public GameObject[] PrototypeItems => _prototypeItems;
 
@@ -65,11 +68,11 @@ namespace RecyclableScrollRect
             {
                 (item as DemoItemPrototype)?.Initialize(_dataSource[itemData.sectionIndex][itemData.itemIndex]);
             }
-            else if (itemData.itemType == ItemType.Header)
+            else if (itemData.itemType == ItemType.RSRHeader || itemData.itemType == ItemType.Header)
             {
                 (item as DemoItemPrototype)?.Initialize("Header " + itemData.sectionIndex);
             }
-            else if (itemData.itemType == ItemType.Footer)
+            else if (itemData.itemType == ItemType.RSRFooter || itemData.itemType == ItemType.Footer)
             {
                 (item as DemoItemPrototype)?.Initialize("Footer " + itemData.sectionIndex);
             }
@@ -81,9 +84,9 @@ namespace RecyclableScrollRect
 
         public GameObject GetItemPrototype(ItemData itemData)
         {
-            if (itemData.itemType == ItemType.Footer)
+            if (itemData.itemType == ItemType.RSRFooter || itemData.itemType == ItemType.Footer)
                 return _prototypeItems[3];
-            if (itemData.itemType == ItemType.Header)
+            if (itemData.itemType == ItemType.RSRHeader || itemData.itemType == ItemType.Header)
                 return _prototypeItems[2];
             if (itemData.sectionIndex == 0)
                 return _prototypeItems[0];

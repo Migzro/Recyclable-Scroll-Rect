@@ -235,7 +235,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0776231c54fb84e089cbd0e5c9a9bc1e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RecyclableScrollRect.VerticalRSRSectionsDemo
-  _itemsCount: 000000006400000064000000
+  _itemsCount: 320000003200000032000000
   _scrollRect: {fileID: 1904557393}
   _prototypeItems:
   - {fileID: 1638117046129563386, guid: 8c7ab798a8ca04cb2b956c7fe88fd37d, type: 3}

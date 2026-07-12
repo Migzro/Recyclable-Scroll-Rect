@@ -7,6 +7,9 @@ namespace RecyclableScrollRect
     public interface ISectionsSource
     {
         int SectionsCount { get; }
+        bool ScrollRectHasHeader { get; }
+        bool ScrollRectHasFooter { get; }
+        bool ScrollRectHeaderIsPinned { get; }
         bool SectionHasHeader(int sectionIndex);
         bool SectionHasFooter(int sectionIndex);
         bool HeaderIsPinned (int sectionIndex);
