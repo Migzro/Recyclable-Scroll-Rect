@@ -21,6 +21,7 @@ namespace RecyclableScrollRect
         [SerializeField] private BaseScrollAnimationController _scrollAnimationController;
         
         protected IDataSource _dataSource;
+        protected ISectionsSource _sectionsSource;
 
         protected LayoutElement _layoutElement;
         private ScreenResolutionDetector _screenResolutionDetector;
@@ -32,6 +33,7 @@ namespace RecyclableScrollRect
         
         protected int _axis;
         protected int _itemsCount;
+        private int _sectionsCount;
         protected int _minVisibleRowColumnInViewPort;
         protected int _maxVisibleRowColumnInViewPort;
         protected int _minExtraVisibleRowColumnInViewPort;
@@ -128,6 +130,10 @@ namespace RecyclableScrollRect
             {
                 throw new ArgumentNullException(nameof(dataSource), "RSR, IDataSource is null");
             }
+            if (dataSource is ISectionsSource sectionsSource)
+            {
+                _sectionsSource = sectionsSource;
+            }
             Initialize();
         }
         
@@ -190,7 +196,7 @@ namespace RecyclableScrollRect
             ContentPosition = 0;
             SetContentBounds();
 
-            BuildItemsMap();
+            CalculateItemsCount();
             _staticItems = new List<bool>();
             _prototypeNames = new List<string>();
             _itemPositions = new List<ItemPosition>();
@@ -215,6 +221,7 @@ namespace RecyclableScrollRect
             }
 
             ResetVariables();
+            BuildItemsMap();
             SetContentAnchorsPivot();
             InitializeItemPositions();
             CalculateContentSize();
@@ -225,39 +232,44 @@ namespace RecyclableScrollRect
 
             IsInitialized = true;
         }
-        
-        private void BuildItemsMap()
+
+        private void CalculateItemsCount()
         {
             _itemsCount = 0;
-            _itemData = new List<ItemData>();
+            _sectionsCount = _sectionsSource?.SectionsCount ?? 1;
 
-            var sectionsCount = _dataSource.SectionsCount;
-            if (_dataSource.SectionsCount <= 0)
+            if (_sectionsCount <= 0)
             {
                 Debug.LogWarning("Sections count cannot be 0, defaulting to 1");
-                sectionsCount = 1;
+                _sectionsCount = 1;
             }
             
             // Calculate _itemsCount before building the map
-            for (var i = 0; i < sectionsCount; i++)
+            for (var i = 0; i < _sectionsCount; i++)
             {
-                _itemsCount += _dataSource.GetItemsCountInSection(i);
+                _itemsCount += _dataSource.GetItemsCount(i);
                 
-                if (_dataSource.SectionHasHeader(i))
+                if (_sectionsSource != null && _sectionsSource.SectionHasHeader(i))
                 {
                     _itemsCount++;
                 }
 
-                if (_dataSource.SectionHasFooter(i))
+                if (_sectionsSource != null && _sectionsSource.SectionHasFooter(i))
                 {
                     _itemsCount++;
                 }
             }
+            
+        }
+
+        private void BuildItemsMap()
+        {
+            _itemData = new List<ItemData>();
 
             var currentItemIndex = 0;
-            for (var i = 0; i < sectionsCount; i++)
+            for (var i = 0; i < _sectionsCount; i++)
             {
-                if (_dataSource.SectionHasHeader(i))
+                if (_sectionsSource != null && _sectionsSource.SectionHasHeader(i))
                 {
                     _itemData.Add(new ItemData
                     {
@@ -269,7 +281,7 @@ namespace RecyclableScrollRect
                     currentItemIndex++;
                 }
 
-                var itemsCountInSection= _dataSource.GetItemsCountInSection(i);
+                var itemsCountInSection= _dataSource.GetItemsCount(i);
                 for (var j = 0; j < itemsCountInSection; j++)
                 {
                     _itemData.Add(new ItemData
@@ -282,7 +294,7 @@ namespace RecyclableScrollRect
                     currentItemIndex++;
                 }
 
-                if (_dataSource.SectionHasFooter(i))
+                if (_sectionsSource != null && _sectionsSource.SectionHasFooter(i))
                 {
                     _itemData.Add(new ItemData
                     {
@@ -836,7 +848,7 @@ namespace RecyclableScrollRect
         {
             _currentSection = _itemData[_minVisibleRowColumnInViewPort].sectionIndex;
             
-            if (!_dataSource.SectionHasHeader(_currentSection) || !_dataSource.HeaderIsPinned(_currentSection))
+            if (_sectionsSource != null && !_sectionsSource.SectionHasHeader(_currentSection) || _sectionsSource != null && !_sectionsSource.HeaderIsPinned(_currentSection))
                 return;
 
             var currentHeaderIndex = GetHeaderIndexFromSection(_currentSection);
@@ -898,7 +910,7 @@ namespace RecyclableScrollRect
         public void ReloadData(bool reloadAllItems = false)
         {
             var oldItemsCount = _itemsCount;
-            BuildItemsMap();
+            CalculateItemsCount();
             
             // removes extra items
             if (oldItemsCount > _itemsCount)
@@ -925,6 +937,7 @@ namespace RecyclableScrollRect
             }
             
             ResetVariables();
+            BuildItemsMap();
             SetContentAnchorsPivot();
             InitializeItemPositions();
             CalculateContentSize();

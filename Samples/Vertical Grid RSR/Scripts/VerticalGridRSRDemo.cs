@@ -13,9 +13,7 @@ namespace RecyclableScrollRect
         [SerializeField] private int _itemsToReloadTo;
 
         private List<string> _dataSource;
-        private int _itemCount;
 
-        public int SectionsCount => 1;
         public GameObject[] PrototypeItems => _prototypeItems;
 
         private void Start()
@@ -45,24 +43,9 @@ namespace RecyclableScrollRect
             _scrollRect.ReloadData(true);
         }
         
-        public int GetItemsCountInSection(int sectionIndex)
+        public int GetItemsCount(int sectionIndex)
         {
             return _itemsCount;
-        }
-
-        public bool SectionHasHeader(int sectionIndex)
-        {
-            return false;
-        }
-        
-        public bool SectionHasFooter(int sectionIndex)
-        {
-            return false;
-        }
-
-        public bool HeaderIsPinned(int sectionIndex)
-        {
-            return false;
         }
 
         public void SetItemData(IItem item, ItemData itemData)

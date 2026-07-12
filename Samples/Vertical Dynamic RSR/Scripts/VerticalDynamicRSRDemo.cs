@@ -13,7 +13,6 @@ namespace RecyclableScrollRect
 
         private List<string> _dataSource;
 
-        public int SectionsCount => 1;
         public bool IsItemSizeKnown => false;
         public GameObject[] PrototypeItems => _prototypeItems;
 
@@ -41,26 +40,11 @@ namespace RecyclableScrollRect
             _scrollRect.ReloadItem(5);
         }
         
-        public int GetItemsCountInSection(int sectionIndex)
+        public int GetItemsCount(int sectionIndex)
         {
             return _itemsCount;
         }
 
-        public bool SectionHasHeader(int sectionIndex)
-        {
-            return false;
-        }
-        
-        public bool SectionHasFooter(int sectionIndex)
-        {
-            return false;
-        }
-
-        public bool HeaderIsPinned(int sectionIndex)
-        {
-            return false;
-        }
-        
         public float GetItemSize(ItemData itemData)
         {
             return -1;

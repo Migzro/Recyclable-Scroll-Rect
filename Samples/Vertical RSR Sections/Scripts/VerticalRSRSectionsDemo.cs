@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace RecyclableScrollRect
 {
-    public class VerticalRSRSectionsDemo : MonoBehaviour, IRSRDataSource
+    public class VerticalRSRSectionsDemo : MonoBehaviour, IRSRDataSource, ISectionsSource
     {
         [SerializeField] private int[] _itemsCount;
         [SerializeField] private RSR _scrollRect;
@@ -30,7 +30,7 @@ namespace RecyclableScrollRect
             _scrollRect.Initialize(this);
         }
         
-        public int GetItemsCountInSection(int sectionIndex)
+        public int GetItemsCount(int sectionIndex)
         {
             return _itemsCount[sectionIndex];
         }

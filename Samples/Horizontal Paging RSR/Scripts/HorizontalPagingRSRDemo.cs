@@ -10,45 +10,31 @@ namespace RecyclableScrollRect
         [SerializeField] private int _itemsCount;
         [SerializeField] private RSRPages _scrollRect;
         [SerializeField] private GameObject[] _prototypeItems;
+        [SerializeField] private RectTransform _canvas;
 
         private List<string> _dataSource;
-        private int _itemCount;
+        private float _canvasWidth;
 
-        public int SectionsCount => 1;
         public bool IsItemSizeKnown => true;
         public GameObject[] PrototypeItems => _prototypeItems;
 
         private void Start()
         {
+            _canvasWidth = _canvas.rect.width;
             _dataSource = new List<string>();
             for (var i = 0; i < _itemsCount; i++)
                 _dataSource.Add(i.ToString());
             _scrollRect.Initialize(this);
         }
         
-        public int GetItemsCountInSection(int sectionIndex)
+        public int GetItemsCount(int sectionIndex)
         {
             return _itemsCount;
         }
 
-        public bool SectionHasHeader(int sectionIndex)
-        {
-            return false;
-        }
-        
-        public bool SectionHasFooter(int sectionIndex)
-        {
-            return false;
-        }
-
-        public bool HeaderIsPinned(int sectionIndex)
-        {
-            return false;
-        }
-
         public float GetItemSize(ItemData itemData)
         {
-            return 1334f;
+            return _canvasWidth;
         }
 
         public void SetItemData(IItem item, ItemData itemData)

@@ -14,20 +14,13 @@ namespace RecyclableScrollRect
         [SerializeField] private RSRGrid _scrollRect;
         [SerializeField] private GameObject[] _prototypeItems;
 
-        private List<string> _dataSource;
         private Dictionary<int, Sprite> _sprites;
-        private int _itemCount;
 
-        public int ItemsCount => _dataSource.Count;
-        public int SectionsCount => 0;
         public GameObject[] PrototypeItems => _prototypeItems;
 
         private void Start()
         {
-            _dataSource = new List<string>();
             _sprites = new Dictionary<int, Sprite>();
-            for (var i = 0; i < _itemsCount; i++)
-                _dataSource.Add(i.ToString());
             _scrollRect.Initialize(this);
         }
 
@@ -99,24 +92,9 @@ namespace RecyclableScrollRect
         {
         }
         
-        public int GetItemsCountInSection(int sectionIndex)
+        public int GetItemsCount(int sectionIndex)
         {
-            return 0;
-        }
-
-        public bool SectionHasHeader(int sectionIndex)
-        {
-            return false;
-        }
-
-        public bool SectionHasFooter(int sectionIndex)
-        {
-            return false;
-        }
-
-        public bool HeaderIsPinned(int sectionIndex)
-        {
-            return false;
+            return _itemsCount;
         }
     }
 }

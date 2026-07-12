@@ -6,9 +6,8 @@ namespace RecyclableScrollRect
 {
     public interface IDataSource
     {
-        int SectionsCount { get; }
         GameObject[] PrototypeItems { get; }
-        int GetItemsCountInSection(int sectionIndex);
+        int GetItemsCount(int sectionIndex);
         GameObject GetItemPrototype(ItemData itemData);
         void SetItemData(IItem item, ItemData itemData);
         void ItemCreated(IItem item, GameObject itemGo, ItemData itemData);
@@ -20,8 +19,5 @@ namespace RecyclableScrollRect
         void ReachedScrollStart();
         void ReachedScrollEnd();
         void LastItemIsVisible();
-        bool SectionHasHeader(int sectionIndex);
-        bool SectionHasFooter(int sectionIndex);
-        bool HeaderIsPinned (int sectionIndex);
     }
 }
