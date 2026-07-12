@@ -2,6 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 using UnityEngine;
 using UnityEngine.EventSystems;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 namespace RecyclableScrollRect
 {
@@ -115,14 +118,28 @@ namespace RecyclableScrollRect
 #if UNITY_EDITOR
         private void Update()
         {
+#if ENABLE_INPUT_SYSTEM
+            if (Keyboard.current != null)
+            {
+                if (Keyboard.current.upArrowKey.wasReleasedThisFrame)
+                {
+                    ScrollToItemIndex(Mathf.Max(_currentPage - 1, 0), _scrollingDuration);
+                }
+                else if (Keyboard.current.downArrowKey.wasReleasedThisFrame)
+                {
+                    ScrollToItemIndex(Mathf.Min(_currentPage + 1, _itemsCount - 1), _scrollingDuration);
+                }
+            }
+#elif ENABLE_LEGACY_INPUT_MANAGER
             if (Input.GetKeyUp(KeyCode.UpArrow))
             {
                 ScrollToItemIndex(Mathf.Max(_currentPage - 1, 0), _scrollingDuration);
             }
-            else if (Input.GetKeyUp( KeyCode.DownArrow))
+            else if (Input.GetKeyUp(KeyCode.DownArrow))
             {
                 ScrollToItemIndex(Mathf.Min(_currentPage + 1, _itemsCount - 1), _scrollingDuration);
             }
+#endif
         }
 #endif
     }

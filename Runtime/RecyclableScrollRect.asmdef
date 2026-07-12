@@ -3,7 +3,8 @@
     "rootNamespace": "RecyclableScrollRect",
     "references": [
         "Unity.TextMeshPro",
-        "PrimeTween.Runtime"
+        "PrimeTween.Runtime",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
