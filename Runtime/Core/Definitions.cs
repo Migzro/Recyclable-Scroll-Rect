@@ -263,4 +263,10 @@ namespace RecyclableScrollRect
         Finished,
         Canceled,
     }
+    
+    public class PinnedHeaderState
+    {
+        public int index = -1;
+        public bool IsPinned => index != -1;
+    }
 }

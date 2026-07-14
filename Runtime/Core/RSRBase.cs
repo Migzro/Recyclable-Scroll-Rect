@@ -34,12 +34,11 @@ namespace RecyclableScrollRect
         protected int _axis;
         protected int _itemsCount;
         private int _sectionsCount;
+        private int _currentSection;
         protected int _minVisibleRowColumnInViewPort;
         protected int _maxVisibleRowColumnInViewPort;
         protected int _minExtraVisibleRowColumnInViewPort;
         protected int _maxExtraVisibleRowColumnInViewPort;
-        private int _currentSection;
-        protected int _currentPinnedHeaderIndex;
         protected bool _isAnimating;
         private bool _needsClearance;
         private bool _pullToRefresh;
@@ -58,6 +57,9 @@ namespace RecyclableScrollRect
         private Vector2 _lastContentPosition;
         private MovementType _movementType;
         private MovementType _initialMovementType;
+        
+        protected PinnedHeaderState _rsrHeaderPin;
+        protected PinnedHeaderState _sectionHeaderPin;
 
         public bool IsInitialized { get; private set; }
         
@@ -187,7 +189,8 @@ namespace RecyclableScrollRect
             StopMovement();
             
             _currentSection = 0;
-            _currentPinnedHeaderIndex = -1;
+            _rsrHeaderPin = new();
+            _sectionHeaderPin = new();
             _minVisibleRowColumnInViewPort = 0;
             _minExtraVisibleRowColumnInViewPort = 0;
             _maxVisibleRowColumnInViewPort = 0;
@@ -716,12 +719,14 @@ namespace RecyclableScrollRect
             }
             _lastContentPosition = currentContentAnchoredPosition;
 
-            UnpinHeader();
+            UnpinHeaders();
             if (reachedLimits && !_needsClearance)
+            {
                 return;
-            
+            }
+
             ShowHideItems(showBottomRight);
-            CheckPinnedHeaders();
+            PinHeaders();
         }
 
         private void ShowHideItems(bool showBottomRight)
@@ -805,7 +810,7 @@ namespace RecyclableScrollRect
         {
             foreach (var visibleItem in _visibleItems)
             {
-                if (_currentPinnedHeaderIndex != visibleItem.Key)
+                if (_rsrHeaderPin.index != visibleItem.Key && _sectionHeaderPin.index != visibleItem.Key)
                 {
                     visibleItem.Value.transform.SetSiblingIndex(visibleItem.Key);
                 }
@@ -843,68 +848,145 @@ namespace RecyclableScrollRect
             pool.Add(visibleItem);
             _visibleItems.Remove(itemIndex);
         }
-        
-        private void UnpinHeader()
+
+        private void UnpinHeaders()
         {
-            if (_currentPinnedHeaderIndex == -1)
+            if (_rsrHeaderPin.IsPinned)
+            {
+                var rsrHeaderPosition = _itemPositions[_rsrHeaderPin.index];
+                if (_contentTopLeftCorner[_axis] < rsrHeaderPosition.absTopLeftPosition[_axis])
+                {
+                    UnpinHeader(_rsrHeaderPin);
+                }
+            }
+
+            if (_sectionHeaderPin.IsPinned)
+            {
+                var sectionHeaderPosition = _itemPositions[_sectionHeaderPin.index];
+                if (_contentTopLeftCorner[_axis] < sectionHeaderPosition.absTopLeftPosition[_axis] - RSRHeaderCoverage)
+                {
+                    UnpinHeader(_sectionHeaderPin);
+                }
+            }
+        }
+        
+        private void UnpinHeader(PinnedHeaderState headerPin)
+        {
+            if (!headerPin.IsPinned)
                 return;
             
-            var currentHeaderPosition =  _itemPositions[_currentPinnedHeaderIndex];
-            var currentHeaderSection = _itemData[_currentPinnedHeaderIndex].sectionIndex;
-            
-            // this condition is only used for the header of section 0 to make sure it unpins when we scroll back to the top
-            if (_contentTopLeftCorner[_axis] >= currentHeaderPosition.absTopLeftPosition[_axis] && _currentSection == currentHeaderSection)
-                return;
-            
-            Debug.Log($"Unpinning current header {_currentPinnedHeaderIndex}");
-            if (_visibleItems.TryGetValue(_currentPinnedHeaderIndex, out var headerItem))
+            var currentHeaderPosition =  _itemPositions[headerPin.index];
+            var currentHeaderSection = _itemData[headerPin.index].sectionIndex;
+            Debug.Log($"Unpinning current header {headerPin.index} " + _contentTopLeftCorner[_axis] + " " + currentHeaderPosition.absTopLeftPosition[_axis] + " " + _currentSection + " " + currentHeaderSection);
+            if (_visibleItems.TryGetValue(headerPin.index, out var headerItem))
             {
                 headerItem.transform.SetParent(content, true);
-                headerItem.transform.SetSiblingIndex(_currentPinnedHeaderIndex);
-                RestoreItemPosition(_currentPinnedHeaderIndex);
+                headerItem.transform.SetSiblingIndex(headerPin.index);
+                RestoreItemPosition(headerPin.index);
                 // hide the header as if its no longer in the viewport and the section has changed
-                if (_currentPinnedHeaderIndex < _minExtraVisibleRowColumnInViewPort && _currentSection != currentHeaderSection)
+                if (headerPin.index < _minExtraVisibleRowColumnInViewPort && _currentSection != currentHeaderSection)
                 {
-                    HideItemAtIndex(_currentPinnedHeaderIndex);
+                    HideItemAtIndex(headerPin.index);
                 }
-                _currentPinnedHeaderIndex = -1;
+                headerPin.index = -1;
             }
         }
 
-        private void CheckPinnedHeaders()
+        private void PinHeaders()
         {
-            _currentSection = _itemData[_minVisibleRowColumnInViewPort].sectionIndex;
+            _currentSection = _itemData[GetEffectiveMinVisibleIndex()].sectionIndex;
             
-            if (_sectionsSource != null && !_sectionsSource.SectionHasHeader(_currentSection) || _sectionsSource != null && !_sectionsSource.HeaderIsPinned(_currentSection))
+            if (_sectionsSource == null)
                 return;
+            
+            if (_sectionsSource.ScrollRectHasHeader && _sectionsSource.ScrollRectHeaderIsPinned && !_rsrHeaderPin.IsPinned)
+                PinHeader(_rsrHeaderPin, true);
+            
+            if (_sectionsSource.SectionHasHeader(_currentSection) && _sectionsSource.HeaderIsPinned(_currentSection))
+                PinHeader(_sectionHeaderPin, false);
+        }
+        
+        private int GetEffectiveMinVisibleIndex()
+        {
+            if (!_rsrHeaderPin.IsPinned)
+                return _minVisibleRowColumnInViewPort;
 
+            var rsrHeaderCoverage = RSRHeaderCoverage;
+            var effectiveContentTop = _contentTopLeftCorner[_axis] + rsrHeaderCoverage;
+
+            var index = _minVisibleRowColumnInViewPort;
+            while (index < _itemsCount - 1 && effectiveContentTop >= _itemPositions[index].absBottomRightPosition[_axis])
+            {
+                index++;
+            }
+            return index;
+        }
+
+        private void PinHeader(PinnedHeaderState headerPin, bool isRSRHeader)
+        {
             var currentHeaderIndex = GetHeaderIndexFromSection(_currentSection);
-            if (_currentPinnedHeaderIndex == currentHeaderIndex)
+            if (headerPin.index == currentHeaderIndex)
                 return;
 
-            var itemPosition = _itemPositions[currentHeaderIndex];
-            if (_contentTopLeftCorner[_axis] < itemPosition.absTopLeftPosition[_axis])
+            var headerIndex = isRSRHeader ? 0 : GetHeaderIndexFromSection(_currentSection);
+            if (!ShouldBePinned(headerIndex, isRSRHeader))
                 return;
 
-            if (!_visibleItems.ContainsKey(currentHeaderIndex))
-                ShowItemAtIndex(currentHeaderIndex);
+            if (!_visibleItems.ContainsKey(headerIndex))
+                ShowItemAtIndex(headerIndex);
             
-            _visibleItems.TryGetValue(currentHeaderIndex, out var headerItem);
+            _visibleItems.TryGetValue(headerIndex, out var headerItem);
             headerItem.transform.SetParent(viewport, true);
             headerItem.transform.SetAsLastSibling();
 
-            var headerPosition = _itemPositions[currentHeaderIndex];
+            var headerPosition = _itemPositions[headerIndex];
             var newItemPosition = headerPosition.topLeftPosition;
             if (vertical)
-                newItemPosition.y = -_padding.top;
+            {
+                if (isRSRHeader || !_rsrHeaderPin.IsPinned)
+                {
+                    newItemPosition.y = -_padding.top;
+                }
+                else
+                {
+                    newItemPosition.y = -_itemPositions[_rsrHeaderPin.index].absBottomRightPosition.y - _spacing[_axis];
+                }
+            }
             else
-                newItemPosition.x = _padding.left;
+            {
+                if (isRSRHeader || !_rsrHeaderPin.IsPinned)
+                {
+                    newItemPosition.x = _padding.left;
+                }
+                else
+                {
+                    newItemPosition.x = _itemPositions[_rsrHeaderPin.index].absBottomRightPosition.x + _spacing[_axis];
+                }
+            }
             headerItem.transform.anchoredPosition = newItemPosition;
             
-            UnpinHeader();
-            _currentPinnedHeaderIndex = currentHeaderIndex;
-            Debug.Log($"Pinning current header {_currentPinnedHeaderIndex}");
+            UnpinHeader(_sectionHeaderPin);
+            headerPin.index = headerIndex;
+            Debug.Log($"Pinning current header {headerPin.index}");
         }
+        
+        private bool ShouldBePinned(int headerIndex, bool isRSRHeader)
+        {
+            var itemPosition = _itemPositions[headerIndex];
+            var isFirstHeader = (!isRSRHeader && !_rsrHeaderPin.IsPinned) || isRSRHeader;
+            if (isFirstHeader && _contentTopLeftCorner[_axis] >= itemPosition.absTopLeftPosition[_axis])
+            {
+                return true;
+            }
+
+            if (!isFirstHeader && _contentTopLeftCorner[_axis] >= itemPosition.absTopLeftPosition[_axis] - RSRHeaderCoverage)
+            {
+                return true;
+            }
+            return false;
+        }
+        
+        private float RSRHeaderCoverage => _rsrHeaderPin.IsPinned ? _itemPositions[_rsrHeaderPin.index].itemSize[_axis] + _spacing[_axis] : 0f;
         
         private int GetHeaderIndexFromSection(int sectionIndex)
         {
