@@ -411,7 +411,7 @@ namespace RecyclableScrollRect
                 if (itemToHide >= 0 && _visibleItems.ContainsKey(itemToHide))
                 {
                     _minExtraVisibleRowColumnInViewPort++;
-                    if (itemToHide == _currentPinnedHeaderIndex)
+                    if (itemToHide == _sectionHeaderPin.index || itemToHide == _rsrHeaderPin.index)
                     {
                         continue;
                     }
