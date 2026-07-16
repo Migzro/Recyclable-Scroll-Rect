@@ -268,5 +268,11 @@ namespace RecyclableScrollRect
     {
         public int index = -1;
         public bool IsPinned => index != -1;
+        public ItemPosition position;
+
+        public PinnedHeaderState()
+        {
+            position = new();
+        }
     }
 }

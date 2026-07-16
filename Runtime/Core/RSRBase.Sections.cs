@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace RecyclableScrollRect
 {
@@ -9,6 +10,8 @@ namespace RecyclableScrollRect
         
         protected PinnedHeaderState _rsrHeaderPin;
         protected PinnedHeaderState _sectionHeaderPin;
+
+        private RectTransform _headersParent;
         
         private float RSRHeaderCoverage => _rsrHeaderPin.IsPinned ? _itemPositions[_rsrHeaderPin.index].itemSize[_axis] + _spacing[_axis] : 0f;
         
@@ -52,6 +55,7 @@ namespace RecyclableScrollRect
                     HideItemAtIndex(headerPin.index);
                 }
                 headerPin.index = -1;
+                SetHeadersParentSize();
             }
         }
 
@@ -72,7 +76,9 @@ namespace RecyclableScrollRect
         private int GetEffectiveMinVisibleIndex()
         {
             if (!_rsrHeaderPin.IsPinned)
+            {
                 return _minVisibleRowColumnInViewPort;
+            }
 
             var rsrHeaderCoverage = RSRHeaderCoverage;
             var effectiveContentTop = _contentTopLeftCorner[_axis] + rsrHeaderCoverage;
@@ -99,8 +105,6 @@ namespace RecyclableScrollRect
                 ShowItemAtIndex(headerIndex);
             
             _visibleItems.TryGetValue(headerIndex, out var headerItem);
-            headerItem.transform.SetParent(viewport, true);
-            headerItem.transform.SetAsLastSibling();
 
             var headerPosition = _itemPositions[headerIndex];
             var newItemPosition = headerPosition.topLeftPosition;
@@ -129,10 +133,67 @@ namespace RecyclableScrollRect
             headerItem.transform.anchoredPosition = newItemPosition;
             
             UnpinHeader(_sectionHeaderPin);
+            
             headerPin.index = headerIndex;
+            headerPin.position.SetSize(headerPosition.itemSize);
+            headerPin.position.SetPosition(newItemPosition);
+            CreateHeadersParent(headerItem);
             Debug.Log($"Pinning current header {headerPin.index}");
         }
-        
+
+        private void CreateHeadersParent(Item headerItem)
+        {
+            if (_headersParent == null)
+            {
+                var headersParentGo = new GameObject("Headers Parent", typeof(RectTransform));
+                headersParentGo.transform.SetParent(viewport, false);
+                var headersParentImage = headersParentGo.AddComponent<Image>();
+                var scrollRectImage = GetComponent<Image>();
+                if (scrollRectImage != null)
+                {
+                    headersParentImage.sprite = scrollRectImage.sprite;
+                    headersParentImage.color = scrollRectImage.color;
+                    headersParentImage.material = scrollRectImage.material;
+                }
+                var anchorVector = new Vector2(0, 1);
+                _headersParent =  (RectTransform)headersParentGo.transform;
+                _headersParent.anchorMin = anchorVector;
+                _headersParent.anchorMax = anchorVector;
+                _headersParent.pivot = anchorVector;
+            }
+
+            SetHeadersParentSize();
+
+            headerItem.transform.SetParent(_headersParent.transform, false);
+            headerItem.transform.SetAsLastSibling();
+        }
+
+        private void SetHeadersParentSize()
+        {
+            var headerTopLeftPosition = Vector2.zero;
+            var headerBottomRightPosition = Vector2.zero;
+
+            if (_rsrHeaderPin.IsPinned)
+            {
+                var headerPosition = _rsrHeaderPin.position;
+                headerTopLeftPosition = headerPosition.absTopLeftPosition;
+                headerBottomRightPosition = headerPosition.absBottomRightPosition;
+            }
+            
+            if (_sectionHeaderPin.IsPinned)
+            {
+                var headerPosition = _sectionHeaderPin.position;
+                if (!_rsrHeaderPin.IsPinned)
+                {
+                    headerTopLeftPosition = headerPosition.absTopLeftPosition;
+                }
+                headerBottomRightPosition = headerPosition.absBottomRightPosition;
+            }
+            
+            _headersParent.anchoredPosition = headerTopLeftPosition;
+            _headersParent.sizeDelta = headerBottomRightPosition - headerTopLeftPosition;
+        }
+
         private bool ShouldBePinned(int headerIndex, bool isRSRHeader)
         {
             var itemPosition = _itemPositions[headerIndex];
