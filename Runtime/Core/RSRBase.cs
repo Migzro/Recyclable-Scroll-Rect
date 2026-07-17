@@ -861,6 +861,9 @@ namespace RecyclableScrollRect
         /// <param name="reloadAllItems">should be only used when adding items to the top of the current visible items</param>
         public void ReloadData(bool reloadAllItems = false)
         {
+            UnpinHeader(_rsrHeaderPin);
+            UnpinHeader(_sectionHeaderPin);
+            
             var oldItemsCount = _itemsCount;
             CalculateItemsCount();
             
@@ -906,6 +909,7 @@ namespace RecyclableScrollRect
             }
             
             RefreshAfterReload();
+            PinHeaders();
         }
 
         /// <summary>
