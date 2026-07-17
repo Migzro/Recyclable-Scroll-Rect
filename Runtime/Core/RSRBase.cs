@@ -896,6 +896,15 @@ namespace RecyclableScrollRect
             ClampContentPosition();
             SetStaticItems();
             SetPrototypeNames();
+            
+            if (reloadAllItems)
+            {
+                foreach (var item in _visibleItems)
+                {
+                    ReloadItem(item.Key);
+                }
+            }
+            
             RefreshAfterReload();
         }
 
