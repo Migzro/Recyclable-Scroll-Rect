@@ -10,8 +10,8 @@ namespace RecyclableScrollRect
         protected int _sectionsCount;
         private int _currentSection;
         
-        protected PinnedHeaderState _rsrHeaderPin;
-        protected PinnedHeaderState _sectionHeaderPin;
+        internal PinnedHeaderState _rsrHeaderPin;
+        internal PinnedHeaderState _sectionHeaderPin;
 
         private RectTransform _headersParent;
         

@@ -108,9 +108,9 @@ namespace RecyclableScrollRect
         }
     }
 
-    public sealed class Grid
+    internal sealed class Grid
     {
-        public readonly struct Section
+        internal readonly struct Section
         {
             public readonly int sectionIndex;
             public readonly int itemCount;
@@ -126,7 +126,7 @@ namespace RecyclableScrollRect
             }
         }
 
-        public readonly struct Slot
+        internal readonly struct Slot
         {
             public readonly ItemType itemType;
             public readonly int sectionIndex;
@@ -134,7 +134,7 @@ namespace RecyclableScrollRect
             public readonly int crossAxisSpan;
             public readonly bool isEmpty;
 
-            public Slot(ItemType itemType, int sectionIndex, int itemIndex, int crossAxisSpan, bool isEmpty)
+            internal Slot(ItemType itemType, int sectionIndex, int itemIndex, int crossAxisSpan, bool isEmpty)
             {
                 this.itemType = itemType;
                 this.sectionIndex = sectionIndex;
@@ -143,7 +143,7 @@ namespace RecyclableScrollRect
                 this.isEmpty = isEmpty;
             }
 
-            public static Slot Empty(int sectionIndex)
+            internal static Slot Empty(int sectionIndex)
             {
                 return new Slot(ItemType.Item, sectionIndex, -1, 1, true);
             }
@@ -160,9 +160,8 @@ namespace RecyclableScrollRect
         public int height { get; }
         public int maxGridItemsInAxis { get; }
         public int SlotsCount => _slots.Length;
-        public int LastVisibleFlatIndex { get; private set; } = -1;
 
-        public Grid(IReadOnlyList<Section> sections, int gridConstraintCount, bool vertical, GridLayoutGroup.Axis gridStartAxis, GridLayoutGroup.Corner gridStartCorner, bool hasScrollRectHeader, bool hasScrollRectFooter)
+        internal Grid(IReadOnlyList<Section> sections, int gridConstraintCount, bool vertical, GridLayoutGroup.Axis gridStartAxis, GridLayoutGroup.Corner gridStartCorner, bool hasScrollRectHeader, bool hasScrollRectFooter)
         {
             if (sections == null)
             {
@@ -186,12 +185,12 @@ namespace RecyclableScrollRect
             BuildSlots(sections, hasScrollRectHeader, hasScrollRectFooter);
         }
 
-        public Slot GetSlot(int flatIndex)
+        internal Slot GetSlot(int flatIndex)
         {
             return flatIndex < 0 || flatIndex >= _slots.Length ? Slot.Empty(-1) : _slots[flatIndex];
         }
 
-        public Vector2Int To2dIndex(int flatIndex)
+        internal Vector2Int To2dIndex(int flatIndex)
         {
             return flatIndex < 0 || flatIndex >= _positions.Length ? Vector2Int.zero : _positions[flatIndex];
         }
@@ -286,8 +285,6 @@ namespace RecyclableScrollRect
             var flatIndex = line * _constraintCount + crossAxisIndex;
             _slots[flatIndex] = slot;
             _positions[flatIndex] = GetPosition(line, crossAxisIndex);
-            if (!slot.isEmpty)
-                LastVisibleFlatIndex = flatIndex;
         }
 
         private Vector2Int GetPosition(int line, int crossAxisIndex)
@@ -306,7 +303,7 @@ namespace RecyclableScrollRect
         Canceled,
     }
     
-    public class PinnedHeaderState
+    internal class PinnedHeaderState
     {
         public int index = -1;
         public bool IsPinned => index != -1;

@@ -77,7 +77,7 @@ namespace RecyclableScrollRect
                 {
                     itemType = slot.itemType,
                     sectionIndex = slot.sectionIndex,
-                    itemIndex = slot.itemIndex,
+                    itemIndex = slot.itemType == ItemType.Item ? slot.itemIndex : flatIndex,
                     actualItemIndex = slot.isEmpty ? -1 : flatIndex
                 });
             }
@@ -215,7 +215,7 @@ namespace RecyclableScrollRect
 
         protected override bool IsLastRowColumn(int itemIndex)
         {
-            return itemIndex == _grid.LastVisibleFlatIndex;
+            return itemIndex == LastLineStartIndex;
         }
 
         /// <summary>
