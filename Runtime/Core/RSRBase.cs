@@ -245,7 +245,7 @@ namespace RecyclableScrollRect
             }
         }
 
-        private void BuildItemsMap()
+        protected virtual void BuildItemsMap()
         {
             _itemData = new List<ItemData>();
 

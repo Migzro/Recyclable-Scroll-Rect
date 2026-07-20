@@ -21,7 +21,9 @@ namespace RecyclableScrollRect
 
         protected override bool IsItemSizeKnown => true;
         protected override bool ReachedMinRowColumnInViewPort => _minVisibleRowColumnInViewPort == 0;
-        protected override bool ReachedMaxRowColumnInViewPort => _maxVisibleRowColumnInViewPort == (_grid.maxGridItemsInAxis - 1) * _gridConstraintCount;
+        protected override bool ReachedMaxRowColumnInViewPort => _maxVisibleRowColumnInViewPort >= LastLineStartIndex;
+
+        private int LastLineStartIndex => Mathf.Max(0, (_grid.maxGridItemsInAxis - 1) * _gridConstraintCount);
 
         protected override void CalculateItemsCount()
         {
@@ -42,10 +44,43 @@ namespace RecyclableScrollRect
                 }
             }
             
-            _grid = new Grid(_itemsCount, _gridConstraintCount, vertical, _gridStartAxis, _gridStartCorner);
-            // set the items count to the fill the entire grid with items
-            _itemsCount = _grid.width * _grid.height;
+            _gridConstraintCount = Mathf.Max(1, _gridConstraintCount);
+            var sections = new List<Grid.Section>(_sectionsCount);
+            for (var sectionIndex = 0; sectionIndex < _sectionsCount; sectionIndex++)
+            {
+                sections.Add(new Grid.Section(
+                    sectionIndex,
+                    _dataSource.GetItemsCount(sectionIndex),
+                    _sectionsSource != null && _sectionsSource.SectionHasHeader(sectionIndex),
+                    _sectionsSource != null && _sectionsSource.SectionHasFooter(sectionIndex)));
+            }
+
+            _grid = new Grid(
+                sections,
+                _gridConstraintCount,
+                vertical,
+                _gridStartAxis,
+                _gridStartCorner,
+                _sectionsSource is { ScrollRectHasHeader: true },
+                _sectionsSource is { ScrollRectHasFooter: true });
+            _itemsCount = _grid.SlotsCount;
             CalculateGridPadding();
+        }
+
+        protected override void BuildItemsMap()
+        {
+            _itemData = new List<ItemData>(_itemsCount);
+            for (var flatIndex = 0; flatIndex < _itemsCount; flatIndex++)
+            {
+                var slot = _grid.GetSlot(flatIndex);
+                _itemData.Add(new ItemData
+                {
+                    itemType = slot.itemType,
+                    sectionIndex = slot.sectionIndex,
+                    itemIndex = slot.itemIndex,
+                    actualItemIndex = slot.isEmpty ? -1 : flatIndex
+                });
+            }
         }
 
         /// <summary>
@@ -76,11 +111,7 @@ namespace RecyclableScrollRect
         /// get the index of the item
         /// </summary>
         /// <returns></returns>
-        protected override int GetActualItemIndex(int totalItemsInSection, int itemIndexInSection)
-        {
-            // TODO: use sectionIndex here?
-            return _grid.GetActualItemIndex(itemIndexInSection);
-        }
+        protected override int GetActualItemIndex(int totalItemsInSection, int itemIndexInSection) => itemIndexInSection;
         
         /// <summary>
         /// Calculates the grid layout padding which offsets each element in the grid based on the padding and anchors set in GridLayout
@@ -137,6 +168,14 @@ namespace RecyclableScrollRect
             {
                 var newItemPosition = Vector2.zero;
                 var gridIndex = _grid.To2dIndex(itemIndex);
+                var slot = _grid.GetSlot(itemIndex);
+                if (slot.crossAxisSpan > 1)
+                {
+                    if (vertical)
+                        gridIndex.x = 0;
+                    else
+                        gridIndex.y = 0;
+                }
                 newItemPosition.x = _gridLayoutItemsOffset.x + gridIndex.x * itemPosition.itemSize[0] + _spacing[0] * gridIndex.x;
                 newItemPosition.y = -_gridLayoutItemsOffset.y - gridIndex.y * itemPosition.itemSize[1] - _spacing[1] * gridIndex.y;
                 itemPosition.SetPosition(newItemPosition);
@@ -158,7 +197,14 @@ namespace RecyclableScrollRect
             var itemPosition = _itemPositions[itemIndex];
             if (!itemPosition.sizeSet)
             {
-                itemPosition.SetSize(_gridItemSize);
+                var newItemSize = _gridItemSize;
+                var span = _grid.GetSlot(itemIndex).crossAxisSpan;
+                if (span > 1)
+                {
+                    var crossAxis = 1 - _axis;
+                    newItemSize[crossAxis] = (_gridItemSize[crossAxis] * span) + (_spacing[crossAxis] * (span - 1));
+                }
+                itemPosition.SetSize(newItemSize);
             }
             
             if (rect != null)
@@ -169,7 +215,7 @@ namespace RecyclableScrollRect
 
         protected override bool IsLastRowColumn(int itemIndex)
         {
-            return itemIndex == (_grid.maxGridItemsInAxis - 1) * _gridConstraintCount;
+            return itemIndex == _grid.LastVisibleFlatIndex;
         }
 
         /// <summary>
@@ -182,8 +228,7 @@ namespace RecyclableScrollRect
         protected override void InitializeItems(int startIndex = 0)
         {
             // use the current starting row or column index since we base all our calculations on the top or left indices
-            var current2DIndex = _grid.To2dIndex(startIndex);
-            var currentStartItemInRowColumn = current2DIndex[_axis] * _gridConstraintCount;
+            var currentStartItemInRowColumn = (startIndex / _gridConstraintCount) * _gridConstraintCount;
             
             SetContentBounds();
             var contentHasSpace = currentStartItemInRowColumn == 0 || _itemPositions[currentStartItemInRowColumn].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
@@ -201,9 +246,7 @@ namespace RecyclableScrollRect
                 contentHasSpace = _itemPositions[currentStartItemInRowColumn].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
                 _maxExtraVisibleRowColumnInViewPort = currentStartItemInRowColumn;
                 
-                // get the first item in the next row or column that needs to be initialized
-                current2DIndex[_axis]++;
-                currentStartItemInRowColumn = current2DIndex[_axis] * _gridConstraintCount;
+                currentStartItemInRowColumn += _gridConstraintCount;
             }
         }
                 
@@ -215,8 +258,7 @@ namespace RecyclableScrollRect
         {
             base.RemoveExtraItems(itemDiff);
 
-            var lastItem2dIndex = _grid.To2dIndex(_itemsCount - 1);
-            var lastItemFlatIndex = lastItem2dIndex[_axis] * _gridConstraintCount;
+            var lastItemFlatIndex = LastLineStartIndex;
             if (lastItemFlatIndex < _maxVisibleRowColumnInViewPort)
             {
                 _maxVisibleRowColumnInViewPort = lastItemFlatIndex;
@@ -226,14 +268,7 @@ namespace RecyclableScrollRect
             {
                 // get the amount of extra rows/columns possible based on the new item count
                 var extraRowsColumnsPossible = Mathf.Min((lastItemFlatIndex - _maxVisibleRowColumnInViewPort) / _gridConstraintCount, _extraRowsColumnsVisible);
-                if (vertical)
-                {
-                    _maxExtraVisibleRowColumnInViewPort = _maxVisibleRowColumnInViewPort + (extraRowsColumnsPossible * _gridConstraintCount);
-                }
-                else
-                {
-                    _maxExtraVisibleRowColumnInViewPort = _maxVisibleRowColumnInViewPort + extraRowsColumnsPossible;
-                }
+                _maxExtraVisibleRowColumnInViewPort = _maxVisibleRowColumnInViewPort + (extraRowsColumnsPossible * _gridConstraintCount);
             }
         }
 
@@ -259,16 +294,15 @@ namespace RecyclableScrollRect
             // we start from the _minExtraVisibleItemInViewPort row/column till the _maxExtraVisibleItemInViewPort
             var indicesToShow = new List<int>();
             var indicesToHide = new List<int>();
-            var startingRowColumn = _grid.To2dIndex(_minExtraVisibleRowColumnInViewPort)[_axis];
-            var endingRowColumn = _grid.To2dIndex(_maxExtraVisibleRowColumnInViewPort)[_axis];
+            var startingRowColumn = _minExtraVisibleRowColumnInViewPort / _gridConstraintCount;
+            var endingRowColumn = _maxExtraVisibleRowColumnInViewPort / _gridConstraintCount;
             for (var i = startingRowColumn; i <= endingRowColumn; i++)
             {
                 for (var j = 0; j < _gridConstraintCount; j++)
                 {
                     var flatIndex = j + (i * _gridConstraintCount);
-                    var indexActualValue = vertical ? _grid.GetActualItemIndex(j, i) : _grid.GetActualItemIndex(i, j);
                     var isVisible = _visibleItems.ContainsKey(flatIndex);
-                    var shouldBeVisible = indexActualValue != -1;
+                    var shouldBeVisible = !_grid.GetSlot(flatIndex).isEmpty;
                     if (isVisible && !shouldBeVisible)
                     {
                         indicesToHide.Add(flatIndex);
@@ -302,8 +336,7 @@ namespace RecyclableScrollRect
             for (var i = 0; i < _gridConstraintCount; i++)
             {
                 var currentFlatIndex = itemIndex + i;
-                var indexValue = _grid.GetActualItemIndex(currentFlatIndex);
-                if (indexValue != -1)
+                if (currentFlatIndex < _itemsCount && !_grid.GetSlot(currentFlatIndex).isEmpty)
                 {
                     indices.Add(currentFlatIndex);
                 }
@@ -325,7 +358,7 @@ namespace RecyclableScrollRect
         
         protected override void HideItemsAtTopLeft()
         {
-            while (_minVisibleRowColumnInViewPort < _itemsCount - _gridConstraintCount - 1 && _contentTopLeftCorner[_axis] >= _itemPositions[_minVisibleRowColumnInViewPort].absBottomRightPosition[_axis])
+            while (_minVisibleRowColumnInViewPort < LastLineStartIndex && _contentTopLeftCorner[_axis] >= _itemPositions[_minVisibleRowColumnInViewPort].absBottomRightPosition[_axis])
             {
                 var itemToHide = _minVisibleRowColumnInViewPort - (_extraRowsColumnsVisible * _gridConstraintCount);
                 _minVisibleRowColumnInViewPort += _gridConstraintCount;
@@ -339,7 +372,7 @@ namespace RecyclableScrollRect
         
         protected override void ShowItemsAtBottomRight()
         {
-            while (_maxVisibleRowColumnInViewPort < _itemsCount - _gridConstraintCount - 1 && _contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleRowColumnInViewPort].absBottomRightPosition[_axis] + _spacing[_axis])
+            while (_maxVisibleRowColumnInViewPort < LastLineStartIndex && _contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleRowColumnInViewPort].absBottomRightPosition[_axis] + _spacing[_axis])
             {
                 _maxVisibleRowColumnInViewPort += _gridConstraintCount;
                 var itemToShow = _maxVisibleRowColumnInViewPort + (_extraRowsColumnsVisible * _gridConstraintCount);
