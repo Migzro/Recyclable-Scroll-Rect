@@ -7,7 +7,7 @@ namespace RecyclableScrollRect
 {
     public partial class RSRBase
     {
-        private int _sectionsCount;
+        protected int _sectionsCount;
         private int _currentSection;
         
         protected PinnedHeaderState _rsrHeaderPin;

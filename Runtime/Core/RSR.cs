@@ -1,5 +1,7 @@
 // Copyright (c) 2026 Maged Farid
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
+
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace RecyclableScrollRect
@@ -21,7 +23,41 @@ namespace RecyclableScrollRect
             _rsrDataSource = (IRSRDataSource)_dataSource;
             base.Initialize();
         }
-        
+
+        protected override void CalculateItemsCount()
+        {
+            _itemsCount = 0;
+            _sectionsCount = _sectionsSource?.SectionsCount ?? 1;
+
+            if (_sectionsCount <= 0)
+            {
+                Debug.LogWarning("Sections count cannot be 0, defaulting to 1");
+                _sectionsCount = 1;
+            }
+
+            _itemsCount += _sectionsSource is { ScrollRectHasHeader: true } ? 1 : 0;
+            _itemsCount += _sectionsSource is { ScrollRectHasFooter: true } ? 1 : 0;
+
+            _itemsCountInSection = new List<int>();
+            for (var i = 0; i < _sectionsCount; i++)
+            {
+                var itemsCountInSection = _dataSource.GetItemsCount(i);
+
+                if (_sectionsSource != null && _sectionsSource.SectionHasHeader(i))
+                {
+                    itemsCountInSection++;
+                }
+
+                if (_sectionsSource != null && _sectionsSource.SectionHasFooter(i))
+                {
+                    itemsCountInSection++;
+                }
+
+                _itemsCountInSection.Add(itemsCountInSection);
+                _itemsCount += itemsCountInSection;
+            }
+        }
+
         /// <summary>
         /// get the index of the item
         /// </summary>

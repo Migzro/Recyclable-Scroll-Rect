@@ -23,10 +23,8 @@ namespace RecyclableScrollRect
         protected override bool ReachedMinRowColumnInViewPort => _minVisibleRowColumnInViewPort == 0;
         protected override bool ReachedMaxRowColumnInViewPort => _maxVisibleRowColumnInViewPort == (_grid.maxGridItemsInAxis - 1) * _gridConstraintCount;
 
-        protected override void ResetVariables()
+        protected override void CalculateItemsCount()
         {
-            base.ResetVariables();
-
             if (_gridConstraint == GridLayoutGroup.Constraint.Flexible)
             {
                 // Calculate how many items can fit in the current scroll view opposite axis, this is our _gridConstraintCount

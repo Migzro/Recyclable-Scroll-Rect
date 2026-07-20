@@ -47,6 +47,7 @@ namespace RecyclableScrollRect
 
         protected SortedDictionary<int, Item> _visibleItems;
         private Dictionary<string, List<Item>> _pooledItems;
+        protected List<int> _itemsCountInSection;
         
         protected Vector2 _dragStartingPosition;
         protected Vector2 _contentTopLeftCorner;
@@ -108,6 +109,7 @@ namespace RecyclableScrollRect
         protected abstract bool IsItemSizeKnown { get; }
         protected abstract bool ReachedMinRowColumnInViewPort { get; }
         protected abstract bool ReachedMaxRowColumnInViewPort { get; }
+        protected abstract void CalculateItemsCount();
         protected abstract bool IsLastRowColumn(int itemIndex);
         protected abstract void InitializeItems(int startIndex = 0);
         protected abstract void SetItemPosition(int itemIndex, RectTransform rect = null);
@@ -194,6 +196,7 @@ namespace RecyclableScrollRect
             ContentPosition = 0;
             SetContentBounds();
 
+            SetSectionsCount();
             CalculateItemsCount();
             _staticItems = new List<bool>();
             _prototypeNames = new List<string>();
@@ -231,34 +234,14 @@ namespace RecyclableScrollRect
             IsInitialized = true;
         }
 
-        private void CalculateItemsCount()
+        private void SetSectionsCount()
         {
-            _itemsCount = 0;
             _sectionsCount = _sectionsSource?.SectionsCount ?? 1;
 
             if (_sectionsCount <= 0)
             {
                 Debug.LogWarning("Sections count cannot be 0, defaulting to 1");
                 _sectionsCount = 1;
-            }
-            
-            _itemsCount += _sectionsSource is { ScrollRectHasHeader: true } ? 1 : 0;
-            _itemsCount += _sectionsSource is { ScrollRectHasFooter: true } ? 1 : 0;
-            
-            // Calculate _itemsCount before building the items map
-            for (var i = 0; i < _sectionsCount; i++)
-            {
-                _itemsCount += _dataSource.GetItemsCount(i);
-                
-                if (_sectionsSource != null && _sectionsSource.SectionHasHeader(i))
-                {
-                    _itemsCount++;
-                }
-
-                if (_sectionsSource != null && _sectionsSource.SectionHasFooter(i))
-                {
-                    _itemsCount++;
-                }
             }
         }
 
@@ -294,7 +277,7 @@ namespace RecyclableScrollRect
                     currentItemIndex++;
                 }
 
-                var itemsCountInSection= _dataSource.GetItemsCount(i);
+                var itemsCountInSection = _itemsCountInSection[i];
                 for (var j = 0; j < itemsCountInSection; j++)
                 {
                     _itemData.Add(new ItemData
@@ -863,6 +846,7 @@ namespace RecyclableScrollRect
             UnpinHeader(_rsrHeaderPin);
             UnpinHeader(_sectionHeaderPin);
             
+            SetSectionsCount();
             var oldItemsCount = _itemsCount;
             CalculateItemsCount();
             
