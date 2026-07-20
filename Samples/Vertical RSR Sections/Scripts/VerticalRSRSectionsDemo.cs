@@ -10,6 +10,7 @@ namespace RecyclableScrollRect
         [SerializeField] private int[] _itemsCount;
         [SerializeField] private RSR _scrollRect;
         [SerializeField] private GameObject[] _prototypeItems;
+        [SerializeField] private int _itemsToReloadTo;
         
         private List<List<string>> _dataSource;
 
@@ -31,6 +32,19 @@ namespace RecyclableScrollRect
             }
 
             _scrollRect.Initialize(this);
+        }
+        
+        [ContextMenu(nameof(ReloadData))]
+        public void ReloadData()
+        {
+            _dataSource = new List<List<string>>();
+            for (var i = 0; i < _itemsCount.Length; i++)
+            {
+                _dataSource.Add(new List<string>());
+                for (var j = 0; j < _itemsCount[i]; j++)
+                    _dataSource[i].Add(j.ToString());
+            }
+            _scrollRect.ReloadData(true);
         }
         
         public int GetItemsCount(int sectionIndex)

@@ -260,7 +260,6 @@ namespace RecyclableScrollRect
                     _itemsCount++;
                 }
             }
-            
         }
 
         private void BuildItemsMap()
