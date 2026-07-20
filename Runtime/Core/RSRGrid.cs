@@ -365,6 +365,10 @@ namespace RecyclableScrollRect
                 if (itemToHide > -1)
                 {
                     _minExtraVisibleRowColumnInViewPort += _gridConstraintCount;
+                    if (itemToHide == _sectionHeaderPin.index || itemToHide == _rsrHeaderPin.index)
+                    {
+                        continue;
+                    }
                     ShowHideRowsColumnsAtIndex(itemToHide, false);
                 }
             }

@@ -168,6 +168,9 @@ namespace RecyclableScrollRect
 
             headerItem.transform.SetParent(_headersParent.transform, false);
             headerItem.transform.SetAsLastSibling();
+            var localPosition = headerItem.transform.anchoredPosition;
+            localPosition[1 - _axis] = 0f;
+            headerItem.transform.anchoredPosition = localPosition;
         }
 
         private void SetHeadersParentSize()
