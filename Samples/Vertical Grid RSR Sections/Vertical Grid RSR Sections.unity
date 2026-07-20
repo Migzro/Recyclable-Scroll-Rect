@@ -240,6 +240,8 @@ MonoBehaviour:
   _prototypeItems:
   - {fileID: 1638117046129563386, guid: 98fbceada943c41a0a67fe01a1a66c98, type: 3}
   - {fileID: 1638117046129563386, guid: 99a2d93ebb5614fc5909cd276eef8615, type: 3}
+  - {fileID: 1638117046129563386, guid: 0abdd5fdfa22340d6a525e73ea09ecbd, type: 3}
+  - {fileID: 1638117046129563386, guid: fbb1d06032a474c84b5805367ad86179, type: 3}
   _itemsToReloadTo: 0
 --- !u!1 &1362537419
 GameObject:
