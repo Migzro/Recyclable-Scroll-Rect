@@ -18,7 +18,7 @@ namespace RecyclableScrollRect
         public int SectionsCount => _itemsCount.Length;
         public bool ScrollRectHasHeader => true;
         public bool ScrollRectHasFooter => true;
-        public bool ScrollRectHeaderIsPinned => true;
+        public bool ScrollRectHeaderIsPinned => false;
 
         private void Start()
         {
@@ -83,8 +83,10 @@ namespace RecyclableScrollRect
         {
             if (itemData.itemType == ItemType.RSRFooter || itemData.itemType == ItemType.Footer)
                 return _prototypeItems[3];
-            if (itemData.itemType == ItemType.RSRHeader || itemData.itemType == ItemType.Header)
+            if (itemData.itemType == ItemType.Header)
                 return _prototypeItems[2];
+            if (itemData.itemType == ItemType.RSRHeader)
+                return _prototypeItems[4];
             if (itemData.sectionIndex == 0)
                 return _prototypeItems[0];
             return _prototypeItems[1];
@@ -101,7 +103,7 @@ namespace RecyclableScrollRect
 
         public bool IgnoreContentPadding(ItemData itemData)
         {
-            return false;
+            return true;
         }
 
         public void PullToRefresh()
@@ -137,6 +139,13 @@ namespace RecyclableScrollRect
         public bool HeaderIsPinned(int sectionIndex)
         {
             return true;
+        }
+
+        public float GetHeaderFooterSize(ItemData itemData)
+        {
+            if (itemData.itemType == ItemType.RSRHeader)
+                return 150f;
+            return 50f;
         }
     }
 }

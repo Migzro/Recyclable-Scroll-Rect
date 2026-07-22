@@ -15,8 +15,11 @@ namespace RecyclableScrollRect
         [SerializeField] private GridLayoutGroup.Corner _gridStartCorner;
         [SerializeField] private int _extraRowsColumnsVisible;
 
+        private IGridDataSource _gridDataSource;
         private Grid _grid;
         private Vector2 _gridLayoutItemsOffset;
+        private float[] _lineSizes;
+        private float[] _lineOffsets;
         private int _originalItemsCount;
 
         protected override bool IsItemSizeKnown => true;
@@ -24,6 +27,12 @@ namespace RecyclableScrollRect
         protected override bool ReachedMaxRowColumnInViewPort => _maxVisibleRowColumnInViewPort >= LastLineStartIndex;
 
         private int LastLineStartIndex => Mathf.Max(0, (_grid.maxGridItemsInAxis - 1) * _gridConstraintCount);
+
+        protected override void Initialize()
+        {
+            _gridDataSource = (IGridDataSource)_dataSource;
+            base.Initialize();
+        }
 
         protected override void CalculateItemsCount()
         {
@@ -67,6 +76,37 @@ namespace RecyclableScrollRect
             CalculateGridPadding();
         }
 
+        /// <summary>
+        /// Builds the scrolling-axis extent and offset of every grid line. Headers and footers
+        /// can have custom extents, while item lines retain the configured grid item size.
+        /// </summary>
+        private void CalculateLineLayout()
+        {
+            _lineSizes = new float[_grid.maxGridItemsInAxis];
+            _lineOffsets = new float[_grid.maxGridItemsInAxis];
+
+            var offset = 0f;
+            for (var line = 0; line < _grid.maxGridItemsInAxis; line++)
+            {
+                var flatIndex = line * _gridConstraintCount;
+                var slot = _grid.GetSlot(flatIndex);
+                var lineSize = _gridItemSize[_axis];
+
+                if (!slot.isEmpty && slot.itemType != ItemType.Item)
+                {
+                    var suppliedSize = _gridDataSource.GetHeaderFooterSize(_itemData[flatIndex]);
+
+                    // Non-positive means “use the usual grid-cell size.”
+                    if (suppliedSize > 0f)
+                        lineSize = suppliedSize;
+                }
+
+                _lineOffsets[line] = offset;
+                _lineSizes[line] = lineSize;
+                offset += lineSize + _spacing[_axis];
+            }
+        }
+
         protected override void BuildItemsMap()
         {
             _itemData = new List<ItemData>(_itemsCount);
@@ -81,6 +121,7 @@ namespace RecyclableScrollRect
                     actualItemIndex = slot.isEmpty ? -1 : flatIndex
                 });
             }
+            CalculateLineLayout();
         }
 
         /// <summary>
@@ -91,7 +132,12 @@ namespace RecyclableScrollRect
         protected override void CalculateContentSize()
         {
             var contentSizeDelta = viewport.sizeDelta;
-            contentSizeDelta[_axis] = (_grid.maxGridItemsInAxis * _gridItemSize[_axis]) + (_spacing[_axis] * Mathf.Max(0, _grid.maxGridItemsInAxis - 1));
+            var contentAxisSize = 0f;
+            for (var line = 0; line < _lineSizes.Length; line++)
+            {
+                contentAxisSize += _lineSizes[line];
+            }
+            contentSizeDelta[_axis] = contentAxisSize + (_spacing[_axis] * Mathf.Max(0, _lineSizes.Length - 1));
             
             if (vertical)
             {
@@ -176,8 +222,18 @@ namespace RecyclableScrollRect
                     else
                         gridIndex.y = 0;
                 }
-                newItemPosition.x = _gridLayoutItemsOffset.x + gridIndex.x * itemPosition.itemSize[0] + _spacing[0] * gridIndex.x;
-                newItemPosition.y = -_gridLayoutItemsOffset.y - gridIndex.y * itemPosition.itemSize[1] - _spacing[1] * gridIndex.y;
+                newItemPosition.x = vertical
+                    ? _gridLayoutItemsOffset.x + gridIndex.x * itemPosition.itemSize[0] + _spacing[0] * gridIndex.x
+                    : _gridLayoutItemsOffset.x + _lineOffsets[gridIndex.x];
+                newItemPosition.y = vertical
+                    ? -_gridLayoutItemsOffset.y - _lineOffsets[gridIndex.y]
+                    : -_gridLayoutItemsOffset.y - gridIndex.y * itemPosition.itemSize[1] - _spacing[1] * gridIndex.y;
+
+                var ignoresPadding = slot.crossAxisSpan > 1 && _dataSource.IgnoreContentPadding(_itemData[itemIndex]);
+                if (ignoresPadding)
+                {
+                    newItemPosition[1 - _axis] = 0f;
+                }
                 itemPosition.SetPosition(newItemPosition);
             }
             
@@ -188,7 +244,37 @@ namespace RecyclableScrollRect
         }
         
         /// <summary>
-        /// This function just sets the rect.sizeDelta of the grid
+        /// Sets the cross-axis size of a grid item. Full-span headers and footers can ignore
+        /// the grid padding and occupy the full content cross-axis.
+        /// </summary>
+        /// <param name="itemIndex">item index whose cross-axis size is being set</param>
+        /// <param name="rect">rect transform to update, if visible</param>
+        protected override void SetNonAxisSize(int itemIndex, RectTransform rect = null)
+        {
+            var itemPosition = _itemPositions[itemIndex];
+            if (!itemPosition.nonAxisSizeSet)
+            {
+                var newItemSize = _gridItemSize;
+                var slot = _grid.GetSlot(itemIndex);
+                if (slot.crossAxisSpan > 1)
+                {
+                    var crossAxis = 1 - _axis;
+                    newItemSize[crossAxis] = _dataSource.IgnoreContentPadding(_itemData[itemIndex])
+                        ? content.rect.size[crossAxis]
+                        : (_gridItemSize[crossAxis] * slot.crossAxisSpan) +
+                          (_spacing[crossAxis] * (slot.crossAxisSpan - 1));
+                }
+                itemPosition.SetNonAxisSize(newItemSize);
+            }
+
+            if (rect != null)
+            {
+                rect.sizeDelta = itemPosition.itemSize;
+            }
+        }
+
+        /// <summary>
+        /// Sets the scrolling-axis size of a grid item.
         /// </summary>
         /// <param name="itemIndex">item index which the size will be calculated for</param>
         /// <param name="rect">RectTransform to set size for</param>
@@ -197,13 +283,8 @@ namespace RecyclableScrollRect
             var itemPosition = _itemPositions[itemIndex];
             if (!itemPosition.sizeSet)
             {
-                var newItemSize = _gridItemSize;
-                var span = _grid.GetSlot(itemIndex).crossAxisSpan;
-                if (span > 1)
-                {
-                    var crossAxis = 1 - _axis;
-                    newItemSize[crossAxis] = (_gridItemSize[crossAxis] * span) + (_spacing[crossAxis] * (span - 1));
-                }
+                var newItemSize = itemPosition.itemSize;
+                newItemSize[_axis] = _lineSizes[itemIndex / _gridConstraintCount];
                 itemPosition.SetSize(newItemSize);
             }
             

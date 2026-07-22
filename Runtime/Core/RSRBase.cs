@@ -586,9 +586,8 @@ namespace RecyclableScrollRect
         }
 
         /// <summary>
-        /// it sets the vertical size of the item in a horizontal layout
-        /// or the horizontal size of an item in a vertical layout based on the settings of said layout
-        /// Is not needed in grid as items will have different positions in non axis position and the non axis size is the same in all of them
+        /// It sets the vertical size of an item in a horizontal layout or the horizontal size of an
+        /// item in a vertical layout based on the settings of the concrete layout.
         /// </summary>
         /// <param name="itemIndex">The index of the item that its size will be adjusted</param>
         /// <param name="rect">rect transform that needs setting</param>

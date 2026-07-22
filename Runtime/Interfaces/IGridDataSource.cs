@@ -4,5 +4,6 @@ namespace RecyclableScrollRect
 {
     public interface IGridDataSource : IDataSource
     {
+        float GetHeaderFooterSize(ItemData itemData);
     }
 }

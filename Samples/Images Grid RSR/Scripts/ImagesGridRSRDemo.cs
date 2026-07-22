@@ -91,7 +91,12 @@ namespace RecyclableScrollRect
         public void LastItemIsVisible()
         {
         }
-        
+
+        public float GetHeaderFooterSize(ItemData itemData)
+        {
+            return -1;
+        }
+
         public int GetItemsCount(int sectionIndex)
         {
             return _itemsCount;
