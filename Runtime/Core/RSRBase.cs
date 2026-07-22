@@ -494,7 +494,11 @@ namespace RecyclableScrollRect
                 itemImpl = itemGo.GetComponent<IItem>();
                 itemImpl.RSRBase = this;
                 itemImpl.ItemIndex = itemIndex;
-                itemGo.name = $"{itemPrototypeItem.name} {itemIndex}";
+
+                var itemData = _itemData[itemIndex];
+                itemGo.name = itemData.itemType == ItemType.Item
+                    ? $"{itemPrototypeItem.name} {itemData.sectionIndex}:{itemData.itemIndex}"
+                    : $"{itemPrototypeItem.name} {itemData.sectionIndex}";
             }
             else
             {
@@ -758,7 +762,10 @@ namespace RecyclableScrollRect
                 SetItemRectAndData(itemIndex, item);
                 if (!_staticItems[itemIndex])
                 {
-                    item.transform.name = $"{itemPrototypeName} {itemIndex}";
+                    var itemData = _itemData[itemIndex];
+                    item.transform.name = itemData.itemType == ItemType.Item
+                        ? $"{itemPrototypeName} {itemData.sectionIndex}:{itemData.itemIndex}"
+                        : $"{itemPrototypeName} {itemData.sectionIndex}";
                 }
             }
 
