@@ -1,5 +1,6 @@
 // Copyright (c) 2026 Maged Farid
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 #if ENABLE_INPUT_SYSTEM
@@ -14,8 +15,33 @@ namespace RecyclableScrollRect
         [SerializeField] protected float _swipeThreshold = 200;
 
         private IPageDataSource _pageDataSource;
+        private List<int> _pageMap;
         private int _currentPage;
         private bool _isDragging;
+        private int _pendingPageAfterScroll = -1;
+
+        private int TotalPages => _pageMap?.Count ?? 0;
+        private int CurrentPageDataIndex => _pageMap[_currentPage];
+        private int ClampPage(int page) => Mathf.Clamp(page, 0, TotalPages - 1);
+
+        protected override void BuildItemsMap()
+        {
+            base.BuildItemsMap();
+            BuildPageMap();
+        }
+        
+        private void BuildPageMap()
+        {
+            _pageMap ??= new List<int>();
+            _pageMap.Clear();
+            for (var i = 0; i < _itemData.Count; i++)
+            {
+                if (_itemData[i].itemType == ItemType.Item)
+                {
+                    _pageMap.Add(i);
+                }
+            }
+        }
 
         protected override void Initialize()
         {
@@ -23,64 +49,97 @@ namespace RecyclableScrollRect
             _currentPage = 0;
             base.Initialize();
             
-            if (_itemsCount > 0 && _visibleItems.TryGetValue(_currentPage, out var visibleItem))
+            if (TotalPages > 0 && _visibleItems.TryGetValue(CurrentPageDataIndex, out var visibleItem))
             {
-                _pageDataSource?.PageWillFocus(visibleItem.item, _itemData[_currentPage], true);
+                _pageDataSource?.PageWillFocus(visibleItem.item, _itemData[CurrentPageDataIndex], true);
             }
         }
 
         /// <summary>
-        /// Used to refresh needed data if is in paged mode
-        /// Focuses first item if a new item was added
-        /// Scrolls to new page if currentPage page was deleted
+        /// Called after ReloadData — clamps the current page to the new page count
+        /// and re-fires the focus callback for whichever page we land on.
         /// </summary>
         protected override void RefreshAfterReload()
         {
             base.RefreshAfterReload();
-            
-            if (_currentPage >= _itemsCount)
+
+            if (TotalPages == 0)
+                return;
+
+            _currentPage = ClampPage(_currentPage);
+            if (_visibleItems.TryGetValue(CurrentPageDataIndex, out var visibleItem))
             {
-                // scroll item will handle the focus
-                ScrollToItemIndex(Mathf.Max(0, _currentPage - 1), instant:true);
+                _pageDataSource?.PageWillFocus(visibleItem.item, _itemData[CurrentPageDataIndex], true);
             }
-            else if (_itemsCount > 0 && _visibleItems.TryGetValue(_currentPage, out var visibleItem))
+            else
             {
-                _pageDataSource?.PageWillFocus(visibleItem.item, _itemData[_currentPage], true);
+                ScrollToItemIndex(_currentPage, instant: true);
             }
+        }
+                
+        public override void ScrollToItemIndex(int pageNumber, float timeOrSpeed = -1, bool isSpeed = false, bool instant = false, bool callEvent = false, object ease = null)
+        {
+            if (_pageMap == null || _pageMap.Count == 0)
+                return;
+
+            var clampedPage = ClampPage(pageNumber);
+            var dataIndex = _pageMap[clampedPage];
+
+            // walk back to include any headers/footers sitting above this page
+            var scrollTarget = dataIndex;
+            for (var i = dataIndex - 1; i >= 0; i--)
+            {
+                var itemType = _itemData[i].itemType;
+                var isHeader = itemType is ItemType.Header or ItemType.RSRHeader;
+
+                if (!isHeader)
+                    break;
+
+                scrollTarget = i;
+            }
+
+            _pendingPageAfterScroll = clampedPage;
+            base.ScrollToItemIndex(scrollTarget, timeOrSpeed, isSpeed, instant, callEvent, ease);
         }
         
         protected override void PerformPreScrollingActions(int itemIndex)
         {
+            var targetPage = _pendingPageAfterScroll != -1 ? _pendingPageAfterScroll : _pageMap.IndexOf(itemIndex);
             base.PerformPreScrollingActions(itemIndex);
             
-            var isNextPage = itemIndex > _currentPage;
-            if (_visibleItems.TryGetValue(_currentPage, out var visibleItem))
-            {
-                _pageDataSource?.PageWillUnFocus(visibleItem.item, _itemData[_currentPage], isNextPage);
-            }
+            if (targetPage == -1 || targetPage == _currentPage)
+                return;
+
+            var isNextPage = targetPage > _currentPage;
+            if (_visibleItems.TryGetValue(CurrentPageDataIndex, out var visibleItem))
+                _pageDataSource?.PageWillUnFocus(visibleItem.item, _itemData[CurrentPageDataIndex], isNextPage);
         }
 
         protected override void PerformPostScrollingActions(bool callEvent, AnimationState animationState, bool scrollingDown, int itemIndex = -1)
         {
             base.PerformPostScrollingActions(callEvent, animationState, scrollingDown, itemIndex);
             
-            if (animationState == AnimationState.Finished && _currentPage != itemIndex)
-            {
-                var isNextPage = itemIndex > _currentPage;
-                _currentPage = itemIndex;
-                if (_visibleItems.TryGetValue(_currentPage, out var visibleItem))
-                {
-                    _pageDataSource?.PageWillFocus(visibleItem.item, _itemData[_currentPage], isNextPage);
-                }
-            }
+            if (animationState != AnimationState.Finished || _pendingPageAfterScroll == -1)
+                return;
+
+            var newPageIndex = _pendingPageAfterScroll;
+            _pendingPageAfterScroll = -1;
+
+            if (newPageIndex == _currentPage)
+                return;
+
+            var isNextPage = newPageIndex > _currentPage;
+            _currentPage = newPageIndex;
+
+            if (_visibleItems.TryGetValue(CurrentPageDataIndex, out var visibleItem))
+                _pageDataSource?.PageWillFocus(visibleItem.item, _itemData[CurrentPageDataIndex], isNextPage);
         }
 
         public override void OnBeginDrag(PointerEventData eventData)
         {
             if (_isAnimating)
-            {
                 return;
-            }
+
             base.OnBeginDrag(eventData);
             _isDragging = true;
             _dragStartingPosition = content.anchoredPosition * (vertical ? 1 : -1);
@@ -90,55 +149,47 @@ namespace RecyclableScrollRect
         {
             base.OnEndDrag(eventData);
             if (!_isDragging)
-            {
                 return;
-            }
+
             _isDragging = false;
-            var newPageIndex = CalculateNextPageAfterDrag();
-            ScrollToItemIndex(newPageIndex, _scrollingDuration);
+            ScrollToItemIndex(CalculateNextPageAfterDrag(), _scrollingDuration);
         }
 
         protected virtual int CalculateNextPageAfterDrag()
         {
+            if (TotalPages == 0)
+                return _currentPage;
+
             var currentContentPosition = content.anchoredPosition * (vertical ? 1 : -1);
-            var distance = Vector3.Distance(_dragStartingPosition, currentContentPosition);
-            var isNextPage = currentContentPosition[_axis] > _dragStartingPosition[_axis];
-            var newPage = _currentPage;
-            if (distance > _swipeThreshold)
-            {
-                if (isNextPage && _currentPage < _itemsCount - 1)
-                    newPage++;
-                else if (!isNextPage && _currentPage > 0)
-                    newPage--;
-            }
-            
-            return newPage;
+            var delta = currentContentPosition[_axis] - _dragStartingPosition[_axis];
+            var distance = Mathf.Abs(delta);
+
+            if (distance <= _swipeThreshold)
+                return _currentPage;
+
+            var isNextPage = delta > 0;
+            return ClampPage(isNextPage ? _currentPage + 1 : _currentPage - 1);
         }
         
 #if UNITY_EDITOR
         private void Update()
         {
+            if (TotalPages == 0)
+                return;
+
 #if ENABLE_INPUT_SYSTEM
             if (Keyboard.current != null)
             {
                 if (Keyboard.current.upArrowKey.wasReleasedThisFrame)
-                {
-                    ScrollToItemIndex(Mathf.Max(_currentPage - 1, 0), _scrollingDuration);
-                }
+                    ScrollToItemIndex(ClampPage(_currentPage - 1), _scrollingDuration);
                 else if (Keyboard.current.downArrowKey.wasReleasedThisFrame)
-                {
-                    ScrollToItemIndex(Mathf.Min(_currentPage + 1, _itemsCount - 1), _scrollingDuration);
-                }
+                    ScrollToItemIndex(ClampPage(_currentPage + 1), _scrollingDuration);
             }
 #elif ENABLE_LEGACY_INPUT_MANAGER
             if (Input.GetKeyUp(KeyCode.UpArrow))
-            {
-                ScrollToItemIndex(Mathf.Max(_currentPage - 1, 0), _scrollingDuration);
-            }
+                ScrollToItemIndex(ClampPage(_currentPage - 1), _scrollingDuration);
             else if (Input.GetKeyUp(KeyCode.DownArrow))
-            {
-                ScrollToItemIndex(Mathf.Min(_currentPage + 1, _itemsCount - 1), _scrollingDuration);
-            }
+                ScrollToItemIndex(ClampPage(_currentPage + 1), _scrollingDuration);
 #endif
         }
 #endif

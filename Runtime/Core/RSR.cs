@@ -42,6 +42,7 @@ namespace RecyclableScrollRect
             for (var i = 0; i < _sectionsCount; i++)
             {
                 var itemsCountInSection = _dataSource.GetItemsCount(i);
+                _itemsCountInSection.Add(itemsCountInSection);
 
                 if (_sectionsSource != null && _sectionsSource.SectionHasHeader(i))
                 {
@@ -53,7 +54,6 @@ namespace RecyclableScrollRect
                     itemsCountInSection++;
                 }
 
-                _itemsCountInSection.Add(itemsCountInSection);
                 _itemsCount += itemsCountInSection;
             }
         }

@@ -963,7 +963,7 @@ namespace RecyclableScrollRect
             ScrollToContentPosition(0, targetContentPosition, timeOrSpeed, isSpeed, instant, ease, (state, scrollingDown) => PerformPostScrollingActions(false, state, scrollingDown));
         }
         
-        public void ScrollToItemIndex(int itemIndex, float timeOrSpeed = -1, bool isSpeed = false, bool instant = false, bool callEvent = false, object ease = null)
+        public virtual void ScrollToItemIndex(int itemIndex, float timeOrSpeed = -1, bool isSpeed = false, bool instant = false, bool callEvent = false, object ease = null)
         {
             if (itemIndex < 0 || itemIndex >= _itemsCount)
             {

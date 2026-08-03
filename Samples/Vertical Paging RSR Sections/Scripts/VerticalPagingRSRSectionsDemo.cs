@@ -12,6 +12,7 @@ namespace RecyclableScrollRect
         [SerializeField] private GameObject[] _prototypeItems;
         [SerializeField] private RectTransform _canvas;
         [SerializeField] private int _itemsToReloadTo;
+        [SerializeField] private float _headerHeight = 50;
 
         private List<List<string>> _dataSource;
         private float _canvasHeight;
@@ -57,8 +58,24 @@ namespace RecyclableScrollRect
         public float GetItemSize(ItemData itemData)
         {
             if (itemData.itemType == ItemType.Item)
-                return _canvasHeight  - 50;
-            return 50;
+            {
+                var itemSize = _canvasHeight;  
+                var itemIndex = itemData.itemIndex;
+                var sectionIndex = itemData.sectionIndex;
+                if ((SectionHasHeader(sectionIndex) && (itemIndex == 0 || HeaderIsPinned(sectionIndex))) 
+                    || (itemIndex == _itemsCount[sectionIndex] - 1 && SectionHasFooter(sectionIndex)))
+                {
+                    itemSize -= _headerHeight;
+                }
+                if ((ScrollRectHasHeader && ((itemIndex == 0 && sectionIndex == 0) || ScrollRectHeaderIsPinned)) 
+                    || (itemIndex == _itemsCount[sectionIndex] - 1 && sectionIndex == SectionsCount - 1 && ScrollRectHasFooter))
+                {
+                    itemSize -= _headerHeight;
+                }
+                return itemSize;
+            }
+
+            return _headerHeight;
         }
 
         public void SetItemData(IItem item, ItemData itemData)
@@ -136,17 +153,17 @@ namespace RecyclableScrollRect
 
         public bool SectionHasHeader(int sectionIndex)
         {
-            return false;
+            return true;
         }
 
         public bool SectionHasFooter(int sectionIndex)
         {
-            return false;
+            return true;
         }
 
         public bool HeaderIsPinned(int sectionIndex)
         {
-            return false;
+            return true;
         }
 
         public void PageWillFocus(IItem item, ItemData itemData, bool isNextPage)

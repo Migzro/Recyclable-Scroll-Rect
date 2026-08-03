@@ -240,10 +240,11 @@ MonoBehaviour:
   _prototypeItems:
   - {fileID: 1638117046129563386, guid: 39b913bf86a5f4853ac63602c059da10, type: 3}
   - {fileID: 1638117046129563386, guid: a8aa966ed47e54d94bfed86d96dec1aa, type: 3}
-  - {fileID: 1638117046129563386, guid: ce85d1975e5d242f5a2de4491a4ebc24, type: 3}
   - {fileID: 1638117046129563386, guid: 09779d3f6d5e84cf48cdc50bd8a38ef1, type: 3}
+  - {fileID: 1638117046129563386, guid: ce85d1975e5d242f5a2de4491a4ebc24, type: 3}
   _canvas: {fileID: 658359683}
   _itemsToReloadTo: 0
+  _headerHeight: 50
 --- !u!1 &1362537419
 GameObject:
   m_ObjectHideFlags: 0
