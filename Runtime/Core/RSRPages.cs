@@ -19,6 +19,7 @@ namespace RecyclableScrollRect
         private int _currentPage;
         private bool _isDragging;
         private int _pendingPageAfterScroll = -1;
+        private bool _focusPageAfterReload;
 
         private int TotalPages => _pageMap?.Count ?? 0;
         private int CurrentPageDataIndex => _pageMap[_currentPage];
@@ -63,16 +64,24 @@ namespace RecyclableScrollRect
         {
             base.RefreshAfterReload();
 
+            _pendingPageAfterScroll = -1;
+            _focusPageAfterReload = false;
+
             if (TotalPages == 0)
+            {
+                _currentPage = 0;
                 return;
+            }
 
             _currentPage = ClampPage(_currentPage);
-            if (_visibleItems.TryGetValue(CurrentPageDataIndex, out var visibleItem))
+            var dataIndex = CurrentPageDataIndex;
+            if (_visibleItems.TryGetValue(dataIndex, out var visibleItem))
             {
-                _pageDataSource?.PageWillFocus(visibleItem.item, _itemData[CurrentPageDataIndex], true);
+                _pageDataSource?.PageWillFocus(visibleItem.item, _itemData[dataIndex], true);
             }
             else
             {
+                _focusPageAfterReload = true;
                 ScrollToItemIndex(_currentPage, instant: true);
             }
         }
@@ -125,13 +134,13 @@ namespace RecyclableScrollRect
             var newPageIndex = _pendingPageAfterScroll;
             _pendingPageAfterScroll = -1;
 
-            if (newPageIndex == _currentPage)
-                return;
-
-            var isNextPage = newPageIndex > _currentPage;
+            var pageChanged = newPageIndex != _currentPage;
+            var shouldFocus = pageChanged || _focusPageAfterReload;
+            var isNextPage = newPageIndex >= _currentPage;
             _currentPage = newPageIndex;
+            _focusPageAfterReload = false;
 
-            if (_visibleItems.TryGetValue(CurrentPageDataIndex, out var visibleItem))
+            if (shouldFocus && _visibleItems.TryGetValue(CurrentPageDataIndex, out var visibleItem))
                 _pageDataSource?.PageWillFocus(visibleItem.item, _itemData[CurrentPageDataIndex], isNextPage);
         }
 
