@@ -43,9 +43,7 @@ namespace RecyclableScrollRect
             if (!headerPin.IsPinned)
                 return;
             
-            var currentHeaderPosition =  _itemPositions[headerPin.index];
             var currentHeaderSection = _itemData[headerPin.index].sectionIndex;
-            Debug.Log($"Unpinning current header {headerPin.index} " + _contentTopLeftCorner[_axis] + " " + currentHeaderPosition.absTopLeftPosition[_axis] + " " + _currentSection + " " + currentHeaderSection);
             if (_visibleItems.TryGetValue(headerPin.index, out var headerItem))
             {
                 headerItem.transform.SetParent(content, true);
@@ -140,7 +138,6 @@ namespace RecyclableScrollRect
             headerPin.position.SetSize(headerPosition.itemSize);
             headerPin.position.SetPosition(newItemPosition);
             CreateHeadersParent(headerItem);
-            Debug.Log($"Pinning current header {headerPin.index}");
         }
 
         private void CreateHeadersParent(Item headerItem)
@@ -215,7 +212,7 @@ namespace RecyclableScrollRect
             return false;
         }
         
-        private int GetHeaderIndexFromSection(int sectionIndex)
+        protected int GetHeaderIndexFromSection(int sectionIndex)
         {
             for (int i = 0; i < _itemData.Count; i++)
             {

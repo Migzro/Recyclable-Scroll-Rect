@@ -984,7 +984,7 @@ namespace RecyclableScrollRect
             while (!itemPosition.positionSet)
             {
                 animationState = AnimationState.Animating; 
-                var estimatedItemTop = itemIndex * (AverageItemSize + _spacing[_axis]) * (vertical ? 1 : -1);
+                var estimatedItemTop = (itemIndex * (AverageItemSize + _spacing[_axis]) - GetScrollToItemOffset(itemIndex)) * (vertical ? 1 : -1);
                 ScrollToContentPosition(itemIndex, estimatedItemTop, animationTimeLeft, isSpeed, instant, ease, (state, scrollingDown) =>
                 {
                     animationState = state;
@@ -1008,7 +1008,7 @@ namespace RecyclableScrollRect
             }
             
             // if all item positions are known, we can clamp the content position to avoid over shooting
-            var itemPositionFinal = itemPosition.absTopLeftPosition[_axis] * (vertical ? 1 : -1);
+            var itemPositionFinal = (itemPosition.absTopLeftPosition[_axis] - GetScrollToItemOffset(itemIndex)) * (vertical ? 1 : -1);
             if (AllItemsPositionsSet)
             {
                 var minContentPosition = vertical ? 0 : (content.rect.size[_axis] - _viewPortSize[_axis]) * (vertical ? 1 : -1);
@@ -1016,6 +1016,16 @@ namespace RecyclableScrollRect
                 itemPositionFinal = Mathf.Clamp(itemPositionFinal, minContentPosition, maxContentPosition);
             }
             ScrollToContentPosition(itemIndex, itemPositionFinal, animationTimeLeft, isSpeed, instant, ease, (state, scrollingDown) => PerformPostScrollingActions(callEvent, state, scrollingDown, itemIndex));
+        }
+
+        protected virtual float GetScrollToItemOffset(int itemIndex)
+        {
+            return 0f;
+        }
+
+        protected float GetItemAxisSize(int itemIndex)
+        {
+            return _itemPositions[itemIndex].itemSize[_axis];
         }
         
         private void ScrollToContentPosition(int itemIndex, float targetContentPosition, float timeOrSpeed, bool isSpeed, bool instant, object ease = null, Action<AnimationState, bool> animationFinished = null)

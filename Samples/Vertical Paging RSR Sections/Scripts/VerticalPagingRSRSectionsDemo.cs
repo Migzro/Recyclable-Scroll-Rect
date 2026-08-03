@@ -54,28 +54,39 @@ namespace RecyclableScrollRect
         {
             return _itemsCount[sectionIndex];
         }
-        
+
         public float GetItemSize(ItemData itemData)
         {
-            if (itemData.itemType == ItemType.Item)
+            if (itemData.itemType != ItemType.Item)
+                return _headerHeight;
+
+            var itemSize = _canvasHeight;
+            var sectionIndex = itemData.sectionIndex;
+            var itemIndex = itemData.itemIndex;
+            var isLastSectionItem =
+                itemIndex == _itemsCount[sectionIndex] - 1;
+
+            if (ScrollRectHasHeader && ScrollRectHeaderIsPinned)
             {
-                var itemSize = _canvasHeight;  
-                var itemIndex = itemData.itemIndex;
-                var sectionIndex = itemData.sectionIndex;
-                if ((SectionHasHeader(sectionIndex) && (itemIndex == 0 || HeaderIsPinned(sectionIndex))) 
-                    || (itemIndex == _itemsCount[sectionIndex] - 1 && SectionHasFooter(sectionIndex)))
-                {
-                    itemSize -= _headerHeight;
-                }
-                if ((ScrollRectHasHeader && ((itemIndex == 0 && sectionIndex == 0) || ScrollRectHeaderIsPinned)) 
-                    || (itemIndex == _itemsCount[sectionIndex] - 1 && sectionIndex == SectionsCount - 1 && ScrollRectHasFooter))
-                {
-                    itemSize -= _headerHeight;
-                }
-                return itemSize;
+                itemSize -= _headerHeight;
             }
 
-            return _headerHeight;
+            if (SectionHasHeader(sectionIndex) && HeaderIsPinned(sectionIndex))
+            {
+                itemSize -= _headerHeight;
+            }
+
+            if (isLastSectionItem && SectionHasFooter(sectionIndex))
+            {
+                itemSize -= _headerHeight;
+            }
+
+            if (isLastSectionItem && sectionIndex == SectionsCount - 1 && ScrollRectHasFooter)
+            {
+                itemSize -= _headerHeight;
+            }
+
+            return itemSize;
         }
 
         public void SetItemData(IItem item, ItemData itemData)
@@ -163,7 +174,7 @@ namespace RecyclableScrollRect
 
         public bool HeaderIsPinned(int sectionIndex)
         {
-            return true;
+            return false;
         }
 
         public void PageWillFocus(IItem item, ItemData itemData, bool isNextPage)

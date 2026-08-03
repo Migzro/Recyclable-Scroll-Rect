@@ -110,6 +110,33 @@ namespace RecyclableScrollRect
             _pendingPageAfterScroll = clampedPage;
             base.ScrollToItemIndex(scrollTarget, timeOrSpeed, isSpeed, instant, callEvent, ease);
         }
+
+        protected override float GetScrollToItemOffset(int itemIndex)
+        {
+            if (_sectionsSource == null)
+                return 0f;
+
+            var offset = 0f;
+            var itemData = _itemData[itemIndex];
+
+            if (_sectionsSource.ScrollRectHasHeader &&
+                _sectionsSource.ScrollRectHeaderIsPinned &&
+                itemData.itemType != ItemType.RSRHeader)
+            {
+                offset += GetItemAxisSize(0) + _spacing[_axis];
+            }
+
+            if (itemData.itemType == ItemType.Item &&
+                _sectionsSource.SectionHasHeader(itemData.sectionIndex) &&
+                _sectionsSource.HeaderIsPinned(itemData.sectionIndex))
+            {
+                var headerIndex = GetHeaderIndexFromSection(itemData.sectionIndex);
+                if (headerIndex >= 0)
+                    offset += GetItemAxisSize(headerIndex) + _spacing[_axis];
+            }
+
+            return offset;
+        }
         
         protected override void PerformPreScrollingActions(int itemIndex)
         {
