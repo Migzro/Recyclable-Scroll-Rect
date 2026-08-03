@@ -5,6 +5,7 @@ A ListView implementation for Unity’s UI that recycles item views, designed to
 - Seamless infinite (or large-scale) scrolling of UI lists.
 - Supports vertical, horizontal layouts with reverse arrangments.
 - Supports grid layouts with start axes and corners.
+- Supports Sections, Headers, and Footers.
 - Supports pages layouts (like TikTok).
 - Reuses (recycles) item views instead of creating/destroying repeatedly.
 - Supports multiple gameObject prototypes.
@@ -21,6 +22,9 @@ A ListView implementation for Unity’s UI that recycles item views, designed to
 
 ### Horizontal RSR
 ![Horizontal RSR](Images~/Horizontal%20RSR.gif)
+
+### Vertical RSR With Sections
+![Vertical RSR With Sections](Images~/Vertical%20RSR%20Sections.gif)
 
 ### Grid RSR
 ![Grid RSR](Images~/Grid%20RSR.gif)
@@ -82,92 +86,88 @@ Open the sample scenes located in `Assets/Recyclable Scroll Rect/Samples` to see
 2. Implement the `IDataSource` interface in a MonoBehaviour script to provide data and item views.
 ```csharp
 public class VerticalRSRDemo : MonoBehaviour, IRSRDataSource
+{
+    [SerializeField] private int _itemsCount;
+    [SerializeField] private RSR _scrollRect;
+    [SerializeField] private GameObject[] _prototypeItems;
+    
+    private List<string> _dataSource;
+
+    public bool IsItemSizeKnown => true;
+    public GameObject[] PrototypeItems => _prototypeItems;
+
+    private void Start()
     {
-        [SerializeField] private int _itemsCount;
-        [SerializeField] private RSR _scrollRect;
-        [SerializeField] private GameObject[] _prototypeItems;
-        
-        private List<string> _dataSource;
-        private int _itemCount;
+        _dataSource = new List<string>();
+        for (var i = 0; i < _itemsCount; i++)
+            _dataSource.Add(i.ToString());
+        _scrollRect.Initialize(this);
+    }
+    
+    public int GetItemsCount(int sectionIndex)
+    {
+        return _itemsCount;
+    }
 
-        public int ItemsCount => _itemsCount;
-        public bool IsItemSizeKnown => true;
-        public GameObject[] PrototypeItems => _prototypeItems;
+    public float GetItemSize(ItemData itemData)
+    {
+        return 40.22f;
+    }
 
-        private void Start()
-        {
-            _dataSource = new List<string>();
-            for (var i = 0; i < _itemsCount; i++)
-                _dataSource.Add(i.ToString());
-            _scrollRect.Initialize(this);
-        }
-        
-        public float GetItemSize(int itemIndex)
-        {
-            return 40.22f;
-        }
+    public void SetItemData(IItem item, ItemData itemData)
+    {
+        (item as DemoItemPrototype)?.Initialize(_dataSource[itemData.itemIndex]);
+    }
 
-        public void SetItemData(IItem item, int itemIndex)
-        {
-            (item as DemoItemPrototype)?.Initialize(_dataSource[itemIndex]);
-        }
+    public void ItemHidden(IItem item, ItemData itemData)
+    {
+    }
 
-        public void ItemHidden(IItem item, int itemIndex)
-        {
-        }
+    public GameObject GetItemPrototype(ItemData itemData)
+    {
+        if (itemData.itemIndex % 2 == 0)
+            return _prototypeItems[0];
+        return _prototypeItems[1];
+    }
 
-        public GameObject GetItemPrototype(int itemIndex)
-        {
-            if (itemIndex % 2 == 0)
-                return _prototypeItems[0];
-            return _prototypeItems[1];
-        }
+    public void ItemCreated(IItem item, GameObject itemGo, ItemData itemData)
+    {
 
-        public void ItemCreated(int itemIndex, IItem item, GameObject itemGo)
-        {
+    }
 
-        }
+    public void ScrolledToItem(IItem item, ItemData itemData)
+    {
+    }
 
-        public bool IsItemStatic(int itemIndex)
-        {
-            return false;
-        }
+    public bool IgnoreContentPadding(ItemData itemData)
+    {
+        return false;
+    }
 
-        public void ScrolledToItem(IItem item, int itemIndex)
-        {
-        }
+    public void PullToRefresh()
+    {
+    }
 
-        public bool IgnoreContentPadding(int itemIndex)
-        {
-            return false;
-        }
+    public void PushToClose()
+    {
+    }
 
-        public void PullToRefresh()
-        {
-        }
+    public void ReachedScrollStart()
+    {
+    }
 
-        public void PushToClose()
-        {
-        }
+    public void ReachedScrollEnd()
+    {
+    }
 
-        public void ReachedScrollStart()
-        {
-        }
-
-        public void ReachedScrollEnd()
-        {
-        }
-
-        public void LastItemIsVisible()
-        {
-        }
+    public void LastItemIsVisible()
+    {
     }
 }
 ```
 
 ## 🔮 Coming Soon
 Here’s what’s planned for upcoming releases of **Recyclable Scroll Rect**:
-- Sections with headers and footers
 - Support for carousel mode
 
 ## 🧪 Why Use This?
