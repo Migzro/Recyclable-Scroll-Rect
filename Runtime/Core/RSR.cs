@@ -1,5 +1,7 @@
-// Copyright (c) 2025 Maged Farid
+// Copyright (c) 2026 Maged Farid
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
+
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace RecyclableScrollRect
@@ -21,18 +23,52 @@ namespace RecyclableScrollRect
             _rsrDataSource = (IRSRDataSource)_dataSource;
             base.Initialize();
         }
-        
+
+        protected override void CalculateItemsCount()
+        {
+            _itemsCount = 0;
+            _sectionsCount = _sectionsSource?.SectionsCount ?? 1;
+
+            if (_sectionsCount <= 0)
+            {
+                Debug.LogWarning("Sections count cannot be 0, defaulting to 1");
+                _sectionsCount = 1;
+            }
+
+            _itemsCount += _sectionsSource is { ScrollRectHasHeader: true } ? 1 : 0;
+            _itemsCount += _sectionsSource is { ScrollRectHasFooter: true } ? 1 : 0;
+
+            _itemsCountInSection = new List<int>();
+            for (var i = 0; i < _sectionsCount; i++)
+            {
+                var itemsCountInSection = _dataSource.GetItemsCount(i);
+                _itemsCountInSection.Add(itemsCountInSection);
+
+                if (_sectionsSource != null && _sectionsSource.SectionHasHeader(i))
+                {
+                    itemsCountInSection++;
+                }
+
+                if (_sectionsSource != null && _sectionsSource.SectionHasFooter(i))
+                {
+                    itemsCountInSection++;
+                }
+
+                _itemsCount += itemsCountInSection;
+            }
+        }
+
         /// <summary>
         /// get the index of the item
         /// </summary>
         /// <returns></returns>
-        protected override int GetActualItemIndex(int itemIndex)
+        protected override int GetActualItemIndex (int totalItemsInSection, int itemIndexInSection)
         {
             if (_reverseArrangement)
             {
-                return _itemsCount - 1 - itemIndex;
+                return totalItemsInSection - 1 - itemIndexInSection;
             }
-            return itemIndex;
+            return itemIndexInSection;
         }
 
         protected override bool IsLastRowColumn(int itemIndex)
@@ -97,6 +133,7 @@ namespace RecyclableScrollRect
 
         protected override void SetNonAxisSize(int itemIndex, RectTransform rect = null)
         {
+            var itemData = _itemData[itemIndex];
             var itemPosition = _itemPositions[itemIndex];
             var newItemSize = itemPosition.itemSize;
 
@@ -108,7 +145,7 @@ namespace RecyclableScrollRect
                     {
                         // expand item width if it's in a vertical scrollRect and the conditions are satisfied
                         newItemSize.x = content.rect.width;
-                        if (!_dataSource.IgnoreContentPadding(itemIndex))
+                        if (!_dataSource.IgnoreContentPadding(itemData))
                         {
                             newItemSize.x -= _padding.right + _padding.left;
                         }
@@ -117,7 +154,7 @@ namespace RecyclableScrollRect
                     {
                         // expand item height if it's in a horizontal scrollRect and the conditions are satisfied
                         newItemSize.y = content.rect.height;
-                        if (!_dataSource.IgnoreContentPadding(itemIndex))
+                        if (!_dataSource.IgnoreContentPadding(itemData))
                         {
                             newItemSize.y -= _padding.top + _padding.bottom;
                         }
@@ -125,7 +162,7 @@ namespace RecyclableScrollRect
                 }
                 else
                 {
-                    newItemSize[1 - _axis] = _dataSource.GetItemPrototype(itemIndex).GetComponent<RectTransform>().sizeDelta[1 - _axis];
+                    newItemSize[1 - _axis] = _dataSource.GetItemPrototype(itemData).GetComponent<RectTransform>().sizeDelta[1 - _axis];
                 }
 
                 itemPosition.SetNonAxisSize(newItemSize);
@@ -146,6 +183,7 @@ namespace RecyclableScrollRect
         /// <param name="rect">RectTransform to set position for</param>
         protected override void SetItemPosition(int itemIndex, RectTransform rect = null)
         {
+            var itemData = _itemData[itemIndex];
             var itemPosition = _itemPositions[itemIndex];
             if (!itemPosition.positionSet)
             {
@@ -178,7 +216,7 @@ namespace RecyclableScrollRect
                     {
                         var rightPadding = _padding.right;
                         var leftPadding = _padding.left;
-                        if (_dataSource.IgnoreContentPadding(itemIndex))
+                        if (_dataSource.IgnoreContentPadding(itemData))
                         {
                             rightPadding = 0;
                             leftPadding = 0;
@@ -201,7 +239,7 @@ namespace RecyclableScrollRect
                     {
                         var topPadding = _padding.top;
                         var bottomPadding = _padding.bottom;
-                        if (_dataSource.IgnoreContentPadding(itemIndex))
+                        if (_dataSource.IgnoreContentPadding(itemData))
                         {
                             topPadding = 0;
                             bottomPadding = 0;
@@ -268,7 +306,8 @@ namespace RecyclableScrollRect
                 }
                 else
                 {
-                    newItemSize[_axis] = _rsrDataSource.GetItemSize(itemIndex);
+                    var itemData = _itemData[itemIndex];
+                    newItemSize[_axis] = _rsrDataSource.GetItemSize(itemData);
                 }
 
                 itemPosition.SetSize(newItemSize);
@@ -408,6 +447,10 @@ namespace RecyclableScrollRect
                 if (itemToHide >= 0 && _visibleItems.ContainsKey(itemToHide))
                 {
                     _minExtraVisibleRowColumnInViewPort++;
+                    if (itemToHide == _sectionHeaderPin.index || itemToHide == _rsrHeaderPin.index)
+                    {
+                        continue;
+                    }
                     HideItemAtIndex(itemToHide);
                 }
             }

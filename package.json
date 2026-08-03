@@ -1,16 +1,19 @@
 {
     "name": "com.migzro.recyclablescrollrect",
-    "version": "1.1.3",
+    "version": "1.2",
     "displayName": "Recyclable Scroll Rect",
     "description": "An infinite scroll rect implementation for Unity UI that recycles item views to improve performance with large data sets.",
     "unity": "2019.1",
     "keywords":
     [
-        "ScollRect",
+        "ScrollRect",
         "UnityUI",
         "InfiniteScroll",
         "Recycling",
         "Performance",
+        "Sections",
+        "Headers",
+        "Footers",
         "UI",
         "ListView",
         "TableView",
@@ -38,14 +41,34 @@
             "path": "Samples~/Vertical RSR"
         },
         {
+            "displayName": "Vertical RSR Sections",
+            "description": "Contains a vertical recyclable scroll rect setup that supports sections and headers",
+            "path": "Samples~/Vertical RSR Sections"
+        },
+        {
             "displayName": "Vertical Paging RSR",
             "description": "Contains a vertical paging recyclable scroll rect setup",
             "path": "Samples~/Vertical Paging RSR"
         },
         {
+            "displayName": "Vertical Paging RSR Sections",
+            "description": "Contains a vertical paging recyclable scroll rect setup with sections support",
+            "path": "Samples~/Vertical Paging RSR Sections"
+        },
+        {
+            "displayName": "Images Vertical Grid",
+            "description": "Contains a vertical grid recyclable scroll rect setup that loads images from a URL and uses a placeholder while loading",
+            "path": "Samples~/Images Grid RSR"
+        },
+        {
             "displayName": "Vertical Grid RSR",
             "description": "Contains a vertical grid recyclable scroll rect setup",
             "path": "Samples~/Vertical Grid RSR"
+        },
+        {
+            "displayName": "Vertical Grid RSR Sections",
+            "description": "Contains a vertical grid recyclable scroll rect setup that supports sections and headers",
+            "path": "Samples~/Vertical Grid RSR Sections"
         },
         {
             "displayName": "Vertical Dynamic RSR",
@@ -73,19 +96,14 @@
             "path": "Samples~/Horizontal Dynamic RSR"
         },
         {
-          "displayName": "Vertical RSR (DoTween Scrolling)",
-          "description": "Contains a normal vertical recyclable scroll rect setup that uses DoTween for smooth scrolling",
-          "path": "Samples~/Vertical RSR (DoTween Scrolling)"
+            "displayName": "Vertical RSR (DoTween Scrolling)",
+            "description": "Contains a normal vertical recyclable scroll rect setup that uses DoTween for smooth scrolling",
+            "path": "Samples~/Vertical RSR (DoTween Scrolling)"
         },
         {
-          "displayName": "Vertical RSR (PrimeTween Scrolling)",
-          "description": "Contains a normal vertical recyclable scroll rect setup that uses Prime Tween for smooth scrolling",
-          "path": "Samples~/Vertical RSR (PrimeTween Scrolling)"
-        },
-        {
-          "displayName": "Images Vertical Grid",
-          "description": "Contains a vertical grid recyclable scroll rect setup that loads images from a URL and uses a placeholder while loading",
-          "path": "Samples~/Images Grid RSR"
+            "displayName": "Vertical RSR (PrimeTween Scrolling)",
+            "description": "Contains a normal vertical recyclable scroll rect setup that uses Prime Tween for smooth scrolling",
+            "path": "Samples~/Vertical RSR (PrimeTween Scrolling)"
         }
     ]
 }

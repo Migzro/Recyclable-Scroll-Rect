@@ -1,3 +1,49 @@
+## [1.2.0] - 3-8-2026
+### New Features
+- Added support for sections, headers, and footers with the ability to pin any header with support for header and footer prototypes.
+- Added support for game objects in the scene as prototype items instead of using static items.
+- Added support for Unity's new Input System in the samples.
+- Added new samples to show case how to use sections, headers, and footers.
+
+### Bug Fixes
+- Fixed an issue with ReloadData where currently visible items were not reloading correctly.
+
+### API Changes
+- Added a new interface ISectionsSource which enables sections in addition to the base interface.
+- IDataSource methods now use ItemData instead of itemIndex to support sections and item types.
+```
+public class ItemData
+{
+    public ItemType itemType;
+    public int sectionIndex;
+    public int itemIndex;
+}
+```
+These methods have had their signatures updated to use ItemData instead of itemIndex:
+```
+GameObject GetItemPrototype(ItemData itemData);
+void SetItemData(IItem item, ItemData itemData);
+void ItemCreated(IItem item, GameObject itemGo, ItemData itemData);
+void ItemHidden(IItem item, ItemData itemData);
+void ScrolledToItem(IItem item, ItemData itemData);
+bool IgnoreContentPadding(ItemData itemData);
+float GetItemSize(ItemData itemData);
+void PageWillFocus(IItem item, ItemData itemData, bool isNextPage);
+void PageWillUnFocus(IItem item, ItemData itemData, bool isNextPage);
+```
+- Removed these functions from IDataSource as they are no longer needed:
+```
+int ItemsCount { get; }
+bool IsItemStatic(int itemIndex);
+```
+- Added new functions to IDataSource for sections and item types:
+```
+int GetSectionsCount(int SectionIndex);
+```
+- Added a new function in IGridSource GetHeaderFooterSize which sets the size of the header and footer for a given section that is different from each grid item size.
+```
+float GetHeaderFooterSize(ItemData itemData);
+```
 ## [1.1.3] - 02-6-2026
 ### New Features
 - Added a new sample - Images Grid RSR
