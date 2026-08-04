@@ -11,7 +11,7 @@ namespace RecyclableScrollRect
         [SerializeField] private Vector2 _gridItemSize;
         [SerializeField] private GridLayoutGroup.Axis _gridStartAxis;
         [SerializeField] private GridLayoutGroup.Constraint _gridConstraint;
-        [SerializeField] private int _gridConstraintCount;
+        [SerializeField, Min(1)] private int _gridConstraintCount;
         [SerializeField] private GridLayoutGroup.Corner _gridStartCorner;
         [SerializeField] private int _extraRowsColumnsVisible;
 
@@ -45,11 +45,11 @@ namespace RecyclableScrollRect
 
                 if (vertical)
                 {
-                    _gridConstraintCount = Mathf.FloorToInt(contentSizeWithoutPadding.x / (_gridItemSize.x + _spacing.x));
+                    _gridConstraintCount = Mathf.FloorToInt((contentSizeWithoutPadding.x + _spacing.x) / (_gridItemSize.x + _spacing.x));
                 }
                 else
                 {
-                    _gridConstraintCount = Mathf.FloorToInt(contentSizeWithoutPadding.y / (_gridItemSize.y + _spacing.y));
+                    _gridConstraintCount = Mathf.FloorToInt((contentSizeWithoutPadding.y + _spacing.y) / (_gridItemSize.y + _spacing.y));
                 }
             }
             
