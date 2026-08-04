@@ -56,6 +56,7 @@ namespace RecyclableScrollRect
         private Vector2 _lastContentPosition;
         private MovementType _movementType;
         private MovementType _initialMovementType;
+        private Coroutine _scrollToItemCoroutine;
 
         public bool IsInitialized { get; private set; }
         
@@ -971,8 +972,12 @@ namespace RecyclableScrollRect
                 return;
             }
             
-            StopCoroutine(nameof(ScrollToItemIndexRoutine));
-            StartCoroutine(ScrollToItemIndexRoutine(itemIndex, timeOrSpeed, isSpeed, instant, callEvent, ease));
+            if (_scrollToItemCoroutine != null)
+            {
+                StopCoroutine(_scrollToItemCoroutine);
+            }
+
+            _scrollToItemCoroutine = StartCoroutine(ScrollToItemIndexRoutine(itemIndex, timeOrSpeed, isSpeed, instant, callEvent, ease));
         }
         
         private IEnumerator ScrollToItemIndexRoutine(int itemIndex, float timeOrSpeed, bool isSpeed, bool instant, bool callEvent, object ease)
