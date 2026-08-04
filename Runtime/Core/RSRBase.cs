@@ -76,19 +76,23 @@ namespace RecyclableScrollRect
         private float AverageItemSize
         {
             get {
-                var averageItemSize = 0f;
+                var allItemsSizes = 0f;
                 var totalItems = 0;
                 for (var i = 0; i < _itemsCount; i++)
                 {
                     if (_itemPositions[i].sizeSet)
                     {
-                        averageItemSize += _itemPositions[i].itemSize[_axis];
+                        allItemsSizes += _itemPositions[i].itemSize[_axis];
                         totalItems++;
                     }
                 }
 
-                averageItemSize = averageItemSize / totalItems;
-                return averageItemSize;
+                if (totalItems == 0)
+                {
+                    return Mathf.Max(1f, _viewPortSize[_axis]);
+                }
+
+                return allItemsSizes / totalItems;
             }
         }
 
