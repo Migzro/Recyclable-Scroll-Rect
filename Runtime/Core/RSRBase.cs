@@ -490,9 +490,9 @@ namespace RecyclableScrollRect
         private void InitializeItem(int itemIndex)
         {
             var itemPrototypeItem = _dataSource.GetItemPrototype(_itemData[itemIndex]);
-
             GameObject itemGo;
             IItem itemImpl;
+            
             if (!_scenePrototypeItems[itemIndex])
             {
                 itemGo = Instantiate(itemPrototypeItem, content, false);
@@ -735,8 +735,7 @@ namespace RecyclableScrollRect
         {
             // Get empty item and adjust its position and size, else just create a new an item
             var itemPrototypeName = _prototypeNames[itemIndex];
-
-            if (!_pooledItems.TryGetValue(itemPrototypeName, out var pool) || pool.Count == 0)
+            if (!_pooledItems.TryGetValue(itemPrototypeName, out var pool) || pool.Count == 0 || _scenePrototypeItems[itemIndex])
             {
                 InitializeItem(itemIndex);
             }
@@ -829,13 +828,16 @@ namespace RecyclableScrollRect
             SetVisibilityInHierarchy(visibleItem.transform, false);
             _dataSource.ItemHidden(visibleItem.item, _itemData[itemIndex]);
 
-            var protoName = _prototypeNames[itemIndex];
-            if (!_pooledItems.TryGetValue(protoName, out var pool))
+            if (!_scenePrototypeItems[itemIndex])
             {
-                pool = new List<Item>();
-                _pooledItems[protoName] = pool;
+                var prototypeName = _prototypeNames[itemIndex];
+                if (!_pooledItems.TryGetValue(prototypeName, out var pool))
+                {
+                    pool = new List<Item>();
+                    _pooledItems[prototypeName] = pool;
+                }
+                pool.Add(visibleItem);
             }
-            pool.Add(visibleItem);
             _visibleItems.Remove(itemIndex);
         }
 
