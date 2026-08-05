@@ -1,3 +1,10 @@
+## [1.2.1] - 5-8-2026
+### Bug Fixes
+- Fixed an issue with flexible grid constraint calculation (Issue #6)
+- Fixed an issue with ScrollToIndex coroutine not cancelling properly (Issue #5)
+- Fixed an issue with AverageItemSize calculation resulting in 0 if item sizes are still not set (Issue #5)
+- Fixed an issue where scene prototype items were being pooled (Issue #4)
+
 ## [1.2.0] - 3-8-2026
 ### New Features
 - Added support for sections, headers, and footers with the ability to pin any header with support for header and footer prototypes.
