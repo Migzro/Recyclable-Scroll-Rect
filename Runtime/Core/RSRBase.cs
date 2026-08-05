@@ -28,7 +28,7 @@ namespace RecyclableScrollRect
 
         protected List<ItemData> _itemData;
         protected List<ItemPosition> _itemPositions;
-        private List<bool> _staticItems;
+        private List<bool> _scenePrototypeItems;
         private List<string> _prototypeNames;
         
         protected int _axis;
@@ -180,7 +180,7 @@ namespace RecyclableScrollRect
             {
                 foreach (var visibleItem in _visibleItems)
                 {
-                    if (!_staticItems[visibleItem.Key])
+                    if (!_scenePrototypeItems[visibleItem.Key])
                     {
                         Destroy(visibleItem.Value.transform.gameObject);
                     }
@@ -203,7 +203,7 @@ namespace RecyclableScrollRect
 
             SetSectionsCount();
             CalculateItemsCount();
-            _staticItems = new List<bool>();
+            _scenePrototypeItems = new List<bool>();
             _prototypeNames = new List<string>();
             _itemPositions = new List<ItemPosition>();
             _lastContentPosition = _contentTopLeftCorner;
@@ -377,13 +377,13 @@ namespace RecyclableScrollRect
             {
                 var actualItemIndex = _itemData[i].actualItemIndex;
                 var isCellStatic = actualItemIndex != -1 && _dataSource.GetItemPrototype(_itemData[i]).scene.IsValid();
-                if (i < _staticItems.Count)
+                if (i < _scenePrototypeItems.Count)
                 {
-                    _staticItems[i] = isCellStatic;
+                    _scenePrototypeItems[i] = isCellStatic;
                 }
                 else
                 {
-                    _staticItems.Add(isCellStatic);
+                    _scenePrototypeItems.Add(isCellStatic);
                 }
             }
         }
@@ -397,7 +397,7 @@ namespace RecyclableScrollRect
             for (var i = 0; i < _itemsCount; i++)
             {
                 // no need to check if an item with actual index of -1 is going to be hidden or not, since it's set in SetStaticItems
-                if (_staticItems[i])
+                if (_scenePrototypeItems[i])
                 {
                     RectTransform itemRect;
                     if (_visibleItems.TryGetValue(i, out var visibleItem))
@@ -493,17 +493,14 @@ namespace RecyclableScrollRect
 
             GameObject itemGo;
             IItem itemImpl;
-            if (!_staticItems[itemIndex])
+            if (!_scenePrototypeItems[itemIndex])
             {
                 itemGo = Instantiate(itemPrototypeItem, content, false);
                 itemImpl = itemGo.GetComponent<IItem>();
                 itemImpl.RSRBase = this;
                 itemImpl.ItemIndex = itemIndex;
 
-                var itemData = _itemData[itemIndex];
-                itemGo.name = itemData.itemType == ItemType.Item
-                    ? $"{itemPrototypeItem.name} {itemData.sectionIndex}:{itemData.itemIndex}"
-                    : $"{itemPrototypeItem.name} {itemData.sectionIndex}";
+                SetItemName(itemGo.transform, itemIndex, itemPrototypeItem.name);
             }
             else
             {
@@ -578,7 +575,7 @@ namespace RecyclableScrollRect
             if (_visibleItems.TryGetValue(itemIndex, out var visibleItem))
             {
                 RectTransform[] rects = null;
-                if (!_staticItems[itemIndex])
+                if (!_scenePrototypeItems[itemIndex])
                 {
                     rects = visibleItem.item.ItemsNeededForVisualUpdate;
                 }
@@ -765,12 +762,9 @@ namespace RecyclableScrollRect
                 _visibleItems.Add(itemIndex, item);
                 item.item.ItemIndex = itemIndex;
                 SetItemRectAndData(itemIndex, item);
-                if (!_staticItems[itemIndex])
+                if (!_scenePrototypeItems[itemIndex])
                 {
-                    var itemData = _itemData[itemIndex];
-                    item.transform.name = itemData.itemType == ItemType.Item
-                        ? $"{itemPrototypeName} {itemData.sectionIndex}:{itemData.itemIndex}"
-                        : $"{itemPrototypeName} {itemData.sectionIndex}";
+                    SetItemName(item.transform, itemIndex, itemPrototypeName);
                 }
             }
 
@@ -780,10 +774,18 @@ namespace RecyclableScrollRect
                 _dataSource.LastItemIsVisible();
         }
 
+        private void SetItemName(Transform itemTransform, int itemIndex, string itemPrototypeName)
+        {
+            var itemData = _itemData[itemIndex];
+            itemTransform.name = itemData.itemType == ItemType.Item
+                ? $"{itemPrototypeName} {itemData.sectionIndex}:{itemData.itemIndex}"
+                : $"{itemPrototypeName} {itemData.sectionIndex}";
+        }
+
         private void SetItemRectAndData(int itemIndex, Item item)
         {
             SetNonAxisSize(itemIndex, item.transform);
-            if (_itemData[itemIndex].actualItemIndex != -1 && !_staticItems[itemIndex])
+            if (_itemData[itemIndex].actualItemIndex != -1)
             {
                 _dataSource.SetItemData(item.item, _itemData[itemIndex]);
             }
@@ -868,7 +870,7 @@ namespace RecyclableScrollRect
                 RemoveExtraItems(itemDiff);
                 _itemPositions.RemoveRange(_itemsCount, itemDiff);
                 _prototypeNames.RemoveRange(_itemsCount, itemDiff);
-                _staticItems.RemoveRange(_itemsCount, itemDiff);
+                _scenePrototypeItems.RemoveRange(_itemsCount, itemDiff);
             }
 
             if (reloadAllItems)
