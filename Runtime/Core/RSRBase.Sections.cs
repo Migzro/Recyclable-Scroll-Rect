@@ -42,30 +42,40 @@ namespace RecyclableScrollRect
         {
             if (!headerPin.IsPinned)
                 return;
-            
-            var currentHeaderSection = _itemData[headerPin.index].sectionIndex;
-            if (_visibleItems.TryGetValue(headerPin.index, out var headerItem))
+
+            var headerIndex = headerPin.index;
+            headerPin.index = -1;
+
+            if (headerIndex < _itemData.Count && _visibleItems.TryGetValue(headerIndex, out var headerItem))
             {
+                var currentHeaderSection = _itemData[headerIndex].sectionIndex;
                 headerItem.transform.SetParent(content, true);
-                headerItem.transform.SetSiblingIndex(headerPin.index);
-                RestoreItemPosition(headerPin.index);
+                headerItem.transform.SetSiblingIndex(headerIndex);
+                RestoreItemPosition(headerIndex);
                 // hide the header as if its no longer in the viewport and the section has changed
-                if (headerPin.index < _minExtraVisibleRowColumnInViewPort && _currentSection != currentHeaderSection)
+                if (headerIndex < _minExtraVisibleRowColumnInViewPort && _currentSection != currentHeaderSection)
                 {
-                    HideItemAtIndex(headerPin.index);
+                    HideItemAtIndex(headerIndex);
                 }
-                headerPin.index = -1;
+            }
+
+            if (_headersParent != null)
+            {
                 SetHeadersParentSize();
             }
         }
 
         private void PinHeaders()
         {
-            _currentSection = _itemData[GetEffectiveMinVisibleIndex()].sectionIndex;
-            
             if (_sectionsSource == null)
                 return;
-            
+
+            var minVisibleIndex = GetEffectiveMinVisibleIndex();
+            if (minVisibleIndex < 0 || minVisibleIndex >= _itemData.Count)
+                return;
+
+            _currentSection = _itemData[minVisibleIndex].sectionIndex;
+
             if (_sectionsSource.ScrollRectHasHeader && _sectionsSource.ScrollRectHeaderIsPinned && !_rsrHeaderPin.IsPinned)
                 PinHeader(_rsrHeaderPin, true);
             
@@ -93,11 +103,10 @@ namespace RecyclableScrollRect
 
         private void PinHeader(PinnedHeaderState headerPin, bool isRSRHeader)
         {
-            var currentHeaderIndex = GetHeaderIndexFromSection(_currentSection);
-            if (headerPin.index == currentHeaderIndex)
+            var headerIndex = isRSRHeader ? 0 : GetHeaderIndexFromSection(_currentSection);
+            if (headerIndex < 0 || headerPin.index == headerIndex)
                 return;
 
-            var headerIndex = isRSRHeader ? 0 : GetHeaderIndexFromSection(_currentSection);
             if (!ShouldBePinned(headerIndex, isRSRHeader))
                 return;
 

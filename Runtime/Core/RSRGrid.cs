@@ -340,6 +340,16 @@ namespace RecyclableScrollRect
             base.RemoveExtraItems(itemDiff);
 
             var lastItemFlatIndex = LastLineStartIndex;
+            if (lastItemFlatIndex < _minVisibleRowColumnInViewPort)
+            {
+                _minVisibleRowColumnInViewPort = lastItemFlatIndex;
+            }
+
+            if (lastItemFlatIndex < _minExtraVisibleRowColumnInViewPort)
+            {
+                _minExtraVisibleRowColumnInViewPort = lastItemFlatIndex;
+            }
+
             if (lastItemFlatIndex < _maxVisibleRowColumnInViewPort)
             {
                 _maxVisibleRowColumnInViewPort = lastItemFlatIndex;
