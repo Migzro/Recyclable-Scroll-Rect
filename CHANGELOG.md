@@ -1,3 +1,10 @@
+## [1.2.2] - 27-8-2026
+### Bug Fixes - Courtesy of @BlueVolt1
+- Guard PinHeaders against empty or out of range item data
+- Always clear the pinned header state when unpinning
+- Use the scroll rect header index when checking if it is already pinned
+- Clamp the grid min visible indices when the item count shrinks
+
 ## [1.2.1] - 5-8-2026
 ### Bug Fixes
 - Fixed an issue with flexible grid constraint calculation (Issue #6)
