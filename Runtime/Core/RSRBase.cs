@@ -943,13 +943,14 @@ namespace RecyclableScrollRect
         private void ClampContentPosition()
         {
             SetContentBounds();
-            if (ContentPosition < 0)
+            // compare using the content corners which are positive in both directions, ContentPosition is negative when scrolled horizontally
+            if (_contentTopLeftCorner[_axis] < 0)
             {
                 ContentPosition = 0;
             }
             else if (AllItemsPositionsSet && _contentBottomRightCorner[_axis] >= content.sizeDelta[_axis])
             {
-                ContentPosition = Mathf.Max(0, content.sizeDelta[_axis] - _viewPortSize[_axis]);
+                ContentPosition = Mathf.Max(0, content.sizeDelta[_axis] - _viewPortSize[_axis]) * (vertical ? 1 : -1);
             }
             SetContentBounds();
         }
