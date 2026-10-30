@@ -8,7 +8,7 @@ namespace RecyclableScrollRect
     public class HorizontalCardsRSRDemo : MonoBehaviour, ICarouselDataSource
     {
         [SerializeField] private int _itemsCount;
-        [SerializeField] private RSRCarousel _scrollRect;
+        [SerializeField] private RSRCards _scrollRect;
         [SerializeField] private GameObject[] _prototypeItems;
         [SerializeField] private float _itemSize = 600;
 
@@ -94,9 +94,10 @@ namespace RecyclableScrollRect
 
         public void ItemOffsetChanged(IItem item, ItemData itemData, float offsetFromFocus)
         {
-            // fade items out as they move away before the focused one,
+            // fade items out as they slide away before the focused one, the other modes keep the previous cards in view,
             // this uses the item's CanvasGroup so it conflicts with "Show Using Canvas Group Alpha" on the scroll rect
-            item.CanvasGroup.alpha = offsetFromFocus < 0 ? Mathf.Clamp01(1f + offsetFromFocus) : 1f;
+            var isSlidingAway = _scrollRect.Mode == RSRCards.CardsMode.SlideAway && offsetFromFocus < 0;
+            item.CanvasGroup.alpha = isSlidingAway ? Mathf.Clamp01(1f + offsetFromFocus) : 1f;
         }
     }
 }
