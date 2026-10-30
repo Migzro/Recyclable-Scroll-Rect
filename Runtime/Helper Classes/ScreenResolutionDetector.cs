@@ -23,6 +23,9 @@ namespace RecyclableScrollRect
             }
         }
 
+        // the current instance without creating one, for use during teardown
+        internal static ScreenResolutionDetector ExistingInstance => _Instance;
+
         public event Action OnResolutionChanged;
         private int _lastWidth;
         private int _lastHeight;

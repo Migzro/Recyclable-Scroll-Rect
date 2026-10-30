@@ -42,7 +42,6 @@ namespace RecyclableScrollRect
         private bool _pushToClose;
         private bool _canCallReachedScrollEnd;
         private bool _canCallReachedScrollStart;
-        private bool _isApplicationQuitting;
 
         protected SortedDictionary<int, Item> _visibleItems;
         private Dictionary<string, List<Item>> _pooledItems;
@@ -353,15 +352,11 @@ namespace RecyclableScrollRect
         protected override void OnDestroy()
         {
             base.OnDestroy();
-            if (Application.isPlaying && !_isApplicationQuitting && ScreenResolutionDetector.Instance != null)
+            var screenResolutionDetector = ScreenResolutionDetector.ExistingInstance;
+            if (screenResolutionDetector != null)
             {
-                ScreenResolutionDetector.Instance.OnResolutionChanged -= UpdateContentLayouts;
+                screenResolutionDetector.OnResolutionChanged -= UpdateContentLayouts;
             }
-        }
-
-        private void OnApplicationQuit()
-        {
-            _isApplicationQuitting = true;
         }
 
         private void UpdateContentLayouts()
