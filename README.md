@@ -1,46 +1,61 @@
 # Recyclable Scroll Rect for Unity UI
-A ListView implementation for Unity’s UI that recycles item views, designed to handle large data sets efficiently.
+
+[![openupm](https://img.shields.io/npm/v/com.migzro.recyclablescrollrect?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.migzro.recyclablescrollrect/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
+![Unity 2021.2+](https://img.shields.io/badge/Unity-2021.2%2B-black?logo=unity)
+[![GitHub stars](https://img.shields.io/github/stars/Migzro/Recyclable-Scroll-Rect?style=social)](https://github.com/Migzro/Recyclable-Scroll-Rect)
+
+A virtualized ScrollRect for Unity UI (uGUI) that recycles item views, so even very long lists only keep the visible items alive.
+Lists, grids, sections, paging, looping carousels and card stacks, all driven by one data source interface.
+
+<p align="center">
+  <img src="Images~/Vertical%20Cards%20RSR.gif" alt="Vertical Cards RSR" width="640">
+</p>
 
 ## 📘 Features
-- Seamless infinite (or large-scale) scrolling of UI lists.
-- Supports vertical, horizontal layouts with reverse arrangments.
-- Supports grid layouts with start axes and corners.
-- Supports Sections, Headers, and Footers.
-- Supports pages layouts (like TikTok).
-- Supports carousel mode with optional looping and custom layouts like card stacks.
-- Reuses (recycles) item views instead of creating/destroying repeatedly.
-- Supports multiple gameObject prototypes.
-- Supports unknown item sizes with dynamic layout recalculation.
-- Supports extra visible items for smoother scrolling.
-- Supports reloading of data source.
+**Layouts**
+- Vertical and horizontal lists, with reverse arrangement.
+- Grids with a configurable start axis and start corner.
+- Sections with headers and footers, which can be pinned.
+- Paged scrolling, one item at a time (like TikTok).
+
+**Carousels and cards**
+- Carousel mode that moves the items instead of the content, keeps the focused item centered, and can loop.
+- Card stacks with Slide Away, Tuck Under and Fan modes.
+- A layout hook for building your own carousel layouts and effects.
+
+**Performance**
+- Reuses (recycles) item views instead of creating and destroying them.
+- Extra visible items for smoother fast scrolling.
+
+**Data**
+- Multiple item prototypes in the same list.
+- Items with unknown sizes, measured at runtime.
+- Reload the whole data source or single items.
+- Animated scrolling to any item, with optional DOTween or PrimeTween easing.
 
 ## 🎬 Demo
-### Images Grid RSR
-![Images Grid RSR](Images~/Images%20Grid%20RSR.gif)
-
-### Vertical RSR
-![Vertical RSR](Images~/Vertical%20RSR.gif)
-
-### Horizontal RSR
-![Horizontal RSR](Images~/Horizontal%20RSR.gif)
-
-### Vertical RSR With Sections
-![Vertical RSR With Sections](Images~/Vertical%20RSR%20Sections.gif)
-
-### Grid RSR
-![Grid RSR](Images~/Grid%20RSR.gif)
-
-### Paged RSR
-![Paged RSR](Images~/Paged%20RSR.gif)
-
-### Vertical Dynamic RSR with Data Source Reloading
-![Vertical Dynamic RSR](Images~/Vertical%20Dynamic%20RSR.gif)
-
-### Vertical Carousel RSR
-![Vertical Carousel RSR](Images~/Vertical%20Carousel%20RSR.gif)
-
-### Vertical Cards RSR
-![Vertical Cards RSR](Images~/Vertical%20Cards%20RSR.gif)
+<table>
+  <tr>
+    <td align="center"><b>Vertical Carousel RSR</b><br><img src="Images~/Vertical%20Carousel%20RSR.gif" alt="Vertical Carousel RSR"></td>
+    <td align="center"><b>Vertical Cards RSR</b><br><img src="Images~/Vertical%20Cards%20RSR.gif" alt="Vertical Cards RSR"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Vertical RSR</b><br><img src="Images~/Vertical%20RSR.gif" alt="Vertical RSR"></td>
+    <td align="center"><b>Horizontal RSR</b><br><img src="Images~/Horizontal%20RSR.gif" alt="Horizontal RSR"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Vertical RSR With Sections</b><br><img src="Images~/Vertical%20RSR%20Sections.gif" alt="Vertical RSR With Sections"></td>
+    <td align="center"><b>Grid RSR</b><br><img src="Images~/Grid%20RSR.gif" alt="Grid RSR"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Paged RSR</b><br><img src="Images~/Paged%20RSR.gif" alt="Paged RSR"></td>
+    <td align="center"><b>Vertical Dynamic RSR with Data Source Reloading</b><br><img src="Images~/Vertical%20Dynamic%20RSR.gif" alt="Vertical Dynamic RSR"></td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2"><b>Images Grid RSR</b><br><img src="Images~/Images%20Grid%20RSR.gif" alt="Images Grid RSR"></td>
+  </tr>
+</table>
 
 ## 🚀 Installation
 ### 1 - OpenUPM
@@ -86,92 +101,55 @@ After installing via Package Manager, go to `Window > Package Manager`, select `
 ![Unity Package Manager](Images~/Unity%20Package%20Manager%20Samples.png)
 
 ### Importing from Unity Package
-Open the sample scenes located in `Assets/Recyclable Scroll Rect/Samples` to see examples of vertical, horizontal, grid, and paged layouts.
+Open the sample scenes located in `Assets/Recyclable Scroll Rect/Samples` to see examples of vertical, horizontal, grid, paged, carousel and card stack layouts.
 
-## ⚙️ Usage
-1. Add the required `RSR` component to a `ScrollRect` GameObject.
-2. Implement the `IDataSource` interface in a MonoBehaviour script to provide data and item views.
+## ⚙️ Quick Start
+1. Add an `RSR` component to your scroll view in place of Unity's `ScrollRect`, and assign its Viewport and Content.
+2. Make an item prefab with a component that implements `IItem`, or add `BaseItem` to it.
+3. Implement `IRSRDataSource` and call `Initialize`:
+
 ```csharp
-public class VerticalRSRDemo : MonoBehaviour, IRSRDataSource
+public class MyList : MonoBehaviour, IRSRDataSource
 {
-    [SerializeField] private int _itemsCount;
     [SerializeField] private RSR _scrollRect;
     [SerializeField] private GameObject[] _prototypeItems;
-    
-    private List<string> _dataSource;
 
-    public bool IsItemSizeKnown => true;
+    private readonly List<string> _items = new List<string>();
+
     public GameObject[] PrototypeItems => _prototypeItems;
+    public bool IsItemSizeKnown => true;
 
     private void Start()
     {
-        _dataSource = new List<string>();
-        for (var i = 0; i < _itemsCount; i++)
-            _dataSource.Add(i.ToString());
+        for (var i = 0; i < 10000; i++)
+            _items.Add($"Item {i}");
         _scrollRect.Initialize(this);
     }
-    
-    public int GetItemsCount(int sectionIndex)
-    {
-        return _itemsCount;
-    }
 
-    public float GetItemSize(ItemData itemData)
-    {
-        return 40.22f;
-    }
+    public int GetItemsCount(int sectionIndex) => _items.Count;
+    public float GetItemSize(ItemData itemData) => 100f;
+    public GameObject GetItemPrototype(ItemData itemData) => _prototypeItems[0];
 
+    // called whenever an item view is shown or recycled, fill it with the data at this index
     public void SetItemData(IItem item, ItemData itemData)
     {
-        (item as DemoItemPrototype)?.Initialize(_dataSource[itemData.itemIndex]);
+        (item as DemoItemPrototype)?.Initialize(_items[itemData.itemIndex]);
     }
 
-    public void ItemHidden(IItem item, ItemData itemData)
-    {
-    }
-
-    public GameObject GetItemPrototype(ItemData itemData)
-    {
-        if (itemData.itemIndex % 2 == 0)
-            return _prototypeItems[0];
-        return _prototypeItems[1];
-    }
-
-    public void ItemCreated(IItem item, GameObject itemGo, ItemData itemData)
-    {
-
-    }
-
-    public void ScrolledToItem(IItem item, ItemData itemData)
-    {
-    }
-
-    public bool IgnoreContentPadding(ItemData itemData)
-    {
-        return false;
-    }
-
-    public void PullToRefresh()
-    {
-    }
-
-    public void PushToClose()
-    {
-    }
-
-    public void ReachedScrollStart()
-    {
-    }
-
-    public void ReachedScrollEnd()
-    {
-    }
-
-    public void LastItemIsVisible()
-    {
-    }
+    // optional callbacks, leave them empty if you don't need them
+    public void ItemCreated(IItem item, GameObject itemGo, ItemData itemData) { }
+    public void ItemHidden(IItem item, ItemData itemData) { }
+    public void ScrolledToItem(IItem item, ItemData itemData) { }
+    public bool IgnoreContentPadding(ItemData itemData) => false;
+    public void PullToRefresh() { }
+    public void PushToClose() { }
+    public void ReachedScrollStart() { }
+    public void ReachedScrollEnd() { }
+    public void LastItemIsVisible() { }
 }
 ```
+
+Use `RSRGrid` with `IGridDataSource` for grids, `RSRPages` with `IPageDataSource` for paging, and add `ISectionsSource` for sections, headers and footers. The samples cover each of them.
 
 ### Carousel mode
 Add `RSRCarousel` instead of `RSR` and implement `IPageDataSource`, or `ICarouselDataSource` to get each item's offset from the center for effects like scale or fade. The carousel keeps the content still and moves the items, the focused item is centered, and the **Loop** toggle wraps from the last item back to the first. Headers and footers are not supported in carousel mode.
@@ -189,6 +167,7 @@ This component **reuses** item views to keep performance smooth and memory low.
 - Inventories
 - Infinite scrolling feeds
 - Thumbnail grids
+- Carousels and swipeable card stacks
 
 ## 📝 Release Notes
 See `CHANGELOG.md` for details.
