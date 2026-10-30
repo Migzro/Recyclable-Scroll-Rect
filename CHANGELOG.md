@@ -1,3 +1,17 @@
+## [Unreleased]
+### New Features
+- Added carousel mode with RSRCarousel, which keeps the content still and moves the items instead, with the focused item centered.
+- Added an optional loop for carousels, which wraps from the last item back to the first.
+- Added a layout hook (LayoutItem) and ICarouselDataSource.ItemOffsetChanged to build custom carousel layouts and effects.
+- Added Horizontal Carousel RSR and Horizontal Cards RSR samples.
+
+### Bug Fixes
+- Fixed an issue where ReloadData reset horizontal scroll rects back to the start.
+
+### API Changes
+- RSRCarousel ignores headers and footers from ISectionsSource and logs a warning.
+- New overridable members: RSRBase.ScrollPosition, RSRBase.GetScrollToItemTarget, RSRBase.ClampContentPosition, RSRBase.HandlesScrollInLateUpdate, RSR.StartPadding and RSR.EndPadding, RSRPages.IsNextPage. RSRPages._currentPage is now protected.
+
 ## [1.3.0] - 30-10-2026
 ### Bug Fixes
 - Fixed an issue where starting a scroll re-ran the previous scroll's finished callback with a canceled state

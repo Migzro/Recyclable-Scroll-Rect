@@ -7,6 +7,7 @@ A ListView implementation for Unity’s UI that recycles item views, designed to
 - Supports grid layouts with start axes and corners.
 - Supports Sections, Headers, and Footers.
 - Supports pages layouts (like TikTok).
+- Supports carousel mode with optional looping and custom layouts like card stacks.
 - Reuses (recycles) item views instead of creating/destroying repeatedly.
 - Supports multiple gameObject prototypes.
 - Supports unknown item sizes with dynamic layout recalculation.
@@ -166,9 +167,10 @@ public class VerticalRSRDemo : MonoBehaviour, IRSRDataSource
 }
 ```
 
-## 🔮 Coming Soon
-Here’s what’s planned for upcoming releases of **Recyclable Scroll Rect**:
-- Support for carousel mode
+### Carousel mode
+Add `RSRCarousel` instead of `RSR` and implement `IPageDataSource`, or `ICarouselDataSource` to get each item's offset from the center for effects like scale or fade. The carousel keeps the content still and moves the items, the focused item is centered, and the **Loop** toggle wraps from the last item back to the first. Headers and footers are not supported in carousel mode.
+
+For other layouts, derive from `RSRCarousel` and override `LayoutItem`, the **Horizontal Cards RSR** sample uses this for a card stack.
 
 ## 🧪 Why Use This?
 For large lists or grids (hundreds/thousands of items), regular UI instantiation is heavy.  

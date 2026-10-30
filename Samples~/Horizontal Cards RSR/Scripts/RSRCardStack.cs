@@ -10,10 +10,9 @@ namespace RecyclableScrollRect
     /// </summary>
     public class RSRCardStack : RSRCarousel
     {
-        // how much smaller each card in the stack gets, and how far it peeks out from under the card in front of it
-        protected virtual float DepthScaleStep => 0.05f;
-        protected virtual float DepthPeek => 24f;
-        protected virtual float MaxDepth => 3f;
+        [SerializeField, Tooltip("How much smaller each card in the stack gets")] private float _depthScaleStep = 0.05f;
+        [SerializeField, Tooltip("How far each card peeks out from under the card in front of it")] private float _depthPeek = 24f;
+        [SerializeField, Tooltip("Cards deeper than this sit at the same depth")] private float _maxDepth = 3f;
 
         protected override void LayoutItem(int itemIndex, RectTransform itemRect, float offsetFromFocus)
         {
@@ -33,11 +32,11 @@ namespace RecyclableScrollRect
 
             // scaling happens around the top left pivot, shift by half the lost size to keep the item centered,
             // then push it along the cross axis so its edge peeks out from under the item in front of it
-            var depth = Mathf.Min(offsetFromFocus, MaxDepth);
-            var scale = 1f - depth * DepthScaleStep;
+            var depth = Mathf.Min(offsetFromFocus, _maxDepth);
+            var scale = 1f - depth * _depthScaleStep;
             var size = itemRect.rect.size;
             position += new Vector2(size.x, -size.y) * ((1f - scale) / 2f);
-            position[1 - _axis] += depth * DepthPeek * (vertical ? 1 : -1);
+            position[1 - _axis] += depth * _depthPeek * (vertical ? 1 : -1);
 
             itemRect.localScale = new Vector3(scale, scale, 1f);
             itemRect.anchoredPosition = position;
