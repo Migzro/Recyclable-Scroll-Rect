@@ -1,21 +1,14 @@
 ## [2.0.1] - 30-10-2026
-### Bug Fixes
-- Set the minimum Unity version to 2021.2, the first version that supports the C# features the package uses.
-
-### Samples
-- The Vertical Carousel RSR sample now loops.
-- Added the Vertical Carousel RSR and Vertical Cards RSR GIFs to the README.
-
-## [2.0.0] - 30-10-2026
 ### New Features
 - Added carousel mode with RSRCarousel, which keeps the content still and moves the items instead, with the focused item centered.
 - Added a loop for carousels, on by default, which wraps from the last item back to the first.
 - Added a layout hook (LayoutItem) and ICarouselDataSource.ItemOffsetChanged to build custom carousel layouts and effects.
 - Added RSRCards, a carousel where the cards overlap around the focused card, with three modes: Slide Away, where swiped cards leave the screen, Tuck Under, where they slide out and tuck back under the stack, and Fan, where the cards spread out on both sides of the focused card with each one peeking out. Fan can fill the viewport with cards and pile the cards that don't fit at its edges. The inspector only shows the settings of the selected mode.
-- Added Horizontal Carousel RSR, Vertical Carousel RSR, Horizontal Cards RSR and Vertical Cards RSR samples.
+- Added Horizontal Carousel RSR, Vertical Carousel RSR, Horizontal Cards RSR and Vertical Cards RSR samples, with Vertical Carousel RSR and Vertical Cards RSR demos in the README.
 
 ### Bug Fixes
 - Fixed an issue where ReloadData reset horizontal scroll rects back to the start.
+- Set the minimum Unity version to 2021.2, the first version that supports the C# features the package uses.
 
 ### API Changes
 - RSRCarousel ignores headers and footers from ISectionsSource and logs a warning.
