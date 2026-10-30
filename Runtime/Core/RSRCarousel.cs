@@ -447,9 +447,31 @@ namespace RecyclableScrollRect
             {
                 return 0;
             }
-
-            // shortcut: uses the size known so far, with unknown item sizes the last item may not center exactly until it's measured, revisit when adding dynamic sizes support
             return Mathf.Max(0, (viewport.rect.size[_axis] - _itemPositions[itemIndex].itemSize[_axis]) / 2f);
+        }
+
+        protected override void SetItemSize(int itemIndex, RectTransform rect = null)
+        {
+            var oldSize = GetItemAxisSize(itemIndex);
+            base.SetItemSize(itemIndex, rect);
+
+            // with unknown item sizes, the insets of the first and last items are only right once those items are measured
+            var isEdgeItem = itemIndex == 0 || itemIndex == _itemsCount - 1;
+            if (isEdgeItem && !_isLooping && !Mathf.Approximately(oldSize, GetItemAxisSize(itemIndex)))
+            {
+                CalculateContentSize();
+            }
+        }
+
+        protected override void RecalculateTrailingItems(int itemIndex)
+        {
+            base.RecalculateTrailingItems(itemIndex);
+
+            // an item changed size, keep the focused page centered unless the user or an animation is moving the items
+            if (!_isAnimating && !_isDraggingItems && _currentPage < _itemsCount && _itemPositions[_currentPage].positionSet)
+            {
+                ContentPosition = GetScrollToItemTarget(_currentPage);
+            }
         }
 
         public override void OnBeginDrag(PointerEventData eventData)
