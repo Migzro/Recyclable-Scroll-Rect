@@ -101,6 +101,11 @@
             "path": "Samples~/Horizontal Carousel RSR"
         },
         {
+            "displayName": "Vertical Carousel RSR",
+            "description": "Contains a vertical carousel that moves its items instead of the content and fades them by their distance from the center",
+            "path": "Samples~/Vertical Carousel RSR"
+        },
+        {
             "displayName": "Horizontal Cards RSR",
             "description": "Contains a horizontal card stack built on the carousel's layout hook, where the next cards wait stacked behind the focused one",
             "path": "Samples~/Horizontal Cards RSR"
