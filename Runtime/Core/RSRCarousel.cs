@@ -11,6 +11,7 @@ namespace RecyclableScrollRect
     /// </summary>
     public class RSRCarousel : RSRPages
     {
+        private ICarouselDataSource _carouselDataSource;
         private Vector2 _scrollPosition;
         private bool _isDraggingItems;
         private Vector2 _dragStartCursor;
@@ -33,7 +34,7 @@ namespace RecyclableScrollRect
 
                 foreach (var visibleItem in _visibleItems)
                 {
-                    LayoutItem(visibleItem.Key, visibleItem.Value.transform);
+                    UpdateItemLayout(visibleItem.Key, visibleItem.Value);
                 }
             }
         }
@@ -45,6 +46,7 @@ namespace RecyclableScrollRect
 
         protected override void Initialize()
         {
+            _carouselDataSource = _dataSource as ICarouselDataSource;
             if (_sectionsSource != null && !(_sectionsSource is ItemsOnlySectionsSource))
             {
                 if (HasHeadersOrFooters(_sectionsSource))
@@ -63,11 +65,13 @@ namespace RecyclableScrollRect
         }
 
         /// <summary>
-        /// Places a visible item relative to the current scroll position, as if the content had moved
+        /// Places a visible item, by default in a row relative to the current scroll position as if the content had moved.
+        /// Override it for other layouts such as a card stack
         /// </summary>
         /// <param name="itemIndex">index of the item to place</param>
         /// <param name="itemRect">RectTransform of the item</param>
-        protected virtual void LayoutItem(int itemIndex, RectTransform itemRect)
+        /// <param name="offsetFromFocus">how many items away from the center of the viewport the item is, 0 is centered, negative is before it, positive is after it</param>
+        protected virtual void LayoutItem(int itemIndex, RectTransform itemRect, float offsetFromFocus)
         {
             itemRect.anchoredPosition = _itemPositions[itemIndex].topLeftPosition + _scrollPosition;
         }
@@ -75,10 +79,30 @@ namespace RecyclableScrollRect
         protected override void SetItemPosition(int itemIndex, RectTransform rect = null)
         {
             base.SetItemPosition(itemIndex, rect);
-            if (rect != null)
+            if (rect != null && _visibleItems.TryGetValue(itemIndex, out var visibleItem))
             {
-                LayoutItem(itemIndex, rect);
+                UpdateItemLayout(itemIndex, visibleItem);
             }
+        }
+
+        private void UpdateItemLayout(int itemIndex, Item item)
+        {
+            var offsetFromFocus = GetOffsetFromFocus(itemIndex);
+            LayoutItem(itemIndex, item.transform, offsetFromFocus);
+            _carouselDataSource?.ItemOffsetChanged(item.item, _itemData[itemIndex], offsetFromFocus);
+        }
+
+        /// <summary>
+        /// The distance between the item's center and the viewport's center, in items
+        /// </summary>
+        protected float GetOffsetFromFocus(int itemIndex)
+        {
+            var itemPosition = _itemPositions[itemIndex];
+            var itemSize = itemPosition.itemSize[_axis];
+            var itemCenter = itemPosition.absTopLeftPosition[_axis] + itemSize / 2f;
+            var viewportCenter = _scrollPosition[_axis] * (vertical ? 1 : -1) + viewport.rect.size[_axis] / 2f;
+            var itemStep = itemSize + _spacing[_axis];
+            return itemStep > 0 ? (itemCenter - viewportCenter) / itemStep : 0;
         }
 
         protected override float GetScrollToItemOffset(int itemIndex)
