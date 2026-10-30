@@ -18,6 +18,12 @@ namespace RecyclableScrollRect
         protected override bool ReachedMinRowColumnInViewPort => _minVisibleRowColumnInViewPort == 0;
         protected override bool ReachedMaxRowColumnInViewPort => _maxVisibleRowColumnInViewPort == _itemsCount - 1;
         
+        /// <summary>
+        /// Padding before the first item and after the last item along the scrolling axis
+        /// </summary>
+        protected virtual float StartPadding => vertical ? _padding.top : _padding.left;
+        protected virtual float EndPadding => vertical ? _padding.bottom : _padding.right;
+
         protected override void Initialize()
         {
             _rsrDataSource = (IRSRDataSource)_dataSource;
@@ -109,14 +115,13 @@ namespace RecyclableScrollRect
             }
             contentSizeDelta[_axis] += _spacing[_axis] * (Mathf.Max(0, _itemsCount - 1));
 
+            contentSizeDelta[_axis] += StartPadding + EndPadding;
             if (vertical)
             {
-                contentSizeDelta.y += _padding.top + _padding.bottom;
                 _layoutElement.preferredHeight = contentSizeDelta.y;
             }
             else
             {
-                contentSizeDelta.x += _padding.right + _padding.left;
                 _layoutElement.preferredWidth = contentSizeDelta.x;
             }
 
@@ -183,14 +188,7 @@ namespace RecyclableScrollRect
                 // figure out where the prev item position was
                 if (itemIndex == 0)
                 {
-                    if (vertical)
-                    {
-                        newItemPosition.y = -_padding.top;
-                    }
-                    else
-                    {
-                        newItemPosition.x = _padding.left;
-                    }
+                    newItemPosition[_axis] = vertical ? -StartPadding : StartPadding;
                 }
                 else
                 {
