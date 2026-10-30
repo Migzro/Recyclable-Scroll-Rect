@@ -1,3 +1,11 @@
+## [2.0.1] - 30-10-2026
+### Bug Fixes
+- Set the minimum Unity version to 2021.2, the first version that supports the C# features the package uses.
+
+### Samples
+- The Vertical Carousel RSR sample now loops.
+- Added the Vertical Carousel RSR and Vertical Cards RSR GIFs to the README.
+
 ## [2.0.0] - 30-10-2026
 ### New Features
 - Added carousel mode with RSRCarousel, which keeps the content still and moves the items instead, with the focused item centered.
