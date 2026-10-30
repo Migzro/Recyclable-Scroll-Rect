@@ -60,14 +60,28 @@ namespace RecyclableScrollRect
         
         internal float ContentPosition
         {
-            get => content.anchoredPosition[_axis];
+            get => ScrollPosition[_axis];
 
             set
             {
-                var currentAnchoredPosition = content.anchoredPosition;
-                currentAnchoredPosition[_axis] = value;
-                content.anchoredPosition = currentAnchoredPosition;
-                m_ContentStartPosition = currentAnchoredPosition;
+                var currentScrollPosition = ScrollPosition;
+                currentScrollPosition[_axis] = value;
+                ScrollPosition = currentScrollPosition;
+            }
+        }
+
+        /// <summary>
+        /// The scroll position that drives which items are shown and hidden, by default it's the content anchored position
+        /// can be overridden to scroll without moving the content, e.g. by moving the items instead
+        /// </summary>
+        protected virtual Vector2 ScrollPosition
+        {
+            get => content.anchoredPosition;
+
+            set
+            {
+                content.anchoredPosition = value;
+                m_ContentStartPosition = value;
             }
         }
         
@@ -620,7 +634,7 @@ namespace RecyclableScrollRect
                 return;
             if (_visibleItems.Count <= 0)
                 return;
-            var currentContentAnchoredPosition = content.anchoredPosition * (vertical ? 1f : -1f);
+            var currentContentAnchoredPosition = ScrollPosition * (vertical ? 1f : -1f);
             if (Mathf.Approximately(currentContentAnchoredPosition[_axis], _lastContentPosition[_axis]) && !_needsClearance)
                 return;
             
@@ -847,7 +861,7 @@ namespace RecyclableScrollRect
         protected void SetContentBounds()
         {
             _viewPortSize = viewport.rect.size;
-            _contentTopLeftCorner = content.anchoredPosition * (vertical ? 1f : -1f);
+            _contentTopLeftCorner = ScrollPosition * (vertical ? 1f : -1f);
             _contentBottomRightCorner[1 - _axis] = _contentTopLeftCorner[1 - _axis];
             _contentBottomRightCorner[_axis] = _contentTopLeftCorner[_axis] + _viewPortSize[_axis];
         }

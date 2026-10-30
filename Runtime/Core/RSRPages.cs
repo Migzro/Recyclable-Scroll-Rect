@@ -16,7 +16,7 @@ namespace RecyclableScrollRect
 
         private IPageDataSource _pageDataSource;
         private List<int> _pageMap;
-        private int _currentPage;
+        protected int _currentPage;
         private bool _isDragging;
         private int _pendingPageAfterScroll = -1;
         private bool _focusPageAfterReload;
@@ -178,7 +178,7 @@ namespace RecyclableScrollRect
 
             base.OnBeginDrag(eventData);
             _isDragging = true;
-            _dragStartingPosition = content.anchoredPosition * (vertical ? 1 : -1);
+            _dragStartingPosition = ScrollPosition * (vertical ? 1 : -1);
         }
         
         public override void OnEndDrag(PointerEventData eventData)
@@ -196,7 +196,7 @@ namespace RecyclableScrollRect
             if (TotalPages == 0)
                 return _currentPage;
 
-            var currentContentPosition = content.anchoredPosition * (vertical ? 1 : -1);
+            var currentContentPosition = ScrollPosition * (vertical ? 1 : -1);
             var delta = currentContentPosition[_axis] - _dragStartingPosition[_axis];
             var distance = Mathf.Abs(delta);
 
