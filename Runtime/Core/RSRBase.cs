@@ -151,7 +151,8 @@ namespace RecyclableScrollRect
                 throw new ArgumentNullException(nameof(_dataSource.PrototypeItems), "RSR, No prototype item defined IDataSource");
             }
             
-            // Register event delegate for resolution change
+            // Register event delegate for resolution change, removing first so re-initializing doesn't subscribe twice
+            ScreenResolutionDetector.Instance.OnResolutionChanged -= UpdateContentLayouts;
             ScreenResolutionDetector.Instance.OnResolutionChanged += UpdateContentLayouts;
 
             // add a LayoutElement if not present to set the content size in case another element is controlling it 
