@@ -814,7 +814,11 @@ namespace RecyclableScrollRect
         /// <param name="itemIndex">itemIndex which will be hidden</param>
         protected void HideItemAtIndex(int itemIndex)
         {
-            _visibleItems.TryGetValue(itemIndex, out var visibleItem);
+            if (!_visibleItems.TryGetValue(itemIndex, out var visibleItem))
+            {
+                return;
+            }
+
             if (_showUsingCanvasGroupAlpha)
             {
                 var canvasGroup = visibleItem.item.CanvasGroup;
