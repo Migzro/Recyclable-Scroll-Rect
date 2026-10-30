@@ -1,5 +1,7 @@
 // Copyright (c) 2026 Maged Farid
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -11,11 +13,20 @@ namespace RecyclableScrollRect
     /// </summary>
     public class RSRCarousel : RSRPages
     {
+        [SerializeField] private bool _loop;
+
         private ICarouselDataSource _carouselDataSource;
         private Vector2 _scrollPosition;
         private bool _isDraggingItems;
         private Vector2 _dragStartCursor;
         private Vector2 _dragStartScrollPosition;
+
+        private bool _isLooping;
+        private float _loopLength;
+        private readonly HashSet<int> _loopVisibleIndices = new HashSet<int>();
+        private readonly List<int> _itemsToHide = new List<int>();
+        private readonly List<int> _siblingOrder = new List<int>();
+        private Comparison<int> _compareSiblingOrder;
 
         /// <summary>
         /// Stores the scroll position instead of moving the content, and moves the visible items to match it
@@ -32,17 +43,21 @@ namespace RecyclableScrollRect
                     return;
                 }
 
-                foreach (var visibleItem in _visibleItems)
+                if (_isLooping && IsInitialized)
                 {
-                    UpdateItemLayout(visibleItem.Key, visibleItem.Value);
+                    RefreshLoopVisibility();
                 }
+                LayoutVisibleItems();
             }
         }
 
         // the first and last items are inset by half the free viewport space so they can be centered,
-        // which means the padding along the scrolling axis is not used
-        protected override float StartPadding => CenteringInset(0);
-        protected override float EndPadding => CenteringInset(_itemsCount - 1);
+        // which means the padding along the scrolling axis is not used. A loop has no first or last item so it needs no inset
+        protected override float StartPadding => _isLooping ? 0 : CenteringInset(0);
+        protected override float EndPadding => _isLooping ? 0 : CenteringInset(_itemsCount - 1);
+
+        // a loop has no start or end, so the visible items are refreshed whenever the scroll position changes instead
+        protected override bool HandlesScrollInLateUpdate => !_isLooping;
 
         protected override void Initialize()
         {
@@ -62,10 +77,279 @@ namespace RecyclableScrollRect
             var contentPosition = content.anchoredPosition;
             contentPosition[_axis] = 0;
             content.anchoredPosition = contentPosition;
+
+            // a loop has no inset, so the current page has to be scrolled to the center
+            if (_isLooping)
+            {
+                ContentPosition = GetScrollToItemTarget(_currentPage);
+            }
+        }
+
+        protected override void BuildItemsMap()
+        {
+            base.BuildItemsMap();
+
+            var wasLooping = _isLooping;
+            UpdateLoopState();
+
+            // the item positions depend on the padding, which changes when looping is turned on or off
+            if (wasLooping != _isLooping && _itemPositions != null)
+            {
+                foreach (var itemPosition in _itemPositions)
+                {
+                    itemPosition.ResetAllFlags();
+                }
+            }
         }
 
         /// <summary>
-        /// Places a visible item, by default in a row relative to the current scroll position as if the content had moved.
+        /// Looping needs every item size up front to know the loop length, and enough items that none has to be shown twice at once
+        /// </summary>
+        private void UpdateLoopState()
+        {
+            _isLooping = false;
+            if (!_loop || _itemsCount == 0)
+            {
+                return;
+            }
+
+            if (!IsItemSizeKnown)
+            {
+                Debug.LogWarning("RSRCarousel can only loop when the item sizes are known, looping is disabled");
+                return;
+            }
+
+            var rsrDataSource = (IRSRDataSource)_dataSource;
+            var minItemStep = float.MaxValue;
+            _loopLength = 0;
+            for (var i = 0; i < _itemsCount; i++)
+            {
+                var itemStep = rsrDataSource.GetItemSize(_itemData[i]) + _spacing[_axis];
+                _loopLength += itemStep;
+                minItemStep = Mathf.Min(minItemStep, itemStep);
+            }
+
+            var maxVisibleItems = minItemStep > 0 ? Mathf.CeilToInt(viewport.rect.size[_axis] / minItemStep) + 1 + 2 * _extraItemsVisible : int.MaxValue;
+            if (_itemsCount < maxVisibleItems)
+            {
+                Debug.LogWarning($"RSRCarousel needs at least {maxVisibleItems} items to loop with the current viewport size and extra items visible, looping is disabled");
+                return;
+            }
+
+            _isLooping = true;
+        }
+
+        protected override void InitializeItems(int startIndex = 0)
+        {
+            if (_isLooping)
+            {
+                RefreshLoopVisibility();
+                return;
+            }
+            base.InitializeItems(startIndex);
+        }
+
+        protected override void RefreshAfterReload()
+        {
+            base.RefreshAfterReload();
+            if (_isLooping)
+            {
+                RefreshLoopVisibility();
+            }
+            LayoutVisibleItems();
+        }
+
+        /// <summary>
+        /// Shows the items that overlap the viewport, plus the extra items on both sides, and hides the rest.
+        /// The viewport is wrapped into one loop length and the walk wraps from the last item back to the first
+        /// </summary>
+        private void RefreshLoopVisibility()
+        {
+            var viewportStart = Mathf.Repeat(_scrollPosition[_axis] * (vertical ? 1 : -1), _loopLength);
+            var viewportEnd = viewportStart + viewport.rect.size[_axis];
+
+            // shortcut: relies on every item position being set, an item size change from ReloadItem is only picked up by the loop after ReloadData
+            var index = FindFirstItemEndingAfter(viewportStart);
+            var wrapOffset = 0f;
+            if (index == _itemsCount)
+            {
+                index = 0;
+                wrapOffset = _loopLength;
+            }
+            var firstIndex = index;
+
+            _loopVisibleIndices.Clear();
+            while (_loopVisibleIndices.Count < _itemsCount && _itemPositions[index].absTopLeftPosition[_axis] + wrapOffset < viewportEnd)
+            {
+                _loopVisibleIndices.Add(index);
+                index++;
+                if (index == _itemsCount)
+                {
+                    index = 0;
+                    wrapOffset += _loopLength;
+                }
+            }
+
+            for (var i = 1; i <= _extraItemsVisible; i++)
+            {
+                _loopVisibleIndices.Add(WrapIndex(firstIndex - i));
+                _loopVisibleIndices.Add(WrapIndex(index + i - 1));
+            }
+
+            _itemsToHide.Clear();
+            foreach (var visibleItem in _visibleItems)
+            {
+                if (!_loopVisibleIndices.Contains(visibleItem.Key))
+                {
+                    _itemsToHide.Add(visibleItem.Key);
+                }
+            }
+
+            foreach (var itemIndex in _itemsToHide)
+            {
+                HideItemAtIndex(itemIndex);
+            }
+
+            foreach (var itemIndex in _loopVisibleIndices)
+            {
+                if (!_visibleItems.ContainsKey(itemIndex))
+                {
+                    ShowItemAtIndex(itemIndex);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Binary search for the first item whose end is after the position, returns the items count if there is none
+        /// </summary>
+        private int FindFirstItemEndingAfter(float position)
+        {
+            var low = 0;
+            var high = _itemsCount;
+            while (low < high)
+            {
+                var mid = (low + high) / 2;
+                if (_itemPositions[mid].absBottomRightPosition[_axis] > position)
+                {
+                    high = mid;
+                }
+                else
+                {
+                    low = mid + 1;
+                }
+            }
+            return low;
+        }
+
+        private int WrapIndex(int itemIndex)
+        {
+            return (itemIndex % _itemsCount + _itemsCount) % _itemsCount;
+        }
+
+        // when looping, the visible items are refreshed from the scroll position directly, so the linear show and hide steps are skipped
+        protected override void HideItemsAtTopLeft()
+        {
+            if (!_isLooping)
+            {
+                base.HideItemsAtTopLeft();
+            }
+        }
+
+        protected override void ShowItemsAtBottomRight()
+        {
+            if (!_isLooping)
+            {
+                base.ShowItemsAtBottomRight();
+            }
+        }
+
+        protected override void HideItemsAtBottomRight()
+        {
+            if (!_isLooping)
+            {
+                base.HideItemsAtBottomRight();
+            }
+        }
+
+        protected override void ShowItemsAtTopLeft()
+        {
+            if (!_isLooping)
+            {
+                base.ShowItemsAtTopLeft();
+            }
+        }
+
+        protected override bool IsLastRowColumn(int itemIndex)
+        {
+            return !_isLooping && base.IsLastRowColumn(itemIndex);
+        }
+
+        protected override void ClampContentPosition()
+        {
+            if (!_isLooping)
+            {
+                base.ClampContentPosition();
+            }
+        }
+
+        protected override float GetScrollToItemTarget(int itemIndex)
+        {
+            if (!_isLooping)
+            {
+                return base.GetScrollToItemTarget(itemIndex);
+            }
+
+            var sign = vertical ? 1 : -1;
+            var target = _itemPositions[itemIndex].absTopLeftPosition[_axis] - GetScrollToItemOffset(itemIndex);
+
+            // pick the copy of the target closest to the current position, so scrolling takes the short way around the loop
+            var currentPosition = _scrollPosition[_axis] * sign;
+            target += _loopLength * Mathf.Round((currentPosition - target) / _loopLength);
+            return target * sign;
+        }
+
+        protected override void PerformPostScrollingActions(bool callEvent, AnimationState animationState, bool scrollingDown, int itemIndex = -1)
+        {
+            base.PerformPostScrollingActions(callEvent, animationState, scrollingDown, itemIndex);
+
+            // keep the scroll position within one loop length so it doesn't lose float precision after many pages
+            if (_isLooping && animationState == AnimationState.Finished)
+            {
+                var sign = vertical ? 1 : -1;
+                var scrollPosition = _scrollPosition;
+                scrollPosition[_axis] = Mathf.Repeat(scrollPosition[_axis] * sign, _loopLength) * sign;
+                ScrollPosition = scrollPosition;
+            }
+        }
+
+        protected override int CalculateNextPageAfterDrag()
+        {
+            if (!_isLooping)
+            {
+                return base.CalculateNextPageAfterDrag();
+            }
+
+            var delta = (_scrollPosition[_axis] - _dragStartScrollPosition[_axis]) * (vertical ? 1 : -1);
+            if (Mathf.Abs(delta) <= _swipeThreshold)
+            {
+                return _currentPage;
+            }
+            return WrapIndex(_currentPage + (delta > 0 ? 1 : -1));
+        }
+
+        protected override bool IsNextPage(int targetPage)
+        {
+            if (!_isLooping)
+            {
+                return base.IsNextPage(targetPage);
+            }
+
+            // around a loop, the next page is the one reached by going forward the shorter way
+            return WrapIndex(targetPage - _currentPage) <= _itemsCount / 2;
+        }
+
+        /// <summary>
+        /// Places a visible item, by default in a row around the center of the viewport.
         /// Override it for other layouts such as a card stack
         /// </summary>
         /// <param name="itemIndex">index of the item to place</param>
@@ -73,7 +357,12 @@ namespace RecyclableScrollRect
         /// <param name="offsetFromFocus">how many items away from the center of the viewport the item is, 0 is centered, negative is before it, positive is after it</param>
         protected virtual void LayoutItem(int itemIndex, RectTransform itemRect, float offsetFromFocus)
         {
-            itemRect.anchoredPosition = _itemPositions[itemIndex].topLeftPosition + _scrollPosition;
+            // the content sits at the origin of the viewport, so the item position is measured from the viewport center
+            var position = _itemPositions[itemIndex].topLeftPosition;
+            var itemSize = GetItemAxisSize(itemIndex);
+            var itemStart = viewport.rect.size[_axis] / 2f + offsetFromFocus * (itemSize + _spacing[_axis]) - itemSize / 2f;
+            position[_axis] = itemStart * (vertical ? -1 : 1);
+            itemRect.anchoredPosition = position;
         }
 
         protected override void SetItemPosition(int itemIndex, RectTransform rect = null)
@@ -85,6 +374,14 @@ namespace RecyclableScrollRect
             }
         }
 
+        private void LayoutVisibleItems()
+        {
+            foreach (var visibleItem in _visibleItems)
+            {
+                UpdateItemLayout(visibleItem.Key, visibleItem.Value);
+            }
+        }
+
         private void UpdateItemLayout(int itemIndex, Item item)
         {
             var offsetFromFocus = GetOffsetFromFocus(itemIndex);
@@ -93,7 +390,8 @@ namespace RecyclableScrollRect
         }
 
         /// <summary>
-        /// The distance between the item's center and the viewport's center, in items
+        /// The distance between the item's center and the viewport's center, in items.
+        /// When looping it's the shorter distance around the loop
         /// </summary>
         protected float GetOffsetFromFocus(int itemIndex)
         {
@@ -101,8 +399,41 @@ namespace RecyclableScrollRect
             var itemSize = itemPosition.itemSize[_axis];
             var itemCenter = itemPosition.absTopLeftPosition[_axis] + itemSize / 2f;
             var viewportCenter = _scrollPosition[_axis] * (vertical ? 1 : -1) + viewport.rect.size[_axis] / 2f;
+            var distance = itemCenter - viewportCenter;
+            if (_isLooping)
+            {
+                distance -= _loopLength * Mathf.Round(distance / _loopLength);
+            }
+
             var itemStep = itemSize + _spacing[_axis];
-            return itemStep > 0 ? (itemCenter - viewportCenter) / itemStep : 0;
+            return itemStep > 0 ? distance / itemStep : 0;
+        }
+
+        /// <summary>
+        /// Draws the items in order of their position rather than their index, so the order stays right across the loop
+        /// </summary>
+        protected override void SetSiblingIndices()
+        {
+            _siblingOrder.Clear();
+            foreach (var visibleItem in _visibleItems)
+            {
+                _siblingOrder.Add(visibleItem.Key);
+            }
+
+            _compareSiblingOrder ??= (a, b) => GetSiblingOrder(a).CompareTo(GetSiblingOrder(b));
+            _siblingOrder.Sort(_compareSiblingOrder);
+            foreach (var itemIndex in _siblingOrder)
+            {
+                _visibleItems[itemIndex].transform.SetAsLastSibling();
+            }
+        }
+
+        /// <summary>
+        /// Items with a higher order are drawn on top, by default the items further along are on top
+        /// </summary>
+        protected virtual float GetSiblingOrder(int itemIndex)
+        {
+            return GetOffsetFromFocus(itemIndex);
         }
 
         protected override float GetScrollToItemOffset(int itemIndex)

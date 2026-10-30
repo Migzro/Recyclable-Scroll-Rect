@@ -46,12 +46,9 @@ namespace RecyclableScrollRect
         /// <summary>
         /// Earlier items are drawn on top, so the focused item covers the ones waiting behind it
         /// </summary>
-        protected override void SetSiblingIndices()
+        protected override float GetSiblingOrder(int itemIndex)
         {
-            foreach (var visibleItem in _visibleItems)
-            {
-                visibleItem.Value.transform.SetAsFirstSibling();
-            }
+            return -GetOffsetFromFocus(itemIndex);
         }
     }
 }

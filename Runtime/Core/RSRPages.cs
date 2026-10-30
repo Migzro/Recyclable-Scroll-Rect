@@ -138,6 +138,14 @@ namespace RecyclableScrollRect
             return offset;
         }
         
+        /// <summary>
+        /// Whether moving to the target page goes forward, the current page counts as forward
+        /// </summary>
+        protected virtual bool IsNextPage(int targetPage)
+        {
+            return targetPage >= _currentPage;
+        }
+
         protected override void PerformPreScrollingActions(int itemIndex)
         {
             var targetPage = _pendingPageAfterScroll != -1 ? _pendingPageAfterScroll : _pageMap.IndexOf(itemIndex);
@@ -146,7 +154,7 @@ namespace RecyclableScrollRect
             if (targetPage == -1 || targetPage == _currentPage)
                 return;
 
-            var isNextPage = targetPage > _currentPage;
+            var isNextPage = IsNextPage(targetPage);
             if (_visibleItems.TryGetValue(CurrentPageDataIndex, out var visibleItem))
                 _pageDataSource?.PageWillUnFocus(visibleItem.item, _itemData[CurrentPageDataIndex], isNextPage);
         }
@@ -163,7 +171,7 @@ namespace RecyclableScrollRect
 
             var pageChanged = newPageIndex != _currentPage;
             var shouldFocus = pageChanged || _focusPageAfterReload;
-            var isNextPage = newPageIndex >= _currentPage;
+            var isNextPage = IsNextPage(newPageIndex);
             _currentPage = newPageIndex;
             _focusPageAfterReload = false;
 

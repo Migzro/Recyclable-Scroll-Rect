@@ -625,12 +625,18 @@ namespace RecyclableScrollRect
         }
 
         /// <summary>
+        /// Whether LateUpdate shows and hides items and raises the scroll limit callbacks based on the scroll position,
+        /// subclasses that manage the visible items themselves (like a looping carousel) can turn it off
+        /// </summary>
+        protected virtual bool HandlesScrollInLateUpdate => true;
+
+        /// <summary>
         /// The function in which we calculate which items need to be shown and which items need to hide
         /// </summary>
         protected override void LateUpdate()
         {
             base.LateUpdate();
-            if (!IsInitialized)
+            if (!IsInitialized || !HandlesScrollInLateUpdate)
                 return;
             if (_visibleItems.Count <= 0)
                 return;
@@ -940,7 +946,7 @@ namespace RecyclableScrollRect
             }
         }
 
-        private void ClampContentPosition()
+        protected virtual void ClampContentPosition()
         {
             SetContentBounds();
             // compare using the content corners which are positive in both directions, ContentPosition is negative when scrolled horizontally
@@ -1036,20 +1042,31 @@ namespace RecyclableScrollRect
                 }
             }
             
-            // if all item positions are known, we can clamp the content position to avoid over shooting
-            var itemPositionFinal = (itemPosition.absTopLeftPosition[_axis] - GetScrollToItemOffset(itemIndex)) * (vertical ? 1 : -1);
-            if (AllItemsPositionsSet)
-            {
-                var minContentPosition = vertical ? 0 : (content.rect.size[_axis] - _viewPortSize[_axis]) * (vertical ? 1 : -1);
-                var maxContentPosition = vertical ? content.rect.size[_axis] - _viewPortSize[_axis] : 0;
-                itemPositionFinal = Mathf.Clamp(itemPositionFinal, minContentPosition, maxContentPosition);
-            }
+            var itemPositionFinal = GetScrollToItemTarget(itemIndex);
             ScrollToContentPosition(itemIndex, itemPositionFinal, animationTimeLeft, isSpeed, instant, ease, (state, scrollingDown) => PerformPostScrollingActions(callEvent, state, scrollingDown, itemIndex));
         }
 
         protected virtual float GetScrollToItemOffset(int itemIndex)
         {
             return 0f;
+        }
+
+        /// <summary>
+        /// The content position to scroll to so the item is in view, once its position is known
+        /// </summary>
+        protected virtual float GetScrollToItemTarget(int itemIndex)
+        {
+            var itemPosition = _itemPositions[itemIndex];
+            var target = (itemPosition.absTopLeftPosition[_axis] - GetScrollToItemOffset(itemIndex)) * (vertical ? 1 : -1);
+
+            // if all item positions are known, we can clamp the content position to avoid over shooting
+            if (AllItemsPositionsSet)
+            {
+                var minContentPosition = vertical ? 0 : (content.rect.size[_axis] - _viewPortSize[_axis]) * (vertical ? 1 : -1);
+                var maxContentPosition = vertical ? content.rect.size[_axis] - _viewPortSize[_axis] : 0;
+                target = Mathf.Clamp(target, minContentPosition, maxContentPosition);
+            }
+            return target;
         }
 
         protected float GetItemAxisSize(int itemIndex)
