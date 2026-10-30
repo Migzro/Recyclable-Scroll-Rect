@@ -3,7 +3,7 @@
     "version": "2.0.0",
     "displayName": "Recyclable Scroll Rect",
     "description": "An infinite scroll rect implementation for Unity UI that recycles item views to improve performance with large data sets.",
-    "unity": "2019.1",
+    "unity": "2021.2",
     "keywords":
     [
         "ScrollRect",
