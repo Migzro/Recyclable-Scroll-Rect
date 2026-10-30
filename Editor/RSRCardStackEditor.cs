@@ -37,7 +37,6 @@ namespace RecyclableScrollRect.Editor
             EditorGUILayout.Space();
             EditorGUILayout.PropertyField(_mode);
             EditorGUILayout.PropertyField(_depthScaleStep);
-            EditorGUILayout.PropertyField(_maxDepth);
 
             var mode = (RSRCardStack.CardStackMode)_mode.enumValueIndex;
             if (mode == RSRCardStack.CardStackMode.Fan)
@@ -48,6 +47,7 @@ namespace RecyclableScrollRect.Editor
             }
             else
             {
+                EditorGUILayout.PropertyField(_maxDepth);
                 EditorGUILayout.PropertyField(_depthPeek);
                 if (mode == RSRCardStack.CardStackMode.TuckUnder)
                 {

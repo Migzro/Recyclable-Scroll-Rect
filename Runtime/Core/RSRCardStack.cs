@@ -21,7 +21,7 @@ namespace RecyclableScrollRect
 
         [SerializeField, Tooltip("How the cards around the focused card are laid out")] private CardStackMode _mode;
         [SerializeField, Tooltip("How much smaller each card gets per step away from the focused card")] private float _depthScaleStep = 0.05f;
-        [SerializeField, Tooltip("Cards further than this from the focused card stop getting smaller")] private float _maxDepth = 3f;
+        [SerializeField, Tooltip("Cards deeper than this in the stack stop getting smaller, fanned cards keep getting smaller")] private float _maxDepth = 3f;
         [SerializeField, Tooltip("How far each card in the stack peeks out from under the card in front of it, negative values peek out the other side")] private float _depthPeek = 24f;
         [SerializeField, Tooltip("How far a card slides out before tucking back under the stack, in item sizes")] private float _tuckSlideDistance = 0.5f;
         [SerializeField, Tooltip("How far apart neighbouring cards sit along the scrolling axis")] private float _fanSpacing = 80f;
@@ -55,14 +55,14 @@ namespace RecyclableScrollRect
             float crossPeek;
             if (_mode == CardStackMode.Fan)
             {
-                depth = Mathf.Min(Mathf.Abs(offsetFromFocus), _maxDepth);
+                depth = Mathf.Abs(offsetFromFocus);
                 axisOffset = offsetFromFocus * _fanSpacing;
                 crossPeek = 0;
 
                 if (_fanPileAtEdges)
                 {
                     // keep the scaled card inside the viewport, cards past the edge pile up on top of each other there
-                    var edgeOffset = Mathf.Max(0, (viewport.rect.size[_axis] - itemSize * (1f - depth * _depthScaleStep)) / 2f);
+                    var edgeOffset = Mathf.Max(0, (viewport.rect.size[_axis] - itemSize * ScaleAtDepth(depth)) / 2f);
                     axisOffset = Mathf.Clamp(axisOffset, -edgeOffset, edgeOffset);
                 }
             }
@@ -93,13 +93,19 @@ namespace RecyclableScrollRect
 
             // scaling happens around the top left pivot, shift by half the lost size to keep the item centered,
             // then push it along the cross axis so its edge peeks out from under the item in front of it
-            var scale = 1f - depth * _depthScaleStep;
+            var scale = ScaleAtDepth(depth);
             var size = itemRect.rect.size;
             position += new Vector2(size.x, -size.y) * ((1f - scale) / 2f);
             position[1 - _axis] += crossPeek * (vertical ? 1 : -1);
 
             itemRect.localScale = new Vector3(scale, scale, 1f);
             itemRect.anchoredPosition = position;
+        }
+
+        // never below zero, since fanned cards keep getting smaller the further they are
+        private float ScaleAtDepth(float depth)
+        {
+            return Mathf.Max(0, 1f - depth * _depthScaleStep);
         }
 
         /// <summary>
