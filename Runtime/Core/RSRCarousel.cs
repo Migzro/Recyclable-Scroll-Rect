@@ -78,11 +78,8 @@ namespace RecyclableScrollRect
             contentPosition[_axis] = 0;
             content.anchoredPosition = contentPosition;
 
-            // a loop has no inset, so the current page has to be scrolled to the center
-            if (_isLooping)
-            {
-                ContentPosition = GetScrollToItemTarget(_currentPage);
-            }
+            // a loop has no inset, and the inset can't center an item larger than the viewport, so scroll the current page to the center
+            ContentPosition = GetScrollToItemTarget(_currentPage);
         }
 
         protected override void BuildItemsMap()
