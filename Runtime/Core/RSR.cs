@@ -24,6 +24,11 @@ namespace RecyclableScrollRect
         protected virtual float StartPadding => vertical ? _padding.top : _padding.left;
         protected virtual float EndPadding => vertical ? _padding.bottom : _padding.right;
 
+        /// <summary>
+        /// How many items are kept alive beyond each side of the viewport
+        /// </summary>
+        protected virtual int ExtraItemsVisible => _extraItemsVisible;
+
         protected override void Initialize()
         {
             _rsrDataSource = (IRSRDataSource)_dataSource;
@@ -86,7 +91,7 @@ namespace RecyclableScrollRect
 
             var contentHasSpace = startIndex == 0 || _itemPositions[startIndex - 1].absBottomRightPosition[_axis] + _spacing[_axis] <= _contentBottomRightCorner[_axis];
             var extraItemsInitialized = contentHasSpace ? 0 : _maxExtraVisibleRowColumnInViewPort - _maxVisibleRowColumnInViewPort;
-            for (var i = startIndex; (contentHasSpace || extraItemsInitialized < _extraItemsVisible) && i < _itemsCount; i++)
+            for (var i = startIndex; (contentHasSpace || extraItemsInitialized < ExtraItemsVisible) && i < _itemsCount; i++)
             {
                 ShowItemAtIndex(i);
                 if (!contentHasSpace)
@@ -323,7 +328,7 @@ namespace RecyclableScrollRect
             }
             if (_itemsCount - 1 < _maxExtraVisibleRowColumnInViewPort)
             {
-                _maxExtraVisibleRowColumnInViewPort = Mathf.Min(Mathf.Max(0, _itemsCount - 1), _maxVisibleRowColumnInViewPort + _extraItemsVisible);
+                _maxExtraVisibleRowColumnInViewPort = Mathf.Min(Mathf.Max(0, _itemsCount - 1), _maxVisibleRowColumnInViewPort + ExtraItemsVisible);
             }
         }
         
@@ -361,11 +366,11 @@ namespace RecyclableScrollRect
 
             if (newMinVisibleItemInViewPort >= 0)
             {
-                newMinExtraVisibleItemInViewPort = Mathf.Clamp(newMinVisibleItemInViewPort - _extraItemsVisible, 0, Mathf.Max(0, _itemsCount - 1));
+                newMinExtraVisibleItemInViewPort = Mathf.Clamp(newMinVisibleItemInViewPort - ExtraItemsVisible, 0, Mathf.Max(0, _itemsCount - 1));
             }
             if (newMaxVisibleItemInViewPort >= 0)
             {
-                newMaxExtraVisibleItemInViewPort = Mathf.Clamp(newMaxVisibleItemInViewPort + _extraItemsVisible, 0, Mathf.Max(0, _itemsCount - 1));
+                newMaxExtraVisibleItemInViewPort = Mathf.Clamp(newMaxVisibleItemInViewPort + ExtraItemsVisible, 0, Mathf.Max(0, _itemsCount - 1));
             }
             
             // // hide all items that are at the top, from _minExtraVisibleRowColumnInViewPort to newMinExtraVisibleItemInViewPort
@@ -432,7 +437,7 @@ namespace RecyclableScrollRect
         {
             while (_minVisibleRowColumnInViewPort < _itemsCount - 1 && _contentTopLeftCorner[_axis] >= _itemPositions[_minVisibleRowColumnInViewPort].absBottomRightPosition[_axis])
             {
-                var itemToHide = _minVisibleRowColumnInViewPort - _extraItemsVisible;
+                var itemToHide = _minVisibleRowColumnInViewPort - ExtraItemsVisible;
                 _minVisibleRowColumnInViewPort++;
                 if (itemToHide >= 0 && _visibleItems.ContainsKey(itemToHide))
                 {
@@ -451,7 +456,7 @@ namespace RecyclableScrollRect
             while (_maxVisibleRowColumnInViewPort < _itemsCount - 1 && _contentBottomRightCorner[_axis] > _itemPositions[_maxVisibleRowColumnInViewPort].absBottomRightPosition[_axis] + _spacing[_axis])
             {
                 _maxVisibleRowColumnInViewPort++;
-                var itemToShow = _maxVisibleRowColumnInViewPort + _extraItemsVisible;
+                var itemToShow = _maxVisibleRowColumnInViewPort + ExtraItemsVisible;
                 if (itemToShow < _itemsCount && !_visibleItems.ContainsKey(itemToShow))
                 {
                     _maxExtraVisibleRowColumnInViewPort = itemToShow;
@@ -464,7 +469,7 @@ namespace RecyclableScrollRect
         {
             while (_maxVisibleRowColumnInViewPort > 0 && _contentBottomRightCorner[_axis] <= _itemPositions[_maxVisibleRowColumnInViewPort].absTopLeftPosition[_axis])
             {
-                var itemToHide = _maxVisibleRowColumnInViewPort + _extraItemsVisible;
+                var itemToHide = _maxVisibleRowColumnInViewPort + ExtraItemsVisible;
                 _maxVisibleRowColumnInViewPort--;
                 if (itemToHide < _itemsCount && _visibleItems.ContainsKey(itemToHide))
                 {
@@ -479,7 +484,7 @@ namespace RecyclableScrollRect
             while (_minVisibleRowColumnInViewPort > 0 && _contentTopLeftCorner[_axis] < _itemPositions[_minVisibleRowColumnInViewPort].absTopLeftPosition[_axis] - _spacing[_axis])
             {
                 _minVisibleRowColumnInViewPort--;
-                var itemToShow = _minVisibleRowColumnInViewPort - _extraItemsVisible;
+                var itemToShow = _minVisibleRowColumnInViewPort - ExtraItemsVisible;
                 if (itemToShow >= 0 && !_visibleItems.ContainsKey(itemToShow))
                 {
                     _minExtraVisibleRowColumnInViewPort = itemToShow;

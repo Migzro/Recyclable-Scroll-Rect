@@ -13,7 +13,7 @@ namespace RecyclableScrollRect
     /// </summary>
     public class RSRCarousel : RSRPages
     {
-        [SerializeField] private bool _loop;
+        [SerializeField] private bool _loop = true;
 
         private ICarouselDataSource _carouselDataSource;
         private Vector2 _scrollPosition;
@@ -129,7 +129,7 @@ namespace RecyclableScrollRect
                 minItemStep = Mathf.Min(minItemStep, itemStep);
             }
 
-            var maxVisibleItems = minItemStep > 0 ? Mathf.CeilToInt(viewport.rect.size[_axis] / minItemStep) + 1 + 2 * _extraItemsVisible : int.MaxValue;
+            var maxVisibleItems = minItemStep > 0 ? Mathf.CeilToInt(viewport.rect.size[_axis] / minItemStep) + 1 + 2 * ExtraItemsVisible : int.MaxValue;
             if (_itemsCount < maxVisibleItems)
             {
                 Debug.LogWarning($"RSRCarousel needs at least {maxVisibleItems} items to loop with the current viewport size and extra items visible, looping is disabled");
@@ -190,7 +190,7 @@ namespace RecyclableScrollRect
                 }
             }
 
-            for (var i = 1; i <= _extraItemsVisible; i++)
+            for (var i = 1; i <= ExtraItemsVisible; i++)
             {
                 _loopVisibleIndices.Add(WrapIndex(firstIndex - i));
                 _loopVisibleIndices.Add(WrapIndex(index + i - 1));
@@ -380,6 +380,9 @@ namespace RecyclableScrollRect
             {
                 UpdateItemLayout(visibleItem.Key, visibleItem.Value);
             }
+
+            // layouts like a card stack change which item is on top while scrolling
+            SetSiblingIndices();
         }
 
         private void UpdateItemLayout(int itemIndex, Item item)
@@ -422,6 +425,25 @@ namespace RecyclableScrollRect
 
             _compareSiblingOrder ??= (a, b) => GetSiblingOrder(a).CompareTo(GetSiblingOrder(b));
             _siblingOrder.Sort(_compareSiblingOrder);
+
+            // this runs on every scroll, so only touch the hierarchy when the order actually changed
+            var previousSiblingIndex = -1;
+            var isInOrder = true;
+            foreach (var itemIndex in _siblingOrder)
+            {
+                var siblingIndex = _visibleItems[itemIndex].transform.GetSiblingIndex();
+                if (siblingIndex < previousSiblingIndex)
+                {
+                    isInOrder = false;
+                    break;
+                }
+                previousSiblingIndex = siblingIndex;
+            }
+            if (isInOrder)
+            {
+                return;
+            }
+
             foreach (var itemIndex in _siblingOrder)
             {
                 _visibleItems[itemIndex].transform.SetAsLastSibling();

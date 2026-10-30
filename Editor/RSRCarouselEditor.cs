@@ -27,9 +27,17 @@ namespace RecyclableScrollRect.Editor
         /// <summary>
         /// Draws the serialized fields added by classes deriving from RSRCarousel, such as custom layouts
         /// </summary>
-        private void DrawSubclassFields()
+        protected virtual void DrawSubclassFields()
         {
-            for (var type = target.GetType(); type != typeof(RSRCarousel) && type != null; type = type.BaseType)
+            DrawFieldsDeclaredBelow(typeof(RSRCarousel));
+        }
+
+        /// <summary>
+        /// Draws the serialized fields declared by the target's class and its base classes, stopping at baseType
+        /// </summary>
+        protected void DrawFieldsDeclaredBelow(System.Type baseType)
+        {
+            for (var type = target.GetType(); type != baseType && type != null; type = type.BaseType)
             {
                 foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
                 {
