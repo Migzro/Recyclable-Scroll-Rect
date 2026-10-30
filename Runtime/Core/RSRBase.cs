@@ -24,7 +24,6 @@ namespace RecyclableScrollRect
         protected ISectionsSource _sectionsSource;
 
         protected LayoutElement _layoutElement;
-        private ScreenResolutionDetector _screenResolutionDetector;
 
         protected List<ItemData> _itemData;
         protected List<ItemPosition> _itemPositions;

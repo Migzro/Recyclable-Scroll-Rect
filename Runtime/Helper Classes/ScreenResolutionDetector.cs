@@ -4,52 +4,55 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-public class ScreenResolutionDetector : MonoBehaviour 
+namespace RecyclableScrollRect
 {
-    private static ScreenResolutionDetector _Instance;
-    public static ScreenResolutionDetector Instance
+    public class ScreenResolutionDetector : MonoBehaviour
     {
-        get
+        private static ScreenResolutionDetector _Instance;
+        public static ScreenResolutionDetector Instance
         {
-            if (!_Instance)
+            get
             {
-                _Instance = new GameObject().AddComponent<ScreenResolutionDetector>();
-                _Instance.name = _Instance.GetType().ToString();
-                DontDestroyOnLoad(_Instance.gameObject);
+                if (!_Instance)
+                {
+                    _Instance = new GameObject().AddComponent<ScreenResolutionDetector>();
+                    _Instance.name = nameof(ScreenResolutionDetector);
+                    DontDestroyOnLoad(_Instance.gameObject);
+                }
+                return _Instance;
             }
-            return _Instance;
         }
-    }
-    
-    public event Action OnResolutionChanged;
-    private int _lastWidth;
-    private int _lastHeight;
 
-    private void Awake()
-    {
-        _lastWidth = Screen.width;
-        _lastHeight = Screen.height;
-    }
+        public event Action OnResolutionChanged;
+        private int _lastWidth;
+        private int _lastHeight;
 
-    private void Update()
-    {
-        if (Screen.width != _lastWidth || Screen.height != _lastHeight)
+        private void Awake()
         {
             _lastWidth = Screen.width;
             _lastHeight = Screen.height;
-            StartCoroutine(WaitForFrame());
         }
-    }
-    
-    private IEnumerator WaitForFrame()
-    {
-        yield return new WaitForEndOfFrame();
-        OnResolutionChanged?.Invoke();
-    }
+
+        private void Update()
+        {
+            if (Screen.width != _lastWidth || Screen.height != _lastHeight)
+            {
+                _lastWidth = Screen.width;
+                _lastHeight = Screen.height;
+                StartCoroutine(WaitForFrame());
+            }
+        }
+
+        private IEnumerator WaitForFrame()
+        {
+            yield return new WaitForEndOfFrame();
+            OnResolutionChanged?.Invoke();
+        }
 
 
-    private void OnDestroy()
-    {
-        _Instance = null;
+        private void OnDestroy()
+        {
+            _Instance = null;
+        }
     }
 }

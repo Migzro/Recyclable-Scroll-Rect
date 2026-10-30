@@ -27,14 +27,6 @@ namespace RecyclableScrollRect
         protected override void CalculateItemsCount()
         {
             _itemsCount = 0;
-            _sectionsCount = _sectionsSource?.SectionsCount ?? 1;
-
-            if (_sectionsCount <= 0)
-            {
-                Debug.LogWarning("Sections count cannot be 0, defaulting to 1");
-                _sectionsCount = 1;
-            }
-
             _itemsCount += _sectionsSource is { ScrollRectHasHeader: true } ? 1 : 0;
             _itemsCount += _sectionsSource is { ScrollRectHasFooter: true } ? 1 : 0;
 
