@@ -1,2 +1,5 @@
 .DS_Store
 .idea/
+# package folders end with ~, keep them even when a global gitignore ignores *~ backup files
+!Samples~/
+!Images~/
