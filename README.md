@@ -34,7 +34,13 @@ A ListView implementation for Unity’s UI that recycles item views, designed to
 ![Paged RSR](Images~/Paged%20RSR.gif)
 
 ### Vertical Dynamic RSR with Data Source Reloading
-![Paged RSR](Images~/Vertical%20Dynamic%20RSR.gif)
+![Vertical Dynamic RSR](Images~/Vertical%20Dynamic%20RSR.gif)
+
+### Vertical Carousel RSR
+![Vertical Carousel RSR](Images~/Vertical%20Carousel%20RSR.gif)
+
+### Vertical Cards RSR
+![Vertical Cards RSR](Images~/Vertical%20Cards%20RSR.gif)
 
 ## 🚀 Installation
 ### 1 - OpenUPM
