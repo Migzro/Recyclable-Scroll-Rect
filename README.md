@@ -70,7 +70,7 @@ You can also add it manually by editing your `manifest.json` file:
 ```
 
 ### 2 - Unity Package
-Download the latest Unity package from the [Releases](https://github.com/Migzro/Recyclable-Scroll-Rect/releases/tag/1.0.1) page.
+Download the latest Unity package from the [Releases](https://github.com/Migzro/Recyclable-Scroll-Rect/releases/latest) page.
 
 ## 🧩 Samples
 ### Importing from Unity Package Manager

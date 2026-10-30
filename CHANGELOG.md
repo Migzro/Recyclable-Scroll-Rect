@@ -1,3 +1,16 @@
+## [1.3.0] - 30-10-2026
+### Bug Fixes
+- Fixed an issue where starting a scroll re-ran the previous scroll's finished callback with a canceled state
+- Fixed an issue where calling Initialize more than once reloaded the data multiple times on resolution change
+- Fixed an issue where destroying a scroll rect during scene unload could create a new ScreenResolutionDetector
+- Guard HideItemAtIndex against items that are not visible
+
+### Performance
+- Cache section header indices so header pinning no longer scans all items every frame
+
+### API Changes
+- ScreenResolutionDetector moved into the RecyclableScrollRect namespace, code referencing it needs `using RecyclableScrollRect;`
+
 ## [1.2.2] - 27-8-2026
 ### Bug Fixes - Courtesy of @BlueVolt1
 - Guard PinHeaders against empty or out of range item data
