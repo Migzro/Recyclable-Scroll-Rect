@@ -572,7 +572,7 @@ MonoBehaviour:
   _extraItemsVisible: 2
   _scrollingDuration: 0.15
   _swipeThreshold: 200
-  _loop: 0
+  _loop: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
