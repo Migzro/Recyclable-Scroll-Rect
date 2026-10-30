@@ -4,8 +4,8 @@ using UnityEditor;
 
 namespace RecyclableScrollRect.Editor
 {
-    [CustomEditor(typeof(RSRCardStack), true)]
-    public class RSRCardStackEditor : RSRCarouselEditor
+    [CustomEditor(typeof(RSRCards), true)]
+    public class RSRCardsEditor : RSRCarouselEditor
     {
         private SerializedProperty _mode;
         private SerializedProperty _depthScaleStep;
@@ -38,8 +38,8 @@ namespace RecyclableScrollRect.Editor
             EditorGUILayout.PropertyField(_mode);
             EditorGUILayout.PropertyField(_depthScaleStep);
 
-            var mode = (RSRCardStack.CardStackMode)_mode.enumValueIndex;
-            if (mode == RSRCardStack.CardStackMode.Fan)
+            var mode = (RSRCards.CardsMode)_mode.enumValueIndex;
+            if (mode == RSRCards.CardsMode.Fan)
             {
                 EditorGUILayout.PropertyField(_fanSpacing);
                 EditorGUILayout.PropertyField(_fanFillViewport);
@@ -49,14 +49,14 @@ namespace RecyclableScrollRect.Editor
             {
                 EditorGUILayout.PropertyField(_maxDepth);
                 EditorGUILayout.PropertyField(_depthPeek);
-                if (mode == RSRCardStack.CardStackMode.TuckUnder)
+                if (mode == RSRCards.CardsMode.TuckUnder)
                 {
                     EditorGUILayout.PropertyField(_tuckSlideDistance);
                 }
             }
 
-            // fields added by classes deriving from RSRCardStack
-            DrawFieldsDeclaredBelow(typeof(RSRCardStack));
+            // fields added by classes deriving from RSRCards
+            DrawFieldsDeclaredBelow(typeof(RSRCards));
         }
     }
 }

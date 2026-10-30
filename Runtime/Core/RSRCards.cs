@@ -7,9 +7,9 @@ namespace RecyclableScrollRect
     /// <summary>
     /// A carousel layout where the cards overlap around the focused card, which is centered and drawn on top
     /// </summary>
-    public class RSRCardStack : RSRCarousel
+    public class RSRCards : RSRCarousel
     {
-        public enum CardStackMode
+        public enum CardsMode
         {
             // the next cards wait in a stack behind the focused card, the previous cards slide off the screen
             SlideAway,
@@ -19,7 +19,7 @@ namespace RecyclableScrollRect
             Fan
         }
 
-        [SerializeField, Tooltip("How the cards around the focused card are laid out")] private CardStackMode _mode;
+        [SerializeField, Tooltip("How the cards around the focused card are laid out")] private CardsMode _mode;
         [SerializeField, Tooltip("How much smaller each card gets per step away from the focused card")] private float _depthScaleStep = 0.05f;
         [SerializeField, Tooltip("Cards deeper than this in the stack stop getting smaller, fanned cards keep getting smaller")] private float _maxDepth = 3f;
         [SerializeField, Tooltip("How far each card in the stack peeks out from under the card in front of it, negative values peek out the other side")] private float _depthPeek = 24f;
@@ -28,13 +28,13 @@ namespace RecyclableScrollRect
         [SerializeField, Tooltip("Keep as many cards alive as fit across the viewport at the fan spacing, instead of only the extra items visible")] private bool _fanFillViewport;
         [SerializeField, Tooltip("Cards that would pass the edge of the viewport stop there and pile up, so they stay in view")] private bool _fanPileAtEdges;
 
-        public CardStackMode Mode => _mode;
+        public CardsMode Mode => _mode;
 
         protected override int ExtraItemsVisible
         {
             get
             {
-                if (_mode != CardStackMode.Fan || !_fanFillViewport || _fanSpacing <= 0)
+                if (_mode != CardsMode.Fan || !_fanFillViewport || _fanSpacing <= 0)
                 {
                     return base.ExtraItemsVisible;
                 }
@@ -53,7 +53,7 @@ namespace RecyclableScrollRect
             float depth;
             float axisOffset;
             float crossPeek;
-            if (_mode == CardStackMode.Fan)
+            if (_mode == CardsMode.Fan)
             {
                 depth = Mathf.Abs(offsetFromFocus);
                 axisOffset = offsetFromFocus * _fanSpacing;
@@ -72,7 +72,7 @@ namespace RecyclableScrollRect
                 axisOffset = 0;
                 crossPeek = depth * _depthPeek;
             }
-            else if (_mode == CardStackMode.TuckUnder)
+            else if (_mode == CardsMode.TuckUnder)
             {
                 // follow the drag out for the first half, then swing back to the center while sinking to the back of the stack
                 var progress = -offsetFromFocus;
@@ -116,12 +116,12 @@ namespace RecyclableScrollRect
         protected override float GetSiblingOrder(int itemIndex)
         {
             var offsetFromFocus = GetOffsetFromFocus(itemIndex);
-            if (_mode == CardStackMode.Fan)
+            if (_mode == CardsMode.Fan)
             {
                 return -Mathf.Abs(offsetFromFocus);
             }
 
-            if (offsetFromFocus >= 0 || _mode == CardStackMode.SlideAway)
+            if (offsetFromFocus >= 0 || _mode == CardsMode.SlideAway)
             {
                 return -offsetFromFocus;
             }

@@ -170,7 +170,7 @@ public class VerticalRSRDemo : MonoBehaviour, IRSRDataSource
 ### Carousel mode
 Add `RSRCarousel` instead of `RSR` and implement `IPageDataSource`, or `ICarouselDataSource` to get each item's offset from the center for effects like scale or fade. The carousel keeps the content still and moves the items, the focused item is centered, and the **Loop** toggle wraps from the last item back to the first. Headers and footers are not supported in carousel mode.
 
-For overlapping cards, use `RSRCardStack` instead, and pick a mode: **Slide Away** stacks the next cards behind the focused one and slides swiped cards off the screen, **Tuck Under** tucks swiped cards back under the stack, and **Fan** spreads the cards out on both sides of the focused one. The **Horizontal Cards RSR** sample shows it.
+For overlapping cards, use `RSRCards` instead, and pick a mode: **Slide Away** stacks the next cards behind the focused one and slides swiped cards off the screen, **Tuck Under** tucks swiped cards back under the stack, and **Fan** spreads the cards out on both sides of the focused one. The **Horizontal Cards RSR** sample shows it.
 
 For other layouts, derive from `RSRCarousel` and override `LayoutItem`.
 
