@@ -54,6 +54,11 @@ namespace RecyclableScrollRect
         
         public virtual void CancelCurrentAnimation()
         {
+            // only notify if an animation is running, otherwise we'd re-fire the previous scroll's callback
+            if (_animationState != AnimationState.Animating)
+            {
+                return;
+            }
             _animationState = AnimationState.Canceled;
             _onFinished?.Invoke(_animationState);
         }
