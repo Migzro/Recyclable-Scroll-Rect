@@ -14,6 +14,7 @@ namespace RecyclableScrollRect
         internal PinnedHeaderState _sectionHeaderPin;
 
         private RectTransform _headersParent;
+        private int[] _sectionHeaderIndices;
         
         private float RSRHeaderCoverage => _rsrHeaderPin.IsPinned ? _itemPositions[_rsrHeaderPin.index].itemSize[_axis] + _spacing[_axis] : 0f;
         
@@ -223,15 +224,32 @@ namespace RecyclableScrollRect
         
         protected int GetHeaderIndexFromSection(int sectionIndex)
         {
-            for (int i = 0; i < _itemData.Count; i++)
+            if (sectionIndex < 0 || sectionIndex >= _sectionHeaderIndices.Length)
+            {
+                return -1;
+            }
+            return _sectionHeaderIndices[sectionIndex];
+        }
+
+        /// <summary>
+        /// Caches the item index of each section's header so pinning doesn't scan all items every frame
+        /// </summary>
+        private void CacheSectionHeaderIndices()
+        {
+            _sectionHeaderIndices = new int[_sectionsCount];
+            for (var i = 0; i < _sectionsCount; i++)
+            {
+                _sectionHeaderIndices[i] = -1;
+            }
+
+            for (var i = 0; i < _itemData.Count; i++)
             {
                 var data = _itemData[i];
-                if (data.sectionIndex == sectionIndex && data.itemType == ItemType.Header)
+                if (data.itemType == ItemType.Header && data.sectionIndex >= 0 && data.sectionIndex < _sectionsCount && _sectionHeaderIndices[data.sectionIndex] == -1)
                 {
-                    return i;
+                    _sectionHeaderIndices[data.sectionIndex] = i;
                 }
             }
-            return -1;
         }
     }
 }

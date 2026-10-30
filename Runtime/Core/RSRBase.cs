@@ -228,6 +228,7 @@ namespace RecyclableScrollRect
 
             ResetVariables();
             BuildItemsMap();
+            CacheSectionHeaderIndices();
             SetContentAnchorsPivot();
             InitializeItemPositions();
             CalculateContentSize();
@@ -891,6 +892,7 @@ namespace RecyclableScrollRect
             
             ResetVariables();
             BuildItemsMap();
+            CacheSectionHeaderIndices();
             SetContentAnchorsPivot();
             InitializeItemPositions();
             CalculateContentSize();
