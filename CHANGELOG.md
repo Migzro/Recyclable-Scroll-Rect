@@ -1,6 +1,8 @@
-## [Unreleased]
+## [2.1.0] - 1-11-2026
 ### Improvements
 - Lowered the minimum Unity version to 2019.4 by using C# 7.3 only.
+- The package now declares its com.unity.ugui dependency, and links to its documentation, changelog and license from the Package Manager.
+- Smaller demo GIFs and a reworked README with a Quick Start.
 
 ### Bug Fixes
 - A scroll animation controller that was destroyed is now replaced when initializing, instead of being kept.
