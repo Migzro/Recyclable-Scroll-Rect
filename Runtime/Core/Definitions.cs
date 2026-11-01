@@ -311,7 +311,7 @@ namespace RecyclableScrollRect
 
         public PinnedHeaderState()
         {
-            position = new();
+            position = new ItemPosition();
         }
     }
 }

@@ -70,8 +70,8 @@ namespace RecyclableScrollRect
                 vertical,
                 _gridStartAxis,
                 _gridStartCorner,
-                _sectionsSource is { ScrollRectHasHeader: true },
-                _sectionsSource is { ScrollRectHasFooter: true });
+                _sectionsSource != null && _sectionsSource.ScrollRectHasHeader,
+                _sectionsSource != null && _sectionsSource.ScrollRectHasFooter);
             _itemsCount = _grid.SlotsCount;
             CalculateGridPadding();
         }

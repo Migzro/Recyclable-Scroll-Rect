@@ -38,8 +38,8 @@ namespace RecyclableScrollRect
         protected override void CalculateItemsCount()
         {
             _itemsCount = 0;
-            _itemsCount += _sectionsSource is { ScrollRectHasHeader: true } ? 1 : 0;
-            _itemsCount += _sectionsSource is { ScrollRectHasFooter: true } ? 1 : 0;
+            _itemsCount += _sectionsSource != null && _sectionsSource.ScrollRectHasHeader ? 1 : 0;
+            _itemsCount += _sectionsSource != null && _sectionsSource.ScrollRectHasFooter ? 1 : 0;
 
             _itemsCountInSection = new List<int>();
             for (var i = 0; i < _sectionsCount; i++)

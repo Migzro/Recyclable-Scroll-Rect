@@ -33,7 +33,8 @@ namespace RecyclableScrollRect
         
         private void BuildPageMap()
         {
-            _pageMap ??= new List<int>();
+            if (_pageMap == null)
+                _pageMap = new List<int>();
             _pageMap.Clear();
             for (var i = 0; i < _itemData.Count; i++)
             {
@@ -99,7 +100,7 @@ namespace RecyclableScrollRect
             for (var i = dataIndex - 1; i >= 0; i--)
             {
                 var itemType = _itemData[i].itemType;
-                var isHeader = itemType is ItemType.Header or ItemType.RSRHeader;
+                var isHeader = itemType == ItemType.Header || itemType == ItemType.RSRHeader;
 
                 if (!isHeader)
                     break;

@@ -178,8 +178,14 @@ namespace RecyclableScrollRect
             _initialMovementType = movementType;
             
             InitializeData();
-            _scrollAnimationController ??= gameObject.GetComponent<BaseScrollAnimationController>();
-            _scrollAnimationController ??= gameObject.AddComponent<ScrollAnimationController>();
+            if (_scrollAnimationController == null)
+            {
+                _scrollAnimationController = gameObject.GetComponent<BaseScrollAnimationController>();
+            }
+            if (_scrollAnimationController == null)
+            {
+                _scrollAnimationController = gameObject.AddComponent<ScrollAnimationController>();
+            }
         }
 
         /// <summary>
@@ -204,8 +210,8 @@ namespace RecyclableScrollRect
             StopMovement();
             
             _currentSection = 0;
-            _rsrHeaderPin = new();
-            _sectionHeaderPin = new();
+            _rsrHeaderPin = new PinnedHeaderState();
+            _sectionHeaderPin = new PinnedHeaderState();
             _minVisibleRowColumnInViewPort = 0;
             _minExtraVisibleRowColumnInViewPort = 0;
             _maxVisibleRowColumnInViewPort = 0;

@@ -3,7 +3,7 @@
     "version": "2.0.1",
     "displayName": "Recyclable Scroll Rect",
     "description": "A virtualized (recycling) ScrollRect for Unity UI that handles large data sets: lists, grids, sections with pinned headers, paging, looping carousels and card stacks.",
-    "unity": "2021.2",
+    "unity": "2019.4",
     "documentationUrl": "https://github.com/Migzro/Recyclable-Scroll-Rect#readme",
     "changelogUrl": "https://github.com/Migzro/Recyclable-Scroll-Rect/blob/main/CHANGELOG.md",
     "licensesUrl": "https://github.com/Migzro/Recyclable-Scroll-Rect/blob/main/LICENSE.md",

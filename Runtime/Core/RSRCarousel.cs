@@ -420,7 +420,10 @@ namespace RecyclableScrollRect
                 _siblingOrder.Add(visibleItem.Key);
             }
 
-            _compareSiblingOrder ??= (a, b) => GetSiblingOrder(a).CompareTo(GetSiblingOrder(b));
+            if (_compareSiblingOrder == null)
+            {
+                _compareSiblingOrder = (a, b) => GetSiblingOrder(a).CompareTo(GetSiblingOrder(b));
+            }
             _siblingOrder.Sort(_compareSiblingOrder);
 
             // this runs on every scroll, so only touch the hierarchy when the order actually changed

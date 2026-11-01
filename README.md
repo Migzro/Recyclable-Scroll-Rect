@@ -2,7 +2,7 @@
 
 [![openupm](https://img.shields.io/npm/v/com.migzro.recyclablescrollrect?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.migzro.recyclablescrollrect/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
-![Unity 2021.2+](https://img.shields.io/badge/Unity-2021.2%2B-black?logo=unity)
+![Unity 2019.4+](https://img.shields.io/badge/Unity-2019.4%2B-black?logo=unity)
 [![GitHub stars](https://img.shields.io/github/stars/Migzro/Recyclable-Scroll-Rect?style=social)](https://github.com/Migzro/Recyclable-Scroll-Rect)
 
 A virtualized ScrollRect for Unity UI (uGUI) that recycles item views, so even very long lists only keep the visible items alive.

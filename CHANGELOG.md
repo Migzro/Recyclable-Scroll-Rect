@@ -1,3 +1,10 @@
+## [Unreleased]
+### Improvements
+- Lowered the minimum Unity version to 2019.4 by using C# 7.3 only.
+
+### Bug Fixes
+- A scroll animation controller that was destroyed is now replaced when initializing, instead of being kept.
+
 ## [2.0.1] - 30-10-2026
 ### New Features
 - Added carousel mode with RSRCarousel, which keeps the content still and moves the items instead, with the focused item centered.
